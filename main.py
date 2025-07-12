@@ -36,6 +36,10 @@ class Player:
        else:
            print(f"Darkness spreads... (Hope {amount})")
 
+   def add_loot(self, item):
+       self.inventory.append(item)
+       print(f"You found: {item}")
+
 class NPC:
    def __init__(self, name, story, alive=True):
        self.name = name
@@ -350,10 +354,6 @@ def level_up(player):
        slow_print(f"\nYou've grown stronger... Level {player.level}")
        slow_print(f"Max HP increased to {player.max_hp}.")
        slow_print("But strength alone won't save this world.")
-
-def add_loot(player, item):
-   player.inventory.append(item)
-   slow_print(f"You found: {item}")
 
 def main():
    slow_print("="*50)
