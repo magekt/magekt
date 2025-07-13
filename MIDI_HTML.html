@@ -694,8 +694,8 @@
                 { bass: ['A2'], synth: ['A3', 'E4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['C2'], synth: ['C4', 'E4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            ragaYamanPhrase: new Array(8).fill({}),
-            ragaBhairaviPhrase: new Array(8).fill({}),
+            ragaYamanPhrase: [], // Changed from new Array(8).fill({})
+            ragaBhairaviPhrase: [], // Changed from new Array(8).fill({})
             
             chorus: [
                 { bass: ['A2'], synth: ['A4', 'C5', 'E4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'open', velocity: 0.9 } }, delaySend: 0.6 },
@@ -1084,7 +1084,7 @@
             noise.stop(actualStartTime + 0.2);
             osc.stop(actualStartTime + 0.2);
 
-            noise.onended = () => {
+            osc.onended = () => {
                 noise.disconnect();
                 osc.disconnect();
                 noiseGain.disconnect();
@@ -1233,6 +1233,16 @@
 
             while (nextNoteTime < audioContext.currentTime + 0.1) {
                 const currentStep = currentSectionPhrase[currentPhraseIndex];
+                
+                // Robust check for currentStep and its essential properties
+                if (!currentStep || typeof currentStep !== 'object' || !Array.isArray(currentStep.synth) || !Array.isArray(currentStep.bass) || typeof currentStep.percussion !== 'object' || currentStep.percussion === null) {
+                    console.error(`Invalid or malformed currentStep at index ${currentPhraseIndex}:`, currentStep);
+                    // Attempt to recover by forcing a section transition
+                    currentPhraseIndex = 0; // Reset index for the new section
+                    stepsPlayedInCurrentSection = currentSectionTotalSteps; // Force transition
+                    continue; // Skip to the next iteration of the while loop
+                }
+
                 const duration = baseNoteDuration;
 
                 const effectiveDelaySend = (currentStep.delaySend !== undefined ? currentStep.delaySend : 0.5) * delaySendLevel;
@@ -1304,27 +1314,41 @@
 
                     const nextSectionDef = songStructure[currentSongSectionIndex];
                     currentSectionType = nextSectionDef.type;
+                    let phraseToUse = []; // Temporary variable to hold the phrase before assignment
                     
                     if (currentSectionType === 'verse') {
                         verseIterationCount++;
-                        if (currentSongSectionIndex === 1) {
+                        if (currentSongSectionIndex === 1) { // Special case for the very first verse in the song structure
                             currentSectionName = nextSectionDef.baseName + '_C';
-                            currentSectionPhrase = musicalPhrases[currentSectionName];
+                            phraseToUse = musicalPhrases[currentSectionName];
                             console.log(`Forcing first verse to start with: ${currentSectionName}`);
-                        } else if (verseIterationCount % 2 === 0) {
+                        } else if (verseIterationCount % 2 === 0) { // This is where Ragas are introduced
                             currentSectionName = getNextRagaPhrase();
                             const ragaScaleName = currentSectionName === 'ragaYamanPhrase' ? 'yaman' : 'bhairavi';
-                            currentSectionPhrase = generateRagaMelody(ragaScales[ragaScaleName], 8, humanizationFactor);
+                            phraseToUse = generateRagaMelody(ragaScales[ragaScaleName], 8, humanizationFactor);
                         } else {
                             currentSectionName = getRandomNormalVerseVariation(nextSectionDef.baseName);
-                            currentSectionPhrase = musicalPhrases[currentSectionName];
+                            phraseToUse = musicalPhrases[currentSectionName];
                         }
                     } else {
                         currentSectionName = nextSectionDef.name || nextSectionDef.type;
-                        currentSectionPhrase = musicalPhrases[currentSectionName];
+                        phraseToUse = musicalPhrases[currentSectionName];
                     }
                     
+                    // Assign the determined/generated phrase to currentSectionPhrase
+                    currentSectionPhrase = phraseToUse;
+
+                    // Safeguard: Ensure the phrase is not empty after selection/generation.
+                    // If it is, fall back to a known good phrase.
+                    if (!currentSectionPhrase || currentSectionPhrase.length === 0) {
+                        console.warn(`Section '${currentSectionName}' resulted in an empty phrase. Falling back to intro.`);
+                        currentSectionName = 'intro';
+                        currentSectionPhrase = musicalPhrases.intro;
+                    }
+
+                    // Calculate total steps based on the *final* currentSectionPhrase length
                     currentSectionTotalSteps = currentSectionPhrase.length * nextSectionDef.durationMultiplier;
+
                     console.log(`Transitioning to section: ${currentSectionName} (type: ${currentSectionType}) for ${currentSectionTotalSteps} steps. Humanization Factor: ${humanizationFactor.toFixed(2)}`);
                     updateSectionDisplay();
                 }
@@ -1375,21 +1399,36 @@
             const initialSectionDef = songStructure[currentSongSectionIndex];
             currentSectionType = initialSectionDef.type;
             
+            let initialPhraseToUse = [];
+
             if (currentSectionType === 'verse') {
                 verseIterationCount = 1;
                 currentSectionName = initialSectionDef.baseName + '_C';
-                currentSectionPhrase = musicalPhrases[currentSectionName];
+                initialPhraseToUse = musicalPhrases[currentSectionName];
                 console.log(`Forcing initial verse to start with: ${currentSectionName}`);
             } else {
                 currentSectionName = initialSectionDef.name || initialSectionDef.type;
-                currentSectionPhrase = musicalPhrases[currentSectionName];
+                initialPhraseToUse = musicalPhrases[currentSectionName];
             }
+
+            currentSectionPhrase = initialPhraseToUse; // Assign the determined phrase
 
             shuffleArray(availableRagas);
 
             currentPhraseIndex = 0;
             stepsPlayedInCurrentSection = 0;
+            
+            // Calculate total steps based on the assigned currentSectionPhrase length
             currentSectionTotalSteps = currentSectionPhrase.length * initialSectionDef.durationMultiplier;
+
+            // Safeguard for initial phrase if it somehow ends up empty (though unlikely for 'intro')
+            if (!currentSectionPhrase || currentSectionPhrase.length === 0) {
+                console.warn(`Initial section phrase for '${currentSectionName}' is empty. Falling back to intro.`);
+                currentSectionName = 'intro';
+                currentSectionPhrase = musicalPhrases.intro;
+                currentSectionTotalSteps = currentSectionPhrase.length * initialSectionDef.durationMultiplier;
+            }
+
             updateSectionDisplay();
             console.log(`Starting with section: ${currentSectionName} (type: ${currentSectionType}) for ${currentSectionTotalSteps} steps. Humanization Factor: ${humanizationFactor.toFixed(2)}`);
 
