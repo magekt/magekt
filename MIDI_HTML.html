@@ -233,8 +233,8 @@
                 </div>
                 <div class="knob-group">
                     <label for="synthVolume">Synth Volume</label>
-                    <input type="range" id="synthVolume" min="0" max="0.5" step="0.01" value="0.34">
-                    <span class="knob-value" id="synthVolumeValue">0.34</span>
+                    <input type="range" id="synthVolume" min="0" max="0.5" step="0.01" value="0.08"> <!-- Changed default to 0.08 -->
+                    <span class="knob-value" id="synthVolumeValue">0.08</span>
                 </div>
                 <div class="knob-group">
                     <label for="kickVolume">Kick Volume</label>
@@ -296,13 +296,12 @@
         // Musical parameters controlled by knobs - initialized to default values
         let masterVolume = 0.55;
         let bassVolume = 0.13; // Updated
-        let synthVolume = 0.34; // Updated
+        let synthVolume = 0.08; // Changed default to 0.08
         let kickVolume = 0.89; // Updated
         let snareVolume = 0.21; // Updated
         let hihatVolume = 0.21; // Updated
 
-        let currentTempo = 420; // Updated
-        // These parameters are now dynamically changing in the background without UI knobs
+        let currentTempo = 420; // This will now remain fixed at the knob value
         let currentDetune = 0; // Current detune value for oscillators in cents
         let currentFilterFrequency = 1000; // Current low-pass filter cutoff frequency in Hz
         let currentFilterQ = 1; // Current low-pass filter Q value
@@ -311,6 +310,8 @@
         // Global variables for filter and detune drift (still apply subtle background changes)
         let filterDriftDirection = 1; // 1 for increasing, -1 for decreasing
         let detuneDriftDirection = 1;
+        let delayTimeDriftDirection = 1; // For delay time variation
+        let delayFeedbackDriftDirection = 1; // For delay feedback variation
 
         // Fibonacci-influenced drift scale factors for dynamic parameters
         // These values will influence the *magnitude* of the random drift
@@ -330,7 +331,11 @@
 
 
         // For cycling through verse patterns (normal and Raga)
-        const normalVerseCycle = ['verse1', 'verse2', 'verse3'];
+        const normalVerseOptions = {
+            verse1: ['verse1_A', 'verse1_B', 'verse1_C', 'verse1_D'], // Added D for odd time signature feel
+            verse2: ['verse2_A', 'verse2_B', 'verse2_C', 'verse2_D'], // Added D for odd time signature feel
+            verse3: ['verse3_A', 'verse3_B', 'verse3_C']
+        };
         const ragaVerseOptions = ['ragaYamanPhrase', 'ragaBhairaviPhrase']; // All available Raga phrases
         let availableRagas = [...ragaVerseOptions]; // Copy of original raga list for cycling
         let normalVerseIndex = 0;
@@ -348,93 +353,279 @@
             'C5': 523.25
         };
 
+        // New Raga scale definitions (using C as tonic for simplicity)
+        const ragaScales = {
+            yaman: ['C4', 'D4', 'E4', 'F#4', 'G4', 'A4', 'B4', 'C5'], // Including octave for range
+            bhairavi: ['C4', 'C#4', 'D#4', 'F4', 'G4', 'G#4', 'A#4', 'C5'] // C#, D#, G#, A# for Db, Eb, Ab, Bb
+        };
+
+        /**
+         * Generates a melodic phrase within a given Raga scale, with expressive variations.
+         * @param {Array<string>} scale - Array of note names in the Raga scale (e.g., ['C4', 'D4', 'E4']).
+         * @param {number} phraseLength - Number of steps in the phrase (e.g., 8).
+         * @param {number} humanizationFactor - A factor influencing how "busy" or sparse the melody is (0-1).
+         * @returns {Array<Object>} An array of phrase steps.
+         */
+        function generateRagaMelody(scale, phraseLength, humanizationFactor) {
+            const generatedPhrase = [];
+            let currentNoteIndex = Math.floor(Math.random() * scale.length); // Start at a random note in the scale
+            let lastDirection = Math.random() < 0.5 ? 1 : -1; // Initial melodic direction
+
+            // Identify Vadi (tonic) and Samvadi (dominant/consonant) notes for Raga gravity
+            const vadiNote = scale[0]; // Tonic
+            const samvadiNote = scale[4]; // Fifth (G for C-based scales)
+
+            for (let i = 0; i < phraseLength; i++) {
+                const step = {
+                    bass: [],
+                    synth: [],
+                    percussion: {},
+                    delaySend: 0.3 + (Math.random() * 0.3) // Vary delay send slightly
+                };
+
+                // --- Bass Line Generation (Complementary Harmony) ---
+                // Bass provides a stable, evolving harmonic foundation.
+                // It will primarily play the root, but occasionally the fifth or a note from the Raga.
+                if (i % 4 === 0) { // On beat 1 of every measure (assuming 4 beats per measure)
+                    step.bass.push(scale[0].replace('4', '2')); // Root of the Raga in a lower octave
+                } else if (i % 2 === 0 && Math.random() < 0.6) { // On other strong beats, sometimes play fifth or other scale note
+                    const bassOptions = [scale[0].replace('4', '2'), scale[4].replace('4', '2')]; // Root and fifth
+                    if (scale.length > 5 && Math.random() < 0.3) { // Occasionally add a third or other scale degree
+                        bassOptions.push(scale[2].replace('4', '2'));
+                    }
+                    step.bass.push(bassOptions[Math.floor(Math.random() * bassOptions.length)]);
+                }
+                // Ensure bass is always present, even if just a drone
+                if (step.bass.length === 0) {
+                    step.bass.push(scale[0].replace('4', '2')); // Default to tonic if no bass note
+                }
+
+
+                // --- Synth Melody Generation (Expressive and Varied) ---
+                // Complexity influences how many notes are played and how big the melodic jumps are.
+                const numSynthNotes = 1 + Math.floor(Math.random() * (humanizationFactor * 2)); // 1 to 3 notes based on humanization
+                
+                for (let j = 0; j < numSynthNotes; j++) {
+                    let nextNoteIndex = currentNoteIndex;
+
+                    // Tendency to change direction based on humanization/randomness
+                    if (Math.random() < 0.3 + (humanizationFactor * 0.2)) { // Higher humanization = more directional changes
+                        lastDirection *= -1; // Flip direction
+                    }
+
+                    // Melodic movement: biased towards steps, then skips, then leaps
+                    const moveType = Math.random();
+                    let moveAmount = 0;
+
+                    if (moveType < 0.7) { // 70% chance for stepwise motion (major/minor 2nd)
+                        moveAmount = 1;
+                    } else if (moveType < 0.9) { // 20% chance for skips (3rd, 4th)
+                        moveAmount = Math.random() < 0.5 ? 2 : 3;
+                    } else { // 10% chance for leaps (5th+)
+                        moveAmount = Math.random() < 0.5 ? 4 : 5;
+                    }
+
+                    nextNoteIndex = (currentNoteIndex + lastDirection * moveAmount + scale.length * 2) % scale.length;
+                    
+                    // Raga "Gravity": pull towards Vadi/Samvadi
+                    // If current note is far from Vadi/Samvadi, increase chance to move towards them
+                    const currentNoteFreq = notes[scale[currentNoteIndex]];
+                    const vadiFreq = notes[vadiNote];
+                    const samvadiFreq = notes[samvadiNote];
+
+                    if (Math.abs(currentNoteFreq - vadiFreq) > 50 && Math.random() < 0.4) { // If far from Vadi
+                        lastDirection = (currentNoteFreq < vadiFreq) ? 1 : -1;
+                        nextNoteIndex = scale.indexOf(vadiNote); // Force move to vadi
+                    } else if (Math.abs(currentNoteFreq - samvadiFreq) > 50 && Math.random() < 0.2) { // If far from Samvadi
+                        lastDirection = (currentNoteFreq < samvadiFreq) ? 1 : -1;
+                        nextNoteIndex = scale.indexOf(samvadiNote); // Force move to samvadi
+                    }
+
+                    currentNoteIndex = nextNoteIndex; // Update current note index
+
+                    // Add octave variation for synth
+                    let synthNote = scale[currentNoteIndex];
+                    const currentOctave = parseInt(synthNote.slice(-1));
+                    if (Math.random() < 0.3 * humanizationFactor) { // Chance to shift octave based on humanization
+                        if (Math.random() < 0.5 && currentOctave < 5) { // Shift up if not already highest octave
+                            synthNote = synthNote.slice(0, -1) + (currentOctave + 1);
+                        } else if (currentOctave > 3) { // Shift down if not already lowest octave
+                            synthNote = synthNote.slice(0, -1) + (currentOctave - 1);
+                        }
+                    }
+                    step.synth.push(synthNote);
+                }
+                // Ensure synth is always present, even if just a sustained note
+                if (step.synth.length === 0) {
+                    step.synth.push(scale[currentNoteIndex]); // Default to current melodic note if no synth note
+                }
+
+
+                // --- Percussion: Keep it simple for Raga sections, maybe just hi-hats ---
+                if (i % 2 === 0) { // On every other beat
+                    step.percussion.hihat = 'closed';
+                }
+                if (i === 0 || i === 4) { // Kick on 1 and 5
+                    step.percussion.kick = true;
+                }
+                if (i === 2 || i === 6) { // Snare on 3 and 7
+                    step.percussion.snare = true;
+                }
+
+                generatedPhrase.push(step);
+            }
+            return generatedPhrase;
+        }
+
+
         // Define musical phrases for each section of the song
         // Each object represents a "beat" or "step" and can contain notes, drums, and snares.
         // Chords (notes array) are limited to 3 notes.
         const musicalPhrases = {
             intro: [
-                { bass: [], synth: ['A3'], percussion: {}, delaySend: 0.8 }, // Very sparse start, high delay
-                { bass: [], synth: [], percussion: {}, delaySend: 0.7 },
-                { bass: [], synth: ['E4'], percussion: {}, delaySend: 0.6 },
-                { bass: [], synth: [], percussion: {}, delaySend: 0.5 },
-                { bass: [], synth: ['C4'], percussion: {}, delaySend: 0.4 },
-                { bass: [], synth: [], percussion: {}, delaySend: 0.3 },
-                { bass: [], synth: ['G3'], percussion: {}, delaySend: 0.2 },
-                { bass: [], synth: [], percussion: {}, delaySend: 0.1 },
+                { bass: ['A2'], synth: ['A3'], percussion: {}, delaySend: 0.8 }, // Very sparse start, high delay
+                { bass: ['A2'], synth: ['A3'], percussion: {}, delaySend: 0.7 },
+                { bass: ['E2'], synth: ['E4'], percussion: {}, delaySend: 0.6 },
+                { bass: ['E2'], synth: ['E4'], percussion: {}, delaySend: 0.5 },
+                { bass: ['C3'], synth: ['C4'], percussion: {}, delaySend: 0.4 },
+                { bass: ['C3'], synth: ['C4'], percussion: {}, delaySend: 0.3 },
+                { bass: ['G2'], synth: ['G3'], percussion: {}, delaySend: 0.2 },
+                { bass: ['G2'], synth: ['G3'], percussion: {}, delaySend: 0.1 },
                 { bass: ['A2'], synth: ['A3', 'C4'], percussion: {}, delaySend: 0.0 }, // Bass enters, delay fades
-                { bass: [], synth: [], percussion: {}, delaySend: 0.0 },
+                { bass: ['A2'], synth: ['A3', 'C4'], percussion: {}, delaySend: 0.0 },
                 { bass: ['E2'], synth: ['E4', 'G4'], percussion: {}, delaySend: 0.0 },
-                { bass: [], synth: [], percussion: {}, delaySend: 0.0 },
+                { bass: ['E2'], synth: ['E4', 'G4'], percussion: {}, delaySend: 0.0 },
                 { bass: ['C3'], synth: ['C4', 'E4'], percussion: {}, delaySend: 0.0 },
-                { bass: [], synth: [], percussion: {}, delaySend: 0.0 },
+                { bass: ['C3'], synth: ['C4', 'E4'], percussion: {}, delaySend: 0.0 },
                 { bass: ['G2'], synth: ['G3', 'B3'], percussion: {}, delaySend: 0.0 },
-                { bass: [], synth: [], percussion: {}, delaySend: 0.0 }
+                { bass: ['G2'], synth: ['G3', 'B3'], percussion: {}, delaySend: 0.0 }
             ],
-            // Verse 1: C - G - Am - F progression (I-V-vi-IV in C Major)
-            verse1: [
-                { bass: ['C2'], synth: ['C4', 'E4', 'G4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.2 }, // Subtle delay
-                { bass: [], synth: [], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+            // Verse 1 variations: C - G - Am - F progression (I-V-vi-IV in C Major)
+            verse1_A: [
+                { bass: ['C2'], synth: ['C4', 'E4', 'G4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.2 },
+                { bass: ['C2'], synth: ['E4'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
                 { bass: ['G2'], synth: ['G3', 'B3', 'D4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.2 },
-                { bass: [], synth: [], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['G2'], synth: ['D4'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
                 { bass: ['A2'], synth: ['A3', 'C4', 'E4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.2 },
-                { bass: [], synth: [], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['A2'], synth: ['C4'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
                 { bass: ['F2'], synth: ['F3', 'A3', 'C4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.2 },
-                { bass: [], synth: [], percussion: { hihat: 'closed' }, delaySend: 0.0 }
+                { bass: ['F2'], synth: ['A3'], percussion: { hihat: 'closed' }, delaySend: 0.0 }
             ],
-            // Verse 2: F - C - G - Am progression (IV-I-V-vi in C Major)
-            verse2: [
-                { bass: ['F2'], synth: ['F3', 'A3', 'C4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.0 }, // Less delay
-                { bass: [], synth: [], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+            verse1_B: [
+                { bass: ['C2'], synth: ['E4', 'G4', 'C5'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.2 }, // Different voicing
+                { bass: ['C2'], synth: ['G4'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['G2'], synth: ['B3', 'D4', 'G4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.2 },
+                { bass: ['G2'], synth: ['D4'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['A2'], synth: ['C4', 'E4', 'A4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.2 },
+                { bass: ['A2'], synth: ['E4'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['F2'], synth: ['A3', 'C4', 'F4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.2 },
+                { bass: ['F2'], synth: ['C4'], percussion: { hihat: 'closed' }, delaySend: 0.0 }
+            ],
+            verse1_C: [
+                { bass: ['C2'], synth: ['C4', 'G4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.2 }, // Fewer notes, more sparse
+                { bass: ['C2'], synth: ['E4'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['G2'], synth: ['G3', 'D4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.2 },
+                { bass: ['G2'], synth: ['B3'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['A2'], synth: ['A3', 'E4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.2 },
+                { bass: ['A2'], synth: ['C4'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['F2'], synth: ['F3', 'C4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.2 },
+                { bass: ['F2'], synth: ['A3'], percussion: { hihat: 'closed' }, delaySend: 0.0 }
+            ],
+            verse1_D: [ // 7 steps, C-G-Am-F feel, simulating 7/4 or 7/8
+                { bass: ['C2'], synth: ['C4', 'E4', 'G4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.2 }, // Beat 1
+                { bass: ['C2'], synth: ['G4'], percussion: { hihat: 'closed' }, delaySend: 0.0 }, // Beat 2
+                { bass: ['G2'], synth: ['B3', 'D4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.2 }, // Beat 3
+                { bass: ['G2'], synth: ['E4'], percussion: { hihat: 'closed' }, delaySend: 0.0 }, // Beat 4
+                { bass: ['A2'], synth: ['A3', 'C4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.2 }, // Beat 5
+                { bass: ['A2'], synth: ['E4'], percussion: { hihat: 'closed' }, delaySend: 0.0 }, // Beat 6
+                { bass: ['F2'], synth: ['F3', 'A3', 'C4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.2 } // Beat 7, ends phrase
+            ],
+            // Verse 2 variations: F - C - G - Am progression (IV-I-V-vi in C Major)
+            verse2_A: [
+                { bass: ['F2'], synth: ['F3', 'A3', 'C4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['F2'], synth: ['A3'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
                 { bass: ['C2'], synth: ['C4', 'E4', 'G4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.0 },
-                { bass: [], synth: [], percussion: { hihat: 'closed' }, delaySend: 0.0 },
-                { bass: ['G2'], synth: ['G3', 'B3', 'D4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.3 }, // More delay on this chord
-                { bass: [], synth: [], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['C2'], synth: ['E4'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['G2'], synth: ['G3', 'B3', 'D4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.3 },
+                { bass: ['G2'], synth: ['B3'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
                 { bass: ['A2'], synth: ['A3', 'C4', 'E4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.0 },
-                { bass: [], synth: [], percussion: { hihat: 'closed' }, delaySend: 0.0 }
+                { bass: ['A2'], synth: ['C4'], percussion: { hihat: 'closed' }, delaySend: 0.0 }
             ],
-            // Verse 3: G - Am - F - C progression (V-vi-IV-I in C Major)
-            verse3: [
-                { bass: ['G2'], synth: ['G3', 'B3', 'D4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.4 }, // Stronger delay
-                { bass: [], synth: [], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+            verse2_B: [
+                { bass: ['F2'], synth: ['C4', 'F4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['F2'], synth: ['A3'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['C2'], synth: ['G3', 'C4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['C2'], synth: ['E4'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['G2'], synth: ['D4', 'G4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.3 },
+                { bass: ['G2'], synth: ['B3'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['A2'], synth: ['E4', 'A4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['A2'], synth: ['C4'], percussion: { hihat: 'closed' }, delaySend: 0.0 }
+            ],
+            verse2_C: [
+                { bass: ['F2'], synth: ['F3', 'C4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['F2'], synth: ['A3'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['C2'], synth: ['C4', 'G4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['C2'], synth: ['E4'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['G2'], synth: ['G3', 'D4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.3 },
+                { bass: ['G2'], synth: ['B3'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['A2'], synth: ['A3', 'E4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['A2'], synth: ['C4'], percussion: { hihat: 'closed' }, delaySend: 0.0 }
+            ],
+            verse2_D: [ // 7 steps, F-C-G-Am feel, simulating 7/4 or 7/8
+                { bass: ['F2'], synth: ['F3', 'A3', 'C4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.0 }, // Beat 1
+                { bass: ['F2'], synth: ['C4'], percussion: { hihat: 'closed' }, delaySend: 0.0 }, // Beat 2
+                { bass: ['C2'], synth: ['E4', 'G4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.0 }, // Beat 3
+                { bass: ['C2'], synth: ['G4'], percussion: { hihat: 'closed' }, delaySend: 0.0 }, // Beat 4
+                { bass: ['G2'], synth: ['G3', 'B3'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.3 }, // Beat 5
+                { bass: ['G2'], synth: ['D4'], percussion: { hihat: 'closed' }, delaySend: 0.0 }, // Beat 6
+                { bass: ['A2'], synth: ['A3', 'C4', 'E4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.0 } // Beat 7, ends phrase
+            ],
+            // Verse 3 variations: G - Am - F - C progression (V-vi-IV-I in C Major)
+            verse3_A: [
+                { bass: ['G2'], synth: ['G3', 'B3', 'D4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.4 },
+                { bass: ['G2'], synth: ['B3'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
                 { bass: ['A2'], synth: ['A3', 'C4', 'E4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.0 },
-                { bass: [], synth: [], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['A2'], synth: ['C4'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
                 { bass: ['F2'], synth: ['F3', 'A3', 'C4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.4 },
-                { bass: [], synth: [], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['F2'], synth: ['A3'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
                 { bass: ['C2'], synth: ['C4', 'E4', 'G4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.0 },
-                { bass: [], synth: [], percussion: { hihat: 'closed' }, delaySend: 0.0 }
+                { bass: ['C2'], synth: ['E4'], percussion: { hihat: 'closed' }, delaySend: 0.0 }
             ],
-            // Raga Yaman Phrase (C D E F# G A B) - Ascending scale over 8 steps
-            ragaYamanPhrase: [
-                { bass: ['C2'], synth: ['C3', 'G3', 'C4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.3 },
-                { bass: ['D2'], synth: ['D3', 'A3', 'D4'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
-                { bass: ['E2'], synth: ['E3', 'B3', 'E4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.3 },
-                { bass: ['F#2'], synth: ['F#3', 'C4', 'F#4'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
-                { bass: ['G2'], synth: ['G3', 'D4', 'G4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.3 },
-                { bass: ['A2'], synth: ['A3', 'E4', 'A4'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
-                { bass: ['B2'], synth: ['B3', 'F#4', 'B4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.3 },
-                { bass: ['C3'], synth: ['C4', 'G4', 'C5'], percussion: { hihat: 'closed' }, delaySend: 0.0 }
+            verse3_B: [
+                { bass: ['G2'], synth: ['D4', 'G4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.4 },
+                { bass: ['G2'], synth: ['B3'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['A2'], synth: ['E4', 'A4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['A2'], synth: ['C4'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['F2'], synth: ['C4', 'F4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.4 },
+                { bass: ['F2'], synth: ['A3'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['C2'], synth: ['G4', 'C5'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['C2'], synth: ['E4'], percussion: { hihat: 'closed' }, delaySend: 0.0 }
             ],
-            // Raga Bhairavi Phrase (C Db Eb F G Ab Bb) - Ascending scale over 8 steps
-            ragaBhairaviPhrase: [
-                { bass: ['C2'], synth: ['C3', 'G3', 'C4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.4 },
-                { bass: ['C#2'], synth: ['C#3', 'G#3', 'C#4'], percussion: { hihat: 'closed' }, delaySend: 0.0 }, // Db is C#
-                { bass: ['D#2'], synth: ['D#3', 'A#3', 'D#4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.4 }, // Eb is D#
-                { bass: ['F2'], synth: ['F3', 'C4', 'F4'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
-                { bass: ['G2'], synth: ['G3', 'D4', 'G4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.4 },
-                { bass: ['G#2'], synth: ['G#3', 'D#4', 'G#4'], percussion: { hihat: 'closed' }, delaySend: 0.0 }, // Ab is G#
-                { bass: ['A#2'], synth: ['A#3', 'F4', 'A#4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.4 }, // Bb is A#
-                { bass: ['C3'], synth: ['C4', 'G4', 'C5'], percussion: { hihat: 'closed' }, delaySend: 0.0 }
+            verse3_C: [
+                { bass: ['G2'], synth: ['G3', 'D4'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.4 },
+                { bass: ['A2'], synth: ['A3', 'E4'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['F2'], synth: ['F3', 'C4'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['C2'], synth: ['C4', 'G4'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['G2'], synth: ['G3', 'B3'], percussion: { kick: true, hihat: 'closed' }, delaySend: 0.4 },
+                { bass: ['A2'], synth: ['A3', 'C4'], percussion: { hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['F2'], synth: ['F3', 'A3'], percussion: { snare: true, hihat: 'closed' }, delaySend: 0.0 },
+                { bass: ['C2'], synth: ['C4', 'E4'], percussion: { hihat: 'closed' }, delaySend: 0.0 }
             ],
+            // Raga Yaman Phrase and Bhairavi Phrase will be dynamically generated.
+            // These entries are just placeholders for length if needed, but not used directly for content.
+            ragaYamanPhrase: new Array(8).fill({}), // Placeholder for length
+            ragaBhairaviPhrase: new Array(8).fill({}), // Placeholder for length
+            
             chorus: [
                 // Consistent delay for a full sound
                 { bass: ['A2'], synth: ['A4', 'C5', 'E4'], percussion: { kick: true, hihat: 'open' }, delaySend: 0.6 },
-                { bass: [], synth: [], percussion: { hihat: 'closed' }, delaySend: 0.6 },
+                { bass: ['A2'], synth: ['C5'], percussion: { hihat: 'closed' }, delaySend: 0.6 },
                 { bass: ['G2'], synth: ['G4', 'B4', 'D4'], percussion: { kick: true, snare: true, hihat: 'open' }, delaySend: 0.6 },
-                { bass: [], synth: [], percussion: { hihat: 'closed' }, delaySend: 0.6 },
+                { bass: ['G2'], synth: ['B4'], percussion: { hihat: 'closed' }, delaySend: 0.6 },
                 { bass: ['C3'], synth: ['C4', 'E4', 'G4'], percussion: { kick: true, hihat: 'open' }, delaySend: 0.6 },
-                { bass: [], synth: [], percussion: { hihat: 'closed' }, delaySend: 0.6 },
+                { bass: ['C3'], synth: ['E4'], percussion: { hihat: 'closed' }, delaySend: 0.6 },
                 { bass: ['F2'], synth: ['F4', 'A4', 'C5'], percussion: { kick: true, snare: true, hihat: 'open' }, delaySend: 0.6 },
-                { bass: [], synth: [], percussion: { hihat: 'closed' }, delaySend: 0.6 }
+                { bass: ['F2'], synth: ['A4'], percussion: { hihat: 'closed' }, delaySend: 0.6 }
             ],
             bridge: [
                 // More atmospheric, less percussive, with moderate delay
@@ -449,13 +640,13 @@
             ],
             outro: [
                 { bass: ['A2'], synth: ['A3', 'E4'], percussion: {}, delaySend: 0.8 },
-                { bass: [], synth: [], percussion: {}, delaySend: 0.7 },
+                { bass: ['A2'], synth: ['E4'], percussion: {}, delaySend: 0.7 },
                 { bass: ['C3'], synth: ['C4', 'G3'], percussion: {}, delaySend: 0.6 },
-                { bass: [], synth: [], percussion: {}, delaySend: 0.5 },
+                { bass: ['C3'], synth: ['G3'], percussion: {}, delaySend: 0.5 },
                 { bass: ['A2'], synth: ['A3'], percussion: {}, delaySend: 0.4 },
-                { bass: [], synth: [], percussion: {}, delaySend: 0.3 },
-                { bass: [], synth: [], percussion: {}, delaySend: 0.2 }, // Fade out delay
-                { bass: [], synth: [], percussion: {}, delaySend: 0.0 }
+                { bass: ['A2'], synth: ['A3'], percussion: {}, delaySend: 0.3 },
+                { bass: ['G2'], synth: ['G3'], percussion: {}, delaySend: 0.2 }, // Ensure notes until the end
+                { bass: ['G2'], synth: ['G3'], percussion: {}, delaySend: 0.0 }
             ]
         };
 
@@ -464,13 +655,13 @@
         // Fibonacci sequence used for multipliers (scaled): 1, 1, 2, 3, 5, 8...
         const songStructure = [
             { type: 'intro', durationMultiplier: 2 },
-            { type: 'verse', durationMultiplier: 3 }, // Normal verse
+            { type: 'verse', baseName: 'verse1', durationMultiplier: 3 }, // Normal verse, will pick a variation
             { type: 'chorus', durationMultiplier: 2 },
-            { type: 'verse', durationMultiplier: 3 }, // Raga verse
-            { type: 'verse', durationMultiplier: 5 }, // Normal verse
+            { type: 'verse', baseName: 'verse2', durationMultiplier: 3 }, // Raga verse (next in sequence)
+            { type: 'verse', baseName: 'verse3', durationMultiplier: 5 }, // Normal verse, will pick a variation
             { type: 'bridge', durationMultiplier: 2 },
             { type: 'chorus', durationMultiplier: 3 },
-            { type: 'verse', durationMultiplier: 2 }, // Raga verse
+            { type: 'verse', baseName: 'verse1', durationMultiplier: 2 }, // Raga verse (next in sequence)
             { type: 'outro', durationMultiplier: 2 }
         ];
 
@@ -478,7 +669,7 @@
         // State variables for song progression
         let currentSongSectionIndex = 0;
         let currentSectionType = ''; // 'intro', 'verse', 'chorus', etc.
-        let currentSectionName = ''; // 'verse1', 'ragaVerse1', etc. (actual phrase name)
+        let currentSectionName = ''; // 'verse1_A', 'ragaYamanPhrase', etc. (actual phrase name)
         let currentSectionPhrase = [];
         let currentPhraseIndex = 0; // Index within the current section's phrase
         let stepsPlayedInCurrentSection = 0; // Tracks total steps played in current section
@@ -508,6 +699,21 @@
             const nextRaga = availableRagas.shift(); // Get the next Raga and remove it from the pool
             console.log("Next Raga:", nextRaga, "Remaining Ragas:", availableRagas);
             return nextRaga;
+        }
+
+        /**
+         * Selects a random variation for a given normal verse base name.
+         * @param {string} baseName - The base name of the verse (e.g., 'verse1').
+         * @returns {string} The name of the selected verse variation (e.g., 'verse1_A').
+         */
+        function getRandomNormalVerseVariation(baseName) {
+            const variations = normalVerseOptions[baseName];
+            if (!variations || variations.length === 0) {
+                console.warn(`No variations found for normal verse: ${baseName}`);
+                return baseName; // Fallback to base name if no variations
+            }
+            const randomIndex = Math.floor(Math.random() * variations.length);
+            return variations[randomIndex];
         }
 
         /**
@@ -611,9 +817,10 @@
             const filterNode = audioContext.createBiquadFilter();
 
             // Apply humanization to timing, dynamics, and note length
-            const timingOffset = (Math.random() - 0.5) * 0.04 * humanizationFactor; // +/- 20ms max at full humanization
-            const dynamicFactor = 1 + (Math.random() - 0.5) * 0.4 * humanizationFactor; // +/- 20% gain at full humanization
-            const durationFactor = 1 + (Math.random() - 0.5) * 0.2 * humanizationFactor; // +/- 10% duration at full humanization
+            // Increased range for more noticeable humanization
+            const timingOffset = (Math.random() - 0.5) * 0.08 * humanizationFactor; // +/- 40ms max at full humanization
+            const dynamicFactor = 1 + (Math.random() - 0.5) * 0.6 * humanizationFactor; // +/- 30% gain at full humanization
+            const durationFactor = 1 + (Math.random() - 0.5) * 0.3 * humanizationFactor; // +/- 15% duration at full humanization
 
             // Ensure actualStartTime is non-negative
             const actualStartTime = Math.max(0, startTime + timingOffset);
@@ -650,7 +857,13 @@
                     releaseTime = 0.8; // Longer release for pad
                     initialGain = synthVolume; // Use global synthVolume
                     filterNode.type = 'lowpass';
-                    filterNode.frequency.setValueAtTime(filterFreq, actualStartTime); // Use global filter for synth
+                    
+                    // Apply a subtle, randomized filter sweep for synth notes
+                    const initialFilterFreq = filterFreq * (1 + (Math.random() - 0.5) * 0.2 * humanizationFactor); // Randomize start freq
+                    const finalFilterFreq = filterFreq; // Target frequency
+                    filterNode.frequency.setValueAtTime(initialFilterFreq, actualStartTime);
+                    filterNode.frequency.linearRampToValueAtTime(finalFilterFreq, actualStartTime + 0.5); // Sweep over 0.5s
+                    
                     filterNode.Q.setValueAtTime(filterQ, actualStartTime);
                     break;
             }
@@ -911,6 +1124,28 @@
             // Humanization factor variation:
             humanizationFactor += (Math.random() - 0.5) * driftScale * 0.1; // Influenced by drift scale
             humanizationFactor = Math.max(0.1, Math.min(1.0, humanizationFactor)); // Clamp between 0.1 and 1.0
+
+            // Tempo variation removed: Tempo is now fixed by the knob value for perfect sync.
+
+            // Delay Time variation:
+            delayTimeValue += delayTimeDriftDirection * (Math.random() - 0.5) * driftScale * 0.02; // Subtle delay time drift
+            if (delayTimeValue > 1.0) { // Keep within a reasonable range for audible delay
+                delayTimeDriftDirection = -1;
+            } else if (delayTimeValue < 0.1) {
+                delayTimeDriftDirection = 1;
+            }
+            delayTimeValue = Math.max(0.01, Math.min(2.0, delayTimeValue)); // Clamp to knob range
+            if (delayNode) delayNode.delayTime.setValueAtTime(delayTimeValue, audioContext.currentTime);
+
+            // Delay Feedback variation:
+            delayFeedbackValue += delayFeedbackDriftDirection * (Math.random() - 0.5) * driftScale * 0.01; // Subtle feedback drift
+            if (delayFeedbackValue > 0.8) { // Prevent runaway feedback
+                delayFeedbackDriftDirection = -1;
+            } else if (delayFeedbackValue < 0.1) {
+                delayFeedbackDriftDirection = 1;
+            }
+            delayFeedbackValue = Math.max(0, Math.min(0.95, delayFeedbackValue)); // Clamp to knob range
+            if (delayFeedbackGain) delayFeedbackGain.gain.setValueAtTime(delayFeedbackValue, audioContext.currentTime);
         }
 
         /**
@@ -927,15 +1162,15 @@
 
             // Schedule events in advance (e.g., 100ms ahead of current time)
             while (nextNoteTime < audioContext.currentTime + 0.1) {
-                const currentStep = musicalPhrases[currentSectionName][currentPhraseIndex];
+                const currentStep = currentSectionPhrase[currentPhraseIndex]; // Use currentSectionPhrase directly
                 // Use baseNoteDuration (which is dynamically changing) for melodic elements
                 const duration = baseNoteDuration;
 
-                // Apply delay send level for this step
-                // Multiply the per-step delaySend by the master delaySendLevel knob value
+                // Apply delay send level for this step with a smooth ramp
                 const effectiveDelaySend = (currentStep.delaySend !== undefined ? currentStep.delaySend : 0.5) * delaySendLevel;
                 if (delaySendGain) {
-                    delaySendGain.gain.linearRampToValueAtTime(effectiveDelaySend, audioContext.currentTime); // Use current time for immediate update
+                    // Smooth transition for delay send level over a short period
+                    delaySendGain.gain.linearRampToValueAtTime(effectiveDelaySend, audioContext.currentTime + 0.05);
                 }
 
                 // Play synth notes/chords if defined for this step
@@ -991,7 +1226,7 @@
                 applySubtleChanges();
 
                 // If the end of the current section's phrase is reached, loop it or transition
-                if (currentPhraseIndex >= musicalPhrases[currentSectionName].length) {
+                if (currentPhraseIndex >= currentSectionPhrase.length) { // Use currentSectionPhrase.length
                     currentPhraseIndex = 0; // Loop the phrase
                 }
 
@@ -1014,20 +1249,29 @@
                     const nextSectionDef = songStructure[currentSongSectionIndex];
                     currentSectionType = nextSectionDef.type; // Update section type
 
-                    // Handle unique verse cycling, including Raga verses
+                    // Handle unique verse cycling, including Raga verses and normal verse variations
                     if (currentSectionType === 'verse') {
                         verseIterationCount++;
-                        if (verseIterationCount % 2 === 0) { // Every 2nd verse is a Raga verse
+                        // Force the first verse (which is at index 1 in songStructure) to be the _C variation
+                        if (currentSongSectionIndex === 1) { 
+                            currentSectionName = nextSectionDef.baseName + '_C'; // Force _C variation
+                            currentSectionPhrase = musicalPhrases[currentSectionName];
+                            console.log(`Forcing first verse to start with: ${currentSectionName}`);
+                        } else if (verseIterationCount % 2 === 0) { // Every 2nd verse (after the initial forced one) is a Raga verse
                             currentSectionName = getNextRagaPhrase(); // Get non-repeating Raga
-                        } else { // Normal verse
-                            currentSectionName = normalVerseCycle[normalVerseIndex];
-                            normalVerseIndex = (normalVerseIndex + 1) % normalVerseCycle.length;
+                            // Dynamically generate Raga melody. Use a fixed length (e.g., 8 steps) for Raga phrases.
+                            const ragaScaleName = currentSectionName === 'ragaYamanPhrase' ? 'yaman' : 'bhairavi';
+                            currentSectionPhrase = generateRagaMelody(ragaScales[ragaScaleName], 8, humanizationFactor);
+                        } else { // Normal verse, pick a random variation (including A, B, C, D)
+                            currentSectionName = getRandomNormalVerseVariation(nextSectionDef.baseName);
+                            currentSectionPhrase = musicalPhrases[currentSectionName]; // Use pre-defined variation
                         }
                     } else {
                         currentSectionName = nextSectionDef.name || nextSectionDef.type; // For non-verse sections, name is type
+                        currentSectionPhrase = musicalPhrases[currentSectionName]; // Use pre-defined phrase
                     }
                     
-                    currentSectionPhrase = musicalPhrases[currentSectionName];
+                    // Recalculate total steps for the new section based on its (potentially new) phrase length
                     currentSectionTotalSteps = currentSectionPhrase.length * nextSectionDef.durationMultiplier;
                     console.log(`Transitioning to section: ${currentSectionName} (type: ${currentSectionType}) for ${currentSectionTotalSteps} steps. Humanization Factor: ${humanizationFactor.toFixed(2)}`);
                     updateSectionDisplay(); // Update UI
@@ -1083,17 +1327,22 @@
             currentSongSectionIndex = 0;
             const initialSectionDef = songStructure[currentSongSectionIndex];
             currentSectionType = initialSectionDef.type;
-            currentSectionName = initialSectionDef.name || initialSectionDef.type; // For 'intro', 'chorus', 'bridge', 'outro'
-            if (currentSectionType === 'verse') { // Special handling for first verse
-                currentSectionName = normalVerseCycle[normalVerseIndex];
-                normalVerseIndex = (normalVerseIndex + 1) % normalVerseCycle.length;
+            
+            // Special handling for first verse to pick a variation or Raga
+            if (currentSectionType === 'verse') {
                 verseIterationCount = 1; // First verse is a normal one
+                // Force the very first verse to be the _C variation
+                currentSectionName = initialSectionDef.baseName + '_C';
+                currentSectionPhrase = musicalPhrases[currentSectionName];
+                console.log(`Forcing initial verse to start with: ${currentSectionName}`);
+            } else {
+                currentSectionName = initialSectionDef.name || initialSectionDef.type;
+                currentSectionPhrase = musicalPhrases[currentSectionName]; // Use pre-defined phrase
             }
 
             // Shuffle Raga pool at the very beginning to ensure random start
             shuffleArray(availableRagas);
 
-            currentSectionPhrase = musicalPhrases[currentSectionName];
             currentPhraseIndex = 0;
             stepsPlayedInCurrentSection = 0;
             currentSectionTotalSteps = currentSectionPhrase.length * initialSectionDef.durationMultiplier;
