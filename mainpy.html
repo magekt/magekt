@@ -306,10 +306,10 @@
         ];
 
         const NPCS = [
-            { name: "Elena", desc: "A doctor who still treats the wounded, though medicine is scarce", choices: ["Offer to help", "Ask for healing"] },
-            { name: "Marcus", desc: "A father searching for his lost daughter", choices: ["Promise to look", "Offer comfort"] },
-            { name: "The Chronicler", desc: "An old man who records the stories of the lost", choices: ["Share your story", "Listen to his"] },
-            { name: "Anna", desc: "A young woman who maintains the last garden in the wasteland", choices: ["Help with the garden", "Ask about the past"] }
+            { name: "Elena", desc: "A doctor who still treats the wounded, though medicine is scarce", choices: ["Offer to help", "Ask for healing", "help", "healing"] },
+            { name: "Marcus", desc: "A father searching for his lost daughter", choices: ["Promise to look", "Offer comfort", "promise", "comfort"] },
+            { name: "The Chronicler", desc: "An old man who records the stories of the lost", choices: ["Share your story", "Listen to his", "share", "listen"] }, // Added short keywords
+            { name: "Anna", desc: "A young woman who maintains the last garden in the wasteland", choices: ["Help with the garden", "Ask about the past", "help", "ask"] }
         ];
 
         const ENEMIES = [
@@ -888,14 +888,28 @@
         // --- Choice Handling Functions ---
         function getActualChoiceFromInput(cmd, choices) {
             const isNumeric = /^\d+$/.test(cmd);
+            let resultCmd = cmd.toLowerCase(); // Default to lowercase of raw command
+
             if (isNumeric) {
                 const choiceIndex = parseInt(cmd, 10) - 1;
+                // Ensure choiceIndex is within bounds of choices array
                 if (choiceIndex >= 0 && choiceIndex < choices.length) {
-                    return choices[choiceIndex].toLowerCase();
+                    // Return the canonical form from the choices array, converted to lowercase.
+                    // This is important because the choices array might contain both full phrases
+                    // and short keywords, and we want to use the exact string from the array
+                    // for consistent matching with the 'validChoices' array in handleNpcChoice.
+                    resultCmd = choices[choiceIndex].toLowerCase();
+                } else {
+                    // If numeric but out of bounds, it's an invalid numeric input.
+                    // We'll let the later validation in handleChoice/handleNpcChoice catch this.
+                    // For now, just return the lowercase of the original command.
+                    debugSystem?.log(`Numeric input '${cmd}' is out of bounds for choices (length: ${choices.length}).`, 'debug');
                 }
             }
-            return cmd.toLowerCase();
+            debugSystem?.log(`getActualChoiceFromInput('${cmd}', [${choices.map(c => `'${c}'`).join(', ')}]) returned: '${resultCmd}'`, 'debug');
+            return resultCmd;
         }
+
 
         function handleChoice(cmd) {
             try {
@@ -1104,7 +1118,6 @@
 
         function handleNpcChoice(npcType, cmd) {
             try {
-                debugSystem?.log(`Handling NPC choice for ${npcType}: ${cmd}`, 'info');
                 let npcName;
                 switch(npcType) {
                     case "meet_npc_elena": npcName = "Elena"; break;
@@ -1114,79 +1127,111 @@
                     default: return false;
                 }
 
+                debugSystem?.log(`Handling NPC interaction with ${npcName}, command: '${cmd}'`, 'info');
+
                 if (!player.relationships[npcName]) {
                     player.relationships[npcName] = 0;
                 }
 
-                if (npcName === "Elena") {
-                    if (cmd === "offer to help" || cmd === "help") {
-                        addToStory("You spend the day helping her tend to the wounded.");
-                        player.relationships.Elena += 10;
-                        player.karma += 10;
-                        player.changeHope(5);
-                        addToStory("Elena smiles sadly. 'Thank you. I'd forgotten what kindness looked like.'");
-                        checkStatRewards();
-                        return true;
-                    } else if (cmd === "ask for healing" || cmd === "healing") {
-                        if (player.hp < player.max_hp) {
-                            player.hp = Math.min(player.max_hp, player.hp + 20);
-                            addToStory("Elena tends to your wounds without asking for payment.");
-                            player.relationships.Elena += 5;
-                        } else {
-                            addToStory("You are already at full health.");
-                        }
-                        checkStatRewards();
-                        return true;
-                    }
-                } else if (npcName === "Marcus") {
-                    if (cmd === "promise to look" || cmd === "promise") {
-                        addToStory("'Thank you,' he weeps. 'I won't give up. I can't give up.'");
-                        player.addMemory("Promised to help Marcus find his daughter");
-                        player.relationships.Marcus += 15;
-                        player.karma += 10;
-                        checkStatRewards();
-                        return true;
-                    } else if (cmd === "offer comfort" || cmd === "comfort") {
-                        addToStory("You offer words of solace. He nods, tears in his eyes.");
-                        player.sanity += 5;
-                        player.relationships.Marcus += 5;
-                        checkStatRewards();
-                        return true;
-                    }
-                } else if (npcName === "The Chronicler") {
-                    if (cmd === "share your story") {
-                        addToStory("You tell him of your journey. He writes it down with shaking hands.");
-                        player.addMemory("Shared your story with the Chronicler");
-                        player.sanity += 10;
-                        player.relationships["The Chronicler"] += 10;
-                        checkStatRewards();
-                        return true;
-                    } else if (cmd === "listen to his") {
-                        addToStory("He recounts tales of a forgotten world, of heroes and villains long turned to dust.");
-                        player.sanity += 5;
-                        player.relationships["The Chronicler"] += 5;
-                        checkStatRewards();
-                        return true;
-                    }
-                } else if (npcName === "Anna") {
-                    if (cmd === "help with the garden" || cmd === "help") {
-                        addToStory("You work together in silence. New shoots push through the ash.");
-                        player.changeHope(10);
-                        player.relationships.Anna += 10;
-                        player.sanity += 5;
-                        checkStatRewards();
-                        return true;
-                    } else if (cmd === "ask about the past" || cmd === "ask") {
-                        addToStory("She speaks of vibrant colors and bustling cities, a world that exists only in memory.");
-                        player.sanity += 5;
-                        player.relationships.Anna += 5;
-                        checkStatRewards();
-                        return true;
-                    }
+                // Find the NPC data
+                const npcData = NPCS.find(npc => npc.name === npcName);
+                if (!npcData) {
+                    debugSystem?.log(`NPC data not found for ${npcName}`, 'error');
+                    return false;
                 }
+
+                // Get the available choices for this NPC
+                const validChoices = npcData.choices.map(choice => choice.toLowerCase());
+                debugSystem?.log(`Valid choices for ${npcName}: [${validChoices.map(c => `'${c}'`).join(', ')}]`, 'debug'); // Log valid choices
+
+                // Check if the command matches any of the valid choices
+                // This check now works because NPCS.choices includes both full phrases and keywords.
+                if (!validChoices.includes(cmd)) {
+                    debugSystem?.log(`Command '${cmd}' NOT found in valid choices. Returning false.`, 'warning'); // Specific log
+                    return false;
+                }
+                debugSystem?.log(`Command '${cmd}' IS found in valid choices. Proceeding.`, 'debug'); // Specific log
+
+
+                switch(npcName) {
+                    case "The Chronicler":
+                        if (cmd === "share your story" || cmd === "share") {
+                            addToStory("You tell him of your journey. He writes it down with shaking hands.");
+                            player.addMemory("Shared your story with the Chronicler");
+                            player.sanity += 10;
+                            player.relationships["The Chronicler"] += 10;
+                            checkStatRewards();
+                            return true;
+                        } else if (cmd === "listen to his" || cmd === "listen") {
+                            addToStory("He recounts tales of a forgotten world, of heroes and villains long turned to dust.");
+                            player.sanity += 5;
+                            player.relationships["The Chronicler"] += 5;
+                            checkStatRewards();
+                            return true;
+                        }
+                        break;
+
+                    case "Elena":
+                        if (cmd === "offer to help" || cmd === "help") {
+                            addToStory("You spend the day helping her tend to the wounded.");
+                            player.relationships.Elena += 10;
+                            player.karma += 10;
+                            player.changeHope(5);
+                            addToStory("Elena smiles sadly. 'Thank you. I'd forgotten what kindness looked like.'");
+                            checkStatRewards();
+                            return true;
+                        } else if (cmd === "ask for healing" || cmd === "healing") {
+                            if (player.hp < player.max_hp) {
+                                player.hp = Math.min(player.max_hp, player.hp + 20);
+                                addToStory("Elena tends to your wounds without asking for payment.");
+                                player.relationships.Elena += 5;
+                            } else {
+                                addToStory("You are already at full health.");
+                            }
+                            checkStatRewards();
+                            return true;
+                        }
+                        break;
+
+                    case "Marcus":
+                        if (cmd === "promise to look" || cmd === "promise") {
+                            addToStory("'Thank you,' he weeps. 'I won't give up. I can't give up.'");
+                            player.addMemory("Promised to help Marcus find his daughter");
+                            player.relationships.Marcus += 15;
+                            player.karma += 10;
+                            checkStatRewards();
+                            return true;
+                        } else if (cmd === "offer comfort" || cmd === "comfort") {
+                            addToStory("You offer words of solace. He nods, tears in his eyes.");
+                            player.sanity += 5;
+                            player.relationships.Marcus += 5;
+                            checkStatRewards();
+                            return true;
+                        }
+                        break;
+
+                    case "Anna":
+                        if (cmd === "help with the garden" || cmd === "help") {
+                            addToStory("You work together in silence. New shoots push through the ash.");
+                            player.changeHope(10);
+                            player.relationships.Anna += 10;
+                            player.sanity += 5;
+                            checkStatRewards();
+                            return true;
+                        } else if (cmd === "ask about the past" || cmd === "ask") {
+                            addToStory("She speaks of vibrant colors and bustling cities, a world that exists only in memory.");
+                            player.sanity += 5;
+                            player.relationships.Anna += 5;
+                            checkStatRewards();
+                            return true;
+                        }
+                        break;
+                }
+
+                debugSystem?.log(`No valid action found for ${npcName} with command ${cmd}`, 'warning');
                 return false;
             } catch (error) {
-                handleGameError(new GameError(`Error in NPC choice for ${npcType}`, 'NPC_CHOICE_ERROR'));
+                handleGameError(new GameError(`Error in NPC interaction with ${npcName}`, 'NPC_INTERACTION_ERROR'));
                 return false;
             }
         }
@@ -1451,7 +1496,9 @@
                 optionsText = "What do you do? Options: stats, wander, rest, remember, inventory, meditate, quit";
             } else if (gameState === "choosing" && currentChoiceContext && currentChoiceContext.choices) {
                 optionsText = "Enter the number of your choice:";
-                currentChoiceContext.choices.forEach((choice, index) => {
+                // Filter out short keywords for display, only show full phrases for numbered options
+                const displayChoices = currentChoiceContext.choices.filter(choice => !["share", "listen", "help", "healing", "promise", "comfort", "ask"].includes(choice.toLowerCase()));
+                displayChoices.forEach((choice, index) => {
                     optionsText += `<br>${index + 1}. ${choice}`;
                 });
             } else if (gameState === "battle" && currentChoiceContext && currentChoiceContext.choices) { 
@@ -1754,7 +1801,8 @@
                     clearInterval(this.updateInterval);
                     this.updateInterval = null;
                 }
-                this.log('Debug system disabled.', 'system'); // This log might not appear if overlay is hidden immediately
+                // Log here might not be visible if overlay is hidden immediately
+                // this.log('Debug system disabled.', 'system'); 
             }
 
             toggle() {
@@ -1847,7 +1895,7 @@
             document.addEventListener('keydown', (e) => {
                 if (e.ctrlKey && e.key === '`') {
                     e.preventDefault();
-                    DebugSystem.toggle();
+                    debugSystem.toggle();
                 }
             });
         });
