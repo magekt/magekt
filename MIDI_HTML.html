@@ -1009,7 +1009,7 @@
                     analyserNode.maxDecibels = -10;
                     
                     // Initialize data arrays with correct sizes
-                    dataArray = new Uint8Array(analyserNode.fftSize); // For time domain visualization
+                    dataArray = new Uint8Array(analyserNode.frequencyBinCount); // For time domain visualization
                     frequencyDataArray = new Uint8Array(analyserNode.frequencyBinCount); // For frequency visualization and volume meter
 
                     // Connect nodes:
@@ -1055,8 +1055,8 @@
 
                     // Initialize recorder
                     looperRecorder = new EnhancedLooperRecorder(audioContext);
-                    // Initialize the recorder's internal MediaRecorder instance
-                    looperRecorder.initializeRecorder(); 
+                    // The EnhancedLooperRecorder constructor now handles its own initialization
+                    // looperRecorder.initializeRecorder(); 
 
                     showMessage(`Audio context initialized. Master Gain: ${masterVolume.toFixed(2)}`);
                     console.log("AudioContext initialized successfully. State:", audioContext.state);
@@ -1618,7 +1618,7 @@
             masterGainNode.gain.linearRampToValueAtTime(masterVolume, audioContext.currentTime + 4);
 
             scheduler();
-            initializeVisualization(); // Call the new visualization function
+            initializeVisualization(); // Call the visualization function after audio context is running
             
             document.getElementById('startButton').disabled = true;
             document.getElementById('stopButton').disabled = false; /* Corrected: Enable stop button */
@@ -1666,79 +1666,69 @@
          * This function sets up the continuous drawing loop for the visualizer.
          */
         function initializeVisualization() {
-            if (!audioVisualizerCtx || !analyserNode) return;
-            // Start the drawing loop
-            drawVisualizationLoop();
-        }
-
-        /**
-         * The main drawing loop for audio visualization.
-         * Draws waveform, frequency bars, and updates the volume meter.
-         */
-        function drawVisualizationLoop() {
-            if (!isPlaying || !analyserNode || !audioVisualizerCtx) {
-                // Clear canvas and reset meters when not playing
-                if (audioVisualizerCtx) {
-                    audioVisualizerCtx.clearRect(0, 0, audioVisualizerCanvas.width, audioVisualizerCanvas.height);
-                }
-                if (volumeMeterFillElement) {
-                    volumeMeterFillElement.style.width = '0%';
-                }
-                if (volumePeakElement) {
-                    volumePeakElement.style.opacity = 0;
-                }
-                return;
-            }
-
-            requestAnimationFrame(drawVisualizationLoop);
-
-            const width = audioVisualizerCanvas.width;
-            const height = audioVisualizerCanvas.height;
-
-            // Clear canvas for fresh drawing
-            audioVisualizerCtx.fillStyle = '#000';
-            audioVisualizerCtx.fillRect(0, 0, width, height);
-
-            // Get both time domain and frequency data
-            analyserNode.getByteTimeDomainData(dataArray);
-            analyserNode.getByteFrequencyData(frequencyDataArray);
-
-            // Draw waveform
-            audioVisualizerCtx.beginPath();
-            audioVisualizerCtx.lineWidth = 2;
-            audioVisualizerCtx.strokeStyle = '#90ee90'; // Waveform color
+            if (!analyserNode || !audioVisualizerCtx) return;
             
-            const sliceWidth = width * 1.0 / dataArray.length;
-            let x = 0;
-
-            for (let i = 0; i < dataArray.length; i++) {
-                const v = dataArray[i] / 128.0; // Normalize to 0-2
-                const y = v * height / 2;
-
-                if (i === 0) {
-                    audioVisualizerCtx.moveTo(x, y);
-                } else {
-                    audioVisualizerCtx.lineTo(x, y);
-                }
-                x += sliceWidth;
-            }
-
-            audioVisualizerCtx.lineTo(width, height / 2);
-            audioVisualizerCtx.stroke();
-
-            // Draw frequency bars
-            const barWidth = (width / analyserNode.frequencyBinCount) * 2.5;
-            x = 0; // Reset x for frequency bars
+            // Create data arrays for both time and frequency domain
+            // These are already declared globally but ensure they are correctly sized here
+            dataArray = new Uint8Array(analyserNode.frequencyBinCount);
+            frequencyDataArray = new Uint8Array(analyserNode.frequencyBinCount);
             
-            audioVisualizerCtx.fillStyle = '#4CAF50'; // Bar color
-            for(let i = 0; i < analyserNode.frequencyBinCount; i++) {
-                const barHeight = (frequencyDataArray[i] / 255) * height; // Normalize to canvas height
-                audioVisualizerCtx.fillRect(x, height - barHeight, barWidth, barHeight);
-                x += barWidth + 1; // Add 1px gap between bars
+            function draw() {
+                requestAnimationFrame(draw);
+                
+                const width = audioVisualizerCanvas.width;
+                const height = audioVisualizerCanvas.height;
+                
+                // Clear canvas
+                audioVisualizerCtx.fillStyle = '#000';
+                audioVisualizerCtx.fillRect(0, 0, width, height);
+                
+                // Get both time and frequency data
+                analyserNode.getByteTimeDomainData(dataArray);
+                analyserNode.getByteFrequencyData(frequencyDataArray);
+                
+                // Draw frequency bars
+                const barWidth = width / analyserNode.frequencyBinCount; // Adjusted for better distribution
+                audioVisualizerCtx.fillStyle = '#90ee90'; // Green color for bars
+                
+                for (let i = 0; i < analyserNode.frequencyBinCount; i++) {
+                    const barHeight = (frequencyDataArray[i] / 255) * height;
+                    audioVisualizerCtx.fillRect(
+                        i * barWidth,
+                        height - barHeight,
+                        barWidth - 1, // Small gap between bars
+                        barHeight
+                    );
+                }
+                
+                // Draw waveform overlay
+                audioVisualizerCtx.beginPath();
+                audioVisualizerCtx.lineWidth = 2;
+                audioVisualizerCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; // Semi-transparent white for waveform
+                
+                const sliceWidth = width * 1.0 / dataArray.length;
+                let x = 0;
+                
+                for (let i = 0; i < dataArray.length; i++) {
+                    const v = dataArray[i] / 128.0; // Normalize to 0-2
+                    const y = v * height / 2;
+                    
+                    if (i === 0) {
+                        audioVisualizerCtx.moveTo(x, y);
+                    } else {
+                        audioVisualizerCtx.lineTo(x, y);
+                    }
+                    x += sliceWidth;
+                }
+                
+                audioVisualizerCtx.lineTo(width, height / 2);
+                audioVisualizerCtx.stroke();
+                
+                // Update volume meter
+                updateVolumeMeter();
             }
-
-            // Update volume meter
-            updateVolumeMeter();
+            
+            draw(); // Start the drawing loop
         }
 
         /**
@@ -1747,8 +1737,8 @@
         function updateVolumeMeter() {
             if (!analyserNode || !volumeMeterFillElement || !volumePeakElement) return;
 
-            // Get frequency data (already done in drawVisualizationLoop, but safe to call again if this is standalone)
-            // analyserNode.getByteFrequencyData(frequencyDataArray); // No need to call again if called from drawVisualizationLoop
+            // Get frequency data (already done in initializeVisualization's draw loop)
+            // analyserNode.getByteFrequencyData(frequencyDataArray); 
 
             // Calculate RMS value from frequency data
             let sumOfSquares = 0;
@@ -1980,7 +1970,9 @@
             if (!audioContext || !masterGainNode || !analyserNode || !chorusNode || !compressorNode) return;
 
             // Disconnect masterGainNode from compressor (its direct connection)
-            masterGainNode.disconnect(compressorNode);
+            try {
+                masterGainNode.disconnect(compressorNode);
+            } catch (e) { /* ignore */ }
             // Disconnect chorusNode from compressor if it was connected
             try {
                 chorusNode.disconnect(compressorNode);
@@ -2025,7 +2017,8 @@
                 convolverNode.connect(reverbGainNode);
                 reverbGainNode.connect(analyserNode);
             }
-            analyserNode.connect(audioContext.destination); // Analyser always connects to destination
+            // Analyser always connects to destination, ensure this path is maintained
+            analyserNode.connect(audioContext.destination);
         }
 
         /**
@@ -2114,91 +2107,108 @@
                 this.audioContext = audioContext;
                 this.mediaRecorder = null;
                 this.chunks = [];
-                this.recordingStartTime = 0;
                 this.isRecording = false;
+                this.recordingStartTime = 0;
+                // Ensure this selector matches the HTML element
+                this.recordingMeter = document.querySelector('.recording-meter');
                 
-                // Add recording meter element
-                this.recordingMeter = document.createElement('div');
-                this.recordingMeter.className = 'recording-meter';
-                document.querySelector('.recording-controls').appendChild(this.recordingMeter);
+                // Initialize if we have access to MediaRecorder
+                if (typeof MediaRecorder !== 'undefined') {
+                    this.initializeRecorder();
+                } else {
+                    showMessage('MediaRecorder is not supported in this browser. Recording feature unavailable.', 5000);
+                    console.warn('MediaRecorder is not supported.');
+                }
             }
             
             async initializeRecorder() {
-                // Create a MediaStreamDestination to capture audio from the analyserNode
+                // Check if analyserNode exists before connecting
+                if (!analyserNode) {
+                    console.error("AnalyserNode not available for recording initialization.");
+                    showMessage("Audio system not ready for recording. Please start music first.", 3000);
+                    return;
+                }
+
                 const dest = this.audioContext.createMediaStreamDestination();
-                // Connect the main output (analyserNode) to the recording destination
-                // Ensure analyserNode is connected to the destination before recording
-                analyserNode.connect(dest); 
+                // Connect the analyserNode to the recording destination
+                // Important: Ensure analyserNode is connected to the audio graph before this,
+                // and that its output is also going to the main audio destination.
+                analyserNode.connect(dest);
                 
-                this.mediaRecorder = new MediaRecorder(dest.stream);
-                this.mediaRecorder.ondataavailable = (e) => this.chunks.push(e.data);
-                this.mediaRecorder.onstop = () => this.processRecording();
+                try {
+                    this.mediaRecorder = new MediaRecorder(dest.stream);
+                    this.mediaRecorder.ondataavailable = e => this.chunks.push(e.data);
+                    this.mediaRecorder.onstop = () => this.processRecording();
+                } catch (err) {
+                    console.error('Failed to initialize MediaRecorder:', err);
+                    showMessage('Recording initialization failed. Please try a different browser or check permissions.');
+                }
             }
             
             startRecording() {
                 if (!this.mediaRecorder) {
-                    showMessage("Recording not initialized. Please start audio first.", 3000);
+                    showMessage("Recording system not ready. Please try again.", 3000);
                     return;
                 }
+                if (this.isRecording) {
+                    showMessage("Already recording!", 2000);
+                    return;
+                }
+
                 this.chunks = [];
+                this.recordingStartTime = Date.now();
                 this.mediaRecorder.start();
                 this.isRecording = true;
-                this.recordingStartTime = Date.now();
-                this.recordingMeter.classList.add('active'); // Show and activate meter
-                this.updateRecordingMeter();
-                showMessage("Recording started!");
+                
+                if (this.recordingMeter) {
+                    this.recordingMeter.classList.add('active');
+                    this.updateRecordingTime();
+                }
+                
+                showMessage('Recording started!');
                 console.log("Recording started.");
             }
             
             stopRecording() {
-                if (!this.mediaRecorder || !this.isRecording) {
+                if (!this.isRecording) {
                     showMessage("Not currently recording.", 2000);
                     return;
                 }
+                
                 this.mediaRecorder.stop();
                 this.isRecording = false;
-                this.recordingMeter.classList.remove('active'); // Hide meter
-                this.recordingMeter.textContent = ''; // Clear text
-                showMessage("Recording stopped. Preparing download...");
+                if (this.recordingMeter) {
+                    this.recordingMeter.classList.remove('active');
+                    this.recordingMeter.textContent = ''; // Clear text
+                }
+                
+                showMessage('Recording stopped. Preparing download...');
                 console.log("Recording stopped.");
             }
             
-            updateRecordingMeter() {
-                if (!this.isRecording) return;
+            updateRecordingTime() {
+                if (!this.isRecording || !this.recordingMeter) return;
                 
                 const duration = (Date.now() - this.recordingStartTime) / 1000;
                 this.recordingMeter.textContent = `Recording: ${duration.toFixed(1)}s`;
-                requestAnimationFrame(() => this.updateRecordingMeter());
+                requestAnimationFrame(() => this.updateRecordingTime());
             }
-
+            
             async processRecording() {
-                const blob = new Blob(this.chunks, { type: 'audio/wav' }); // Using WAV for broader compatibility
+                const blob = new Blob(this.chunks, { type: 'audio/wav' }); // Changed to WAV for better compatibility
                 const url = URL.createObjectURL(blob);
                 
-                // Placeholder for applying effects to recorded audio.
-                // In a real scenario, you'd decode the blob to an AudioBuffer,
-                // process it (e.g., apply effects, normalize), then re-encode.
-                // For this example, we'll just log and proceed to download.
-                console.log("Processing recorded audio (effects application placeholder).");
-                // const audioBuffer = await this.audioContext.decodeAudioData(await blob.arrayBuffer());
-                // this.applyEffects(audioBuffer); // Call a method to apply effects if implemented
-
+                // Create download link
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = `relax_loop_${new Date().toISOString().replace(/:/g, '-')}.wav`; // Sanitize filename
                 document.body.appendChild(a); // Append to body to make it clickable
                 a.click();
                 document.body.removeChild(a); // Clean up
+                
                 URL.revokeObjectURL(url); // Release object URL
                 showMessage("Recording downloaded!", 3000);
                 console.log("Recording download initiated.");
-            }
-
-            // Placeholder for applyEffects - actual implementation would be complex
-            applyEffects(audioBuffer) {
-                console.log("Applying effects to audio buffer (not implemented in detail).", audioBuffer);
-                // Example: You could create a new AudioBuffer, apply gain, filter, etc.
-                // For simplicity, this is just a placeholder.
             }
         }
 
@@ -2210,6 +2220,18 @@
 
             if (recordButton) {
                 recordButton.addEventListener('click', () => {
+                    // Ensure audioContext is initialized before interacting with recorder
+                    if (!audioContext) {
+                        showMessage("Please start the music loop first to initialize audio.", 3000);
+                        return;
+                    }
+                    
+                    // The looperRecorder is initialized in initAudio, so it should exist here.
+                    // If it somehow doesn't, initialize it now.
+                    if (!looperRecorder) {
+                        looperRecorder = new EnhancedLooperRecorder(audioContext);
+                    }
+
                     if (looperRecorder.isRecording) {
                         looperRecorder.stopRecording();
                         recordButton.textContent = 'Start Recording';
@@ -2219,11 +2241,6 @@
                             stopButton.disabled = true;
                         }
                     } else {
-                        // Ensure audio context is initialized and running before starting recording
-                        if (!audioContext || audioContext.state === 'suspended') {
-                            showMessage("Please start the music loop before recording.", 3000);
-                            return;
-                        }
                         looperRecorder.startRecording();
                         recordButton.textContent = 'Stop Recording';
                     }
@@ -2286,26 +2303,6 @@
                 }
             });
         }
-
-        // Performance Optimization (AudioWorklet) - Note: Requires external audio-processor.js file
-        // This is a placeholder to show where AudioWorklet integration would go.
-        // In this sandboxed environment, loading external worklet files is not directly supported.
-        // If you were running this code in a full web development environment, you would:
-        // 1. Create a file named 'audio-processor.js' with your AudioWorkletProcessor code.
-        // 2. Add the following block within initAudio() after audioContext is created:
-        /*
-        if (window.AudioWorklet) {
-            audioContext.audioWorklet.addModule('audio-processor.js')
-                .then(() => {
-                    const workletNode = new AudioWorkletNode(audioContext, 'audio-processor');
-                    // Connect the workletNode into your audio graph, e.g.:
-                    // masterGainNode.connect(workletNode);
-                    // workletNode.connect(compressorNode);
-                    console.log('AudioWorklet module loaded and node created.');
-                })
-                .catch(err => console.error('Failed to load audio worklet:', err));
-        }
-        */
 
         // Add event listeners once the DOM is fully loaded
         document.addEventListener('DOMContentLoaded', () => {
