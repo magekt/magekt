@@ -1400,7 +1400,7 @@
             drawVisualization();
 
             document.getElementById('startButton').disabled = true;
-            document.getElementById('stopButton').disabled = true;
+            document.getElementById('stopButton').disabled = false; /* Corrected: Enable stop button */
             showMessage("Music started. Enjoy the evolving structured loop!");
             console.log("Music loop started.");
         }
@@ -1493,24 +1493,27 @@
             audioVisualizerCtx.lineTo(audioVisualizerCanvas.width, audioVisualizerCanvas.height / 2);
             audioVisualizerCtx.stroke();
 
+            // Calculate RMS for volume meter
             const rms = Math.sqrt(sumOfSquares / dataArray.length);
-            const volumePercentage = Math.min(100, rms * 200);
+            const volumePercentage = Math.min(100, rms * 200); // Scale RMS to a percentage for display
             if (volumeMeterFillElement) {
                 volumeMeterFillElement.style.width = `${volumePercentage}%`;
             }
 
             // Peak detection logic
             if (volumePeakElement) {
+                // Update peak if current max amplitude is higher
                 if (maxAmplitude > peakValue) {
-                    peakValue = maxAmplitude; // Update peak
-                    volumePeakElement.style.opacity = 1; // Show peak
-                    // Position peak line at the current RMS level
-                    volumePeakElement.style.left = `${volumePercentage}%`;
-                    // Fade out peak after a short delay
+                    peakValue = maxAmplitude;
+                    volumePeakElement.style.opacity = 1; // Show peak indicator
+                    // Position peak line based on the current peak value
+                    volumePeakElement.style.left = `${Math.min(100, peakValue * 200)}%`; // Scale peak value to percentage
+                    
+                    // Clear previous fade-out timeout and set a new one
                     clearTimeout(volumePeakElement.fadeTimeout);
                     volumePeakElement.fadeTimeout = setTimeout(() => {
                         volumePeakElement.style.opacity = 0;
-                    }, 500);
+                    }, 500); // Peak fades out after 500ms
                 } else if (maxAmplitude < peakValue * 0.8 && volumePeakElement.style.opacity === '1') {
                     // Slowly decay peak if current volume drops significantly below it
                     clearTimeout(volumePeakElement.decayTimeout);
@@ -1680,7 +1683,12 @@
 
             // Disconnect all previous connections from masterGainNode to analyser/chorus
             masterGainNode.disconnect();
-            chorusNode.disconnect(); // Disconnect chorus from analyser
+            // Only disconnect chorusNode if it was previously connected to analyserNode
+            try {
+                chorusNode.disconnect(analyserNode);
+            } catch (e) {
+                // Ignore error if not connected
+            }
 
             // Reconnect based on bypass state
             if (isChorusBypassed) {
