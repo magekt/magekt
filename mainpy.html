@@ -1,855 +1,1279 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>The Last Light - Text RPG</title>
-   <style>
-       body {
-           background: linear-gradient(135deg, #1a1a2e, #16213e);
-           color: #e0e0e0;
-           font-family: 'Courier New', monospace;
-           margin: 0;
-           padding: 20px;
-           min-height: 100vh;
-       }
-       
-       .container {
-           max-width: 900px;
-           margin: 0 auto;
-           background: rgba(0, 0, 0, 0.7);
-           border-radius: 10px;
-           padding: 30px;
-           box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
-       }
-       
-       .title {
-           text-align: center;
-           font-size: 2.5em;
-           color: #ffd700;
-           margin-bottom: 20px;
-           text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-       }
-       
-       .game-text {
-           background: rgba(0, 0, 0, 0.5);
-           padding: 20px;
-           border-radius: 5px;
-           margin: 20px 0;
-           border-left: 4px solid #ffd700;
-           min-height: 200px;
-           font-size: 1.1em;
-           line-height: 1.6;
-       }
-       
-       .stats {
-           background: rgba(0, 50, 100, 0.3);
-           padding: 15px;
-           border-radius: 5px;
-           margin: 20px 0;
-           border: 1px solid #4a90e2;
-           font-size: 0.9em;
-       }
-       
-       .input-section {
-           margin: 20px 0;
-       }
-       
-       .input-section input {
-           width: 70%;
-           padding: 12px;
-           font-size: 1.1em;
-           background: rgba(0, 0, 0, 0.7);
-           border: 2px solid #ffd700;
-           color: #e0e0e0;
-           border-radius: 5px;
-           font-family: 'Courier New', monospace;
-       }
-       
-       .input-section button {
-           padding: 12px 20px;
-           font-size: 1.1em;
-           background: #ffd700;
-           color: #1a1a2e;
-           border: none;
-           border-radius: 5px;
-           cursor: pointer;
-           margin-left: 10px;
-           font-family: 'Courier New', monospace;
-           font-weight: bold;
-       }
-       
-       .input-section button:hover {
-           background: #ffed4a;
-       }
-       
-       .commands {
-           display: flex;
-           flex-wrap: wrap;
-           gap: 10px;
-           margin: 20px 0;
-       }
-       
-       .commands button {
-           padding: 8px 16px;
-           background: rgba(74, 144, 226, 0.3);
-           color: #e0e0e0;
-           border: 1px solid #4a90e2;
-           border-radius: 5px;
-           cursor: pointer;
-           font-family: 'Courier New', monospace;
-       }
-       
-       .commands button:hover {
-           background: rgba(74, 144, 226, 0.5);
-       }
-       
-       .memory {
-           color: #ffd700;
-           font-style: italic;
-       }
-       
-       .hope-positive {
-           color: #4ade80;
-       }
-       
-       .hope-negative {
-           color: #f87171;
-       }
-       
-       .typing {
-           border-right: 2px solid #ffd700;
-           animation: blink 1s infinite;
-       }
-       
-       @keyframes blink {
-           0%, 50% { border-color: #ffd700; }
-           51%, 100% { border-color: transparent; }
-       }
-       
-       .hidden {
-           display: none;
-       }
-   </style>
-</head>
-<body>
-   <div class="container">
-       <div class="title">THE LAST LIGHT</div>
-       
-       <div class="stats" id="stats">
-           <div id="player-stats"></div>
-       </div>
-       
-       <div class="game-text" id="game-text">
-           <div id="story-text">The world ended not with fire, but with the slow death of hope.<br>
-           You are one of the few who still remember what it means to be human.<br>
-           In this broken world, every choice matters.<br>
-           Every life you touch changes the fate of what remains.</div>
-       </div>
-       
-       <div class="input-section" id="name-input">
-           <input type="text" id="player-name" placeholder="What do they call you, wanderer?" autocomplete="off">
-           <button onclick="startGame()">Begin Journey</button>
-       </div>
-       
-       <div class="input-section hidden" id="game-input">
-           <input type="text" id="command-input" placeholder="Enter your choice..." autocomplete="off">
-           <button onclick="processCommand()">Execute</button>
-       </div>
-       
-       <div class="commands hidden" id="commands">
-           <button onclick="executeCommand('stats')">Stats</button>
-           <button onclick="executeCommand('wander')">Wander</button>
-           <button onclick="executeCommand('rest')">Rest</button>
-           <button onclick="executeCommand('remember')">Remember</button>
-           <button onclick="executeCommand('inventory')">Inventory</button>
-           <button onclick="executeCommand('meditate')">Meditate</button>
-           <button onclick="executeCommand('quit')">Quit</button>
-       </div>
-   </div>
-
-   <script>
-       class Player {
-           constructor(name) {
-               this.name = name;
-               this.hp = 100;
-               this.max_hp = 100;
-               this.level = 1;
-               this.exp = 0;
-               this.gold = 10;
-               this.inventory = ["Bread", "Water", "Faded Photo"];
-               this.karma = 0;
-               this.relationships = {};
-               this.memories = ["Left the safety of the vault"];
-               this.sanity = 100;
-               this.hope = 50;
-               this.days_survived = 0;
-           }
-           
-           stats() {
-               return `${this.name} | HP:${this.hp}/${this.max_hp} | Level:${this.level} | ` +
-                      `EXP:${this.exp} | Gold:${this.gold} | Karma:${this.karma} | ` +
-                      `Sanity:${this.sanity} | Hope:${this.hope} | Days:${this.days_survived}<br>` +
-                      `Inventory: ${this.inventory.join(', ') || 'Empty'}`;
-           }
-           
-           addMemory(memory) {
-               this.memories.push(memory);
-               addToStory(`<span class="memory">[Memory added: ${memory}]</span>`);
-           }
-           
-           changeHope(amount) {
-               this.hope = Math.max(0, Math.min(100, this.hope + amount));
-               if (amount > 0) {
-                   addToStory(`<span class="hope-positive">The world feels a little brighter... (Hope +${amount})</span>`);
-               } else {
-                   addToStory(`<span class="hope-negative">Darkness spreads... (Hope ${amount})</span>`);
-               }
-           }
-           
-           addLoot(item) {
-               this.inventory.push(item);
-               addToStory(`You found: ${item}`);
-           }
-       }
-       
-       let player = null;
-       let gameState = "init";
-       let currentChoice = null;
-       let battleState = null;
-       
-       function addToStory(text, delay = 50) {
-           const storyElement = document.getElementById('story-text');
-           storyElement.innerHTML += '<br>' + text;
-           storyElement.scrollTop = storyElement.scrollHeight;
-           updateStats();
-       }
-       
-       function clearStory() {
-           document.getElementById('story-text').innerHTML = '';
-       }
-       
-       function updateStats() {
-           if (player) {
-               document.getElementById('player-stats').innerHTML = player.stats();
-           }
-       }
-       
-       function startGame() {
-           const nameInput = document.getElementById('player-name');
-           const name = nameInput.value.trim();
-           
-           if (!name) {
-               alert('Please enter your name, wanderer.');
-               return;
-           }
-           
-           player = new Player(name);
-           
-           document.getElementById('name-input').classList.add('hidden');
-           document.getElementById('game-input').classList.remove('hidden');
-           document.getElementById('commands').classList.remove('hidden');
-           
-           clearStory();
-           addToStory(`Welcome to the wasteland, ${player.name}.`);
-           addToStory('Your choices will determine not just your fate, but the fate of hope itself.');
-           addToStory('');
-           addToStory('Day 1');
-           addToStory('=' * 50);
-           addToStory('What do you do?');
-           
-           gameState = "playing";
-           
-           // Enable enter key for commands
-           document.getElementById('command-input').addEventListener('keypress', function(e) {
-               if (e.key === 'Enter') {
-                   processCommand();
-               }
-           });
-       }
-       
-       function processCommand() {
-           const input = document.getElementById('command-input');
-           const command = input.value.trim().toLowerCase();
-           input.value = '';
-           
-           if (command) {
-               executeCommand(command);
-           }
-       }
-       
-       function executeCommand(cmd) {
-           if (gameState !== "playing") return;
-           
-           checkGameOver();
-           
-           if (currentChoice) {
-               handleChoice(cmd);
-               return;
-           }
-           
-           if (battleState) {
-               handleBattle(cmd);
-               return;
-           }
-           
-           switch (cmd) {
-               case 'stats':
-                   addToStory(player.stats());
-                   break;
-               case 'wander':
-                   wander();
-                   break;
-               case 'rest':
-                   rest();
-                   break;
-               case 'remember':
-                   remember();
-                   break;
-               case 'inventory':
-                   addToStory(`You carry: ${player.inventory.join(', ') || 'Nothing but hope'}`);
-                   break;
-               case 'meditate':
-                   meditate();
-                   break;
-               case 'quit':
-                   quit();
-                   break;
-               default:
-                   addToStory('In confusion, you hesitate. Time passes.');
-                   break;
-           }
-           
-           // Random sanity and hope decay
-           if (Math.random() < 0.1) {
-               player.sanity -= 1;
-               player.changeHope(-1);
-           }
-       }
-       
-       function wander() {
-           player.days_survived += 1;
-           addToStory('');
-           addToStory(`Day ${player.days_survived + 1}`);
-           addToStory('=' * 50);
-           
-           // Random events
-           if (Math.random() < 0.3) {
-               meetNPC();
-           } else if (Math.random() < 0.2) {
-               criticalChoice();
-           } else if (Math.random() < 0.6) {
-               explore();
-           } else {
-               battle();
-           }
-       }
-       
-       function rest() {
-           if (player.inventory.includes("Shelter")) {
-               player.hp = Math.min(player.max_hp, player.hp + 20);
-               player.sanity += 10;
-               addToStory('You rest safely. Tomorrow brings new challenges.');
-           } else {
-               player.hp = Math.min(player.max_hp, player.hp + 10);
-               player.sanity -= 5;
-               addToStory('You rest fitfully in the open. The cold seeps into your bones.');
-           }
-       }
-       
-       function remember() {
-           if (player.memories.length > 0) {
-               addToStory('You remember...');
-               player.memories.forEach(memory => {
-                   addToStory(`- ${memory}`);
-               });
-               player.sanity += 5;
-           } else {
-               addToStory('Your memories are still being written.');
-           }
-       }
-       
-       function meditate() {
-           addToStory('You sit in silence, remembering who you were before the world ended.');
-           player.sanity += 10;
-           player.hp = Math.min(player.max_hp, player.hp + 5);
-       }
-       
-       function quit() {
-           addToStory('Even in quitting, you make a choice.');
-           addToStory('The world will remember what you did here.');
-           gameOver();
-       }
-       
-       function explore() {
-           const locations = [
-               {
-                   id: "abandoned_school",
-                   desc: "You find an abandoned school, children's drawings still on the walls...",
-                   choices: ["Search the school", "Leave respectfully"]
-               },
-               {
-                   id: "broken_bridge",
-                   desc: "A bridge spans a chasm. Someone is calling for help from below...",
-                   choices: ["Try to help", "Keep walking"]
-               },
-               {
-                   id: "dying_tree",
-                   desc: "An ancient tree withers. A small girl sits beneath it, crying...",
-                   choices: ["Approach the girl", "Observe from distance"]
-               },
-               {
-                   id: "refugee_camp",
-                   desc: "Desperate people huddle around dying fires...",
-                   choices: ["Share your gold", "Keep walking"]
-               },
-               {
-                   id: "memory_shrine",
-                   desc: "A shrine to the lost. Fresh flowers suggest someone still cares...",
-                   choices: ["Add a name", "Leave an offering"]
-               }
-           ];
-           
-           const location = locations[Math.floor(Math.random() * locations.length)];
-           addToStory(location.desc);
-           
-           currentChoice = {
-               type: 'explore',
-               location: location.id,
-               choices: location.choices
-           };
-           
-           addToStory(`Choose: ${location.choices.join(' or ')}`);
-       }
-       
-       function handleChoice(choice) {
-           if (currentChoice.type === 'explore') {
-               handleExploreChoice(choice);
-           } else if (currentChoice.type === 'npc') {
-               handleNPCChoice(choice);
-           } else if (currentChoice.type === 'critical') {
-               handleCriticalChoice(choice);
-           }
-           
-           currentChoice = null;
-       }
-       
-       function handleExploreChoice(choice) {
-           const location = currentChoice.location;
-           
-           if (location === "abandoned_school") {
-               if (choice.includes("search")) {
-                   if (Math.random() < 0.5) {
-                       addToStory("You find a child's diary. The last entry: 'I hope someone remembers us.'");
-                       player.addMemory("Found a child's final hope");
-                       player.changeHope(10);
-                   } else {
-                       addToStory("You find nothing but echoes of laughter that will never return.");
-                       player.sanity -= 10;
-                   }
-               } else {
-                   addToStory("You whisper a prayer and move on. Some places deserve peace.");
-                   player.karma += 5;
-               }
-           } else if (location === "broken_bridge") {
-               if (choice.includes("help")) {
-                   if (Math.random() < 0.6) {
-                       addToStory("You risk everything to save them. They're just a child, lost and alone.");
-                       addToStory("'Thank you,' they whisper. 'I thought no one cared anymore.'");
-                       player.addMemory("Saved a child from the chasm");
-                       player.changeHope(15);
-                       player.karma += 15;
-                       player.sanity += 10;
-                   } else {
-                       addToStory("You try to help, but the rope breaks. You watch them fall...");
-                       addToStory("Their final scream echoes in your mind forever.");
-                       player.sanity -= 25;
-                       player.karma -= 10;
-                       player.addMemory("Failed to save someone");
-                   }
-               } else {
-                   addToStory("You walk away. Their cries follow you into the night.");
-                   player.sanity -= 15;
-                   player.karma -= 5;
-               }
-           } else if (location === "dying_tree") {
-               if (choice.includes("approach")) {
-                   addToStory("'My grandmother planted this tree,' she says without looking up.");
-                   addToStory("'She said it would outlive us all. She was wrong.'");
-                   currentChoice = {
-                       type: 'explore',
-                       location: 'dying_tree_comfort',
-                       choices: ['Comfort her', 'Share your food']
-                   };
-                   addToStory("Choose: Comfort her or Share your food");
-                   return;
-               } else {
-                   addToStory("You watch from afar, unsure how to help.");
-                   player.sanity -= 5;
-               }
-           } else if (location === "dying_tree_comfort") {
-               if (choice.includes("comfort")) {
-                   addToStory("You sit beside her. Sometimes presence is enough.");
-                   player.sanity += 5;
-                   player.karma += 5;
-               } else if (choice.includes("food") || choice.includes("share")) {
-                   if (player.inventory.includes("Bread")) {
-                       player.inventory.splice(player.inventory.indexOf("Bread"), 1);
-                       addToStory("You share your bread. She smiles for the first time in months.");
-                       player.changeHope(10);
-                       player.karma += 10;
-                   } else {
-                       addToStory("You have no food to share. The guilt cuts deep.");
-                       player.sanity -= 5;
-                   }
-               }
-           } else if (location === "refugee_camp") {
-               if (choice.includes("share") && player.gold >= 20) {
-                   player.gold -= 20;
-                   addToStory("Your gold feeds them for one more day. It's not much, but it's hope.");
-                   player.changeHope(10);
-                   player.karma += 10;
-               } else {
-                   addToStory("You have nothing to give. Your empty hands feel like betrayal.");
-                   player.sanity -= 10;
-               }
-           } else if (location === "memory_shrine") {
-               if (choice.includes("add")) {
-                   addToStory("You carve a name into the stone. They will not be forgotten.");
-                   player.addMemory("Honored someone at the shrine");
-                   player.changeHope(5);
-               } else if (choice.includes("offering") && player.inventory.length > 0) {
-                   const item = player.inventory[Math.floor(Math.random() * player.inventory.length)];
-                   player.inventory.splice(player.inventory.indexOf(item), 1);
-                   addToStory(`You leave your ${item}. The dead deserve remembrance.`);
-                   player.karma += 5;
-               }
-           }
-       }
-       
-       function battle() {
-           const enemies = [
-               { name: "Hollow Survivor", desc: "A person who lost everything, now consumed by rage" },
-               { name: "Shadow of Regret", desc: "Your past mistakes given form" },
-               { name: "Despair Wraith", desc: "The embodiment of hopelessness" },
-               { name: "Corrupted Guardian", desc: "A protector who failed and turned dark" }
-           ];
-           
-           const enemy = enemies[Math.floor(Math.random() * enemies.length)];
-           const enemy_hp = Math.floor(Math.random() * 31) + 30;
-           
-           addToStory(enemy.desc);
-           addToStory(`The ${enemy.name} emerges from the shadows... HP: ${enemy_hp}`);
-           
-           battleState = {
-               enemy_name: enemy.name,
-               enemy_hp: enemy_hp,
-               max_enemy_hp: enemy_hp
-           };
-           
-           addToStory(`Your HP: ${player.hp} | Enemy HP: ${enemy_hp}`);
-           addToStory('Choose: Fight, Mercy, or Flee');
-       }
-       
-       function handleBattle(action) {
-           if (action === "fight") {
-               const dmg = Math.floor(Math.random() * 11) + 15;
-               battleState.enemy_hp -= dmg;
-               addToStory(`You strike with desperate fury! ${dmg} damage!`);
-               
-               if (battleState.enemy_hp > 0) {
-                   const enemy_dmg = Math.floor(Math.random() * 11) + 10;
-                   player.hp -= enemy_dmg;
-                   player.sanity -= 2;
-                   addToStory(`The ${battleState.enemy_name} claws at your soul! ${enemy_dmg} damage!`);
-               }
-           } else if (action === "mercy") {
-               if (Math.random() < 0.3) {
-                   addToStory("Your compassion reaches through the darkness...");
-                   addToStory(`The ${battleState.enemy_name} remembers what they once were and fades peacefully.`);
-                   player.karma += 10;
-                   player.changeHope(5);
-                   player.addMemory(`Showed mercy to ${battleState.enemy_name}`);
-                   battleState = null;
-                   return;
-               } else {
-                   addToStory("Your mercy is rejected! The enemy attacks with renewed fury!");
-                   const enemy_dmg = Math.floor(Math.random() * 11) + 15;
-                   player.hp -= enemy_dmg;
-                   player.sanity -= 5;
-               }
-           } else if (action === "flee") {
-               addToStory("You escape into the darkness...");
-               player.sanity -= 5;
-               battleState = null;
-               return;
-           }
-           
-           if (battleState.enemy_hp <= 0) {
-               addToStory(`The ${battleState.enemy_name} falls... but victory feels hollow.`);
-               const gained = Math.floor(Math.random() * 11) + 10;
-               player.exp += gained;
-               player.gold += Math.floor(Math.random() * 6) + 3;
-               player.karma -= 2;
-               addToStory(`Gained ${gained} EXP. Your soul feels heavier.`);
-               
-               if (Math.random() < 0.4) {
-                   player.addLoot("Bitter Memory");
-               }
-               
-               levelUp();
-               battleState = null;
-           } else if (player.hp > 0) {
-               addToStory(`Your HP: ${player.hp} | Enemy HP: ${battleState.enemy_hp}`);
-               addToStory('Choose: Fight, Mercy, or Flee');
-           }
-       }
-       
-       function meetNPC() {
-           const npcs = [
-               { name: "Elena", desc: "A doctor who still treats the wounded, though medicine is scarce" },
-               { name: "Marcus", desc: "A father searching for his lost daughter" },
-               { name: "The Chronicler", desc: "An old man who records the stories of the lost" },
-               { name: "Anna", desc: "A young woman who maintains the last garden in the wasteland" }
-           ];
-           
-           const npc = npcs[Math.floor(Math.random() * npcs.length)];
-           
-           if (!player.relationships[npc.name]) {
-               player.relationships[npc.name] = 0;
-               addToStory(`You meet ${npc.name}.`);
-               addToStory(npc.desc);
-               
-               if (npc.name === "Elena") {
-                   addToStory("'I've seen too much death,' she says. 'But I keep trying to heal.'");
-                   currentChoice = {
-                       type: 'npc',
-                       npc: npc.name,
-                       choices: ['Offer to help', 'Ask for healing']
-                   };
-                   addToStory("Choose: Offer to help or Ask for healing");
-               } else if (npc.name === "Marcus") {
-                   addToStory("'Have you seen a little girl? Brown hair, blue dress? She's all I have left.'");
-                   currentChoice = {
-                       type: 'npc',
-                       npc: npc.name,
-                       choices: ['Promise to look', 'Offer comfort']
-                   };
-                   addToStory("Choose: Promise to look or Offer comfort");
-               } else if (npc.name === "The Chronicler") {
-                   addToStory("'Stories are all we have left,' he says. 'They're how we remember who we were.'");
-                   currentChoice = {
-                       type: 'npc',
-                       npc: npc.name,
-                       choices: ['Share your story', 'Listen to his']
-                   };
-                   addToStory("Choose: Share your story or Listen to his");
-               } else if (npc.name === "Anna") {
-                   addToStory("'These flowers remember the world before,' she says, tending to wilted blooms.");
-                   currentChoice = {
-                       type: 'npc',
-                       npc: npc.name,
-                       choices: ['Help with the garden', 'Ask about the past']
-                   };
-                   addToStory("Choose: Help with the garden or Ask about the past");
-               }
-           }
-       }
-       
-       function handleNPCChoice(choice) {
-           const npc = currentChoice.npc;
-           
-           if (npc === "Elena") {
-               if (choice.includes("help")) {
-                   addToStory("You spend the day helping her tend to the wounded.");
-                   player.relationships[npc] += 10;
-                   player.karma += 10;
-                   player.changeHope(5);
-                   addToStory("Elena smiles sadly. 'Thank you. I'd forgotten what kindness looked like.'");
-               } else {
-                   if (player.hp < player.max_hp) {
-                       player.hp = Math.min(player.max_hp, player.hp + 20);
-                       addToStory("Elena tends to your wounds without asking for payment.");
-                       player.relationships[npc] += 5;
-                   }
-               }
-           } else if (npc === "Marcus") {
-               if (choice.includes("promise")) {
-                   addToStory("'Thank you,' he weeps. 'I won't give up. I can't give up.'");
-                   player.addMemory("Promised to help Marcus find his daughter");
-                   player.relationships[npc] += 15;
-                   player.karma += 10;
-               }
-           } else if (npc === "The Chronicler") {
-               if (choice.includes("share")) {
-                   addToStory("You tell him of your journey. He writes it down with shaking hands.");
-                   player.addMemory("Shared your story with the Chronicler");
-                   player.sanity += 10;
-                   player.relationships[npc] += 10;
-               }
-           } else if (npc === "Anna") {
-               if (choice.includes("help")) {
-                   addToStory("You work together in silence. New shoots push through the ash.");
-                   player.changeHope(10);
-                   player.relationships[npc] += 10;
-                   player.sanity += 5;
-               }
-           }
-       }
-       
-       function criticalChoice() {
-           addToStory('');
-           addToStory('=' * 50);
-           addToStory('A MOMENT OF TRUTH');
-           addToStory('=' * 50);
-           
-           addToStory("You find a group of starving children guarding a cache of food.");
-           addToStory("They're armed with broken glass and desperation.");
-           addToStory("You could easily take the food... but they would starve.");
-           
-           currentChoice = {
-               type: 'critical',
-               choices: ['Take the food', 'Share your supplies', 'Walk away']
-           };
-           
-           addToStory("What defines you in this moment?");
-           addToStory("Choose: Take the food, Share your supplies, or Walk away");
-       }
-       
-       function handleCriticalChoice(choice) {
-           if (choice.includes("take")) {
-               addToStory("You take the food. The children scatter like frightened birds.");
-               addToStory("You eat well tonight, but their faces haunt your dreams.");
-               player.gold += 10;
-               player.sanity -= 30;
-               player.karma -= 25;
-               player.changeHope(-15);
-               player.addMemory("Took food from starving children");
-           } else if (choice.includes("share")) {
-               addToStory("You empty your pack, sharing everything you have.");
-               addToStory("The children stare in disbelief. 'Why?' one asks.");
-               addToStory("'Because someone has to care,' you reply.");
-               player.inventory = [];
-               player.gold = Math.max(0, player.gold - 10);
-               player.karma += 25;
-               player.changeHope(20);
-               player.sanity += 15;
-               player.addMemory("Shared everything with starving children");
-           } else {
-               addToStory("You walk away. Sometimes the right choice is the hardest.");
-               player.sanity -= 10;
-               player.karma += 5;
-           }
-       }
-       
-       function levelUp() {
-           const required_exp = player.level * 30;
-           if (player.exp >= required_exp) {
-               player.level += 1;
-               player.max_hp += 15;
-               player.hp = player.max_hp;
-               player.exp = 0;
-               addToStory(`You've grown stronger... Level ${player.level}`);
-               addToStory(`Max HP increased to ${player.max_hp}.`);
-               addToStory("But strength alone won't save this world.");
-           }
-       }
-       
-       function checkGameOver() {
-           if (player.hp <= 0) {
-               addToStory("Darkness consumes you...");
-               gameOver();
-               return true;
-           }
-           
-           if (player.sanity <= 0) {
-               addToStory("You lose yourself to madness...");
-               gameOver();
-               return true;
-           }
-           
-           if (player.days_survived >= 100) {
-               addToStory("You've survived 100 days. The world is changing because of you.");
-               gameOver();
-               return true;
-           }
-           
-           return false;
-       }
-       
-       function gameOver() {
-           gameState = "ended";
-           
-           addToStory('');
-           addToStory('=' * 50);
-           addToStory('YOUR JOURNEY ENDS');
-           addToStory('=' * 50);
-           
-           addToStory(`You survived ${player.days_survived} days in this broken world.`);
-           addToStory(`Your final karma: ${player.karma}`);
-           addToStory(`The world's hope when you left: ${player.hope}`);
-           
-           if (player.karma > 50) {
-               addToStory("You died as you lived - with compassion.");
-               addToStory("The people you helped remember your name.");
-               addToStory("In the darkness, you were alight.");
-           }
-           else if (player.karma > 0) {
-             addToStory("You tried to do good in an impossible world.");
-             addToStory("It wasn't always enough, but you tried.");
-           }
-           else {
-             addToStory("The world broke you, as it broke so many others.");
-             addToStory("In trying to survive, you lost what made you human.");
-           }
-         addToStory("Your memories:");
-        player.memories.forEach(memory => {
-            addToStory(`- ${memory}`);
-        });
-        
-        addToStory(`Final Hope Level: ${player.hope}/100`);
-        if (player.hope > 70) {
-            addToStory("Against all odds, hope survived. The world might heal.");
-        } else if (player.hope > 30) {
-            addToStory("A flicker of hope remains. Perhaps it's enough.");
-        } else {
-            addToStory("Hope is nearly dead. The world grows darker.");
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Last Light - Text RPG</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
         
-        // Hide game controls
-        document.getElementById('game-input').classList.add('hidden');
-        document.getElementById('commands').classList.add('hidden');
+        .container {
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
         
-        // Add restart button
-        const restartButton = document.createElement('button');
-        restartButton.textContent = 'Begin Again';
-        restartButton.onclick = function() {
-            location.reload();
-        };
-        restartButton.style.cssText = `
-            padding: 15px 30px;
-            font-size: 1.2em;
+        .title {
+            text-align: center;
+            font-size: 2.5em;
+            color: #ffd700;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+        
+        .game-text {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-left: 4px solid #ffd700;
+            min-height: 300px; /* Increased height */
+            max-height: 500px; /* Max height for scrolling */
+            overflow-y: auto; /* Enable scrolling */
+            font-size: 1.1em;
+            line-height: 1.6;
+            white-space: pre-wrap; /* Preserves whitespace and wraps text */
+            word-wrap: break-word; /* Breaks long words */
+            scrollbar-width: thin;
+            scrollbar-color: #ffd700 #1a1a2e;
+            margin-bottom: 20px; /* Added margin-bottom */
+            border-radius: 5px; /* Added border-radius */
+        }
+
+        .game-text::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .game-text::-webkit-scrollbar-track {
+            background: #1a1a2e;
+            border-radius: 10px;
+        }
+
+        .game-text::-webkit-scrollbar-thumb {
+            background-color: #ffd700;
+            border-radius: 10px;
+            border: 2px solid #1a1a2e;
+        }
+
+        .stats {
+            background: rgba(0, 50, 100, 0.3);
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px; /* Added margin-bottom */
+            border: 1px solid #4a90e2;
+            font-size: 0.9em;
+        }
+        
+        .input-section {
+            margin-bottom: 20px; /* Added margin-bottom */
+            display: flex;
+            gap: 10px;
+        }
+        
+        .input-section input[type="text"] {
+            flex-grow: 1;
+            padding: 12px;
+            font-size: 1.1em;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #ffd700;
+            color: #e0e0e0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .input-section button {
+            padding: 12px 20px;
+            font-size: 1.1em;
             background: #ffd700;
             color: #1a1a2e;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            margin-top: 20px;
             font-family: 'Courier New', monospace;
             font-weight: bold;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        `;
-        document.querySelector('.container').appendChild(restartButton);
-    }
-    
-    // Initialize the game
-    document.addEventListener('DOMContentLoaded', function() {
-        document.getElementById('player-name').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                startGame();
+            transition: background 0.2s ease;
+        }
+        
+        .input-section button:hover {
+            background: #ffed4a;
+        }
+        
+        .commands {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px; /* Added margin-bottom */
+        }
+        
+        .commands button {
+            padding: 8px 16px;
+            background: rgba(74, 144, 226, 0.3);
+            color: #e0e0e0;
+            border: 1px solid #4a90e2;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: background 0.2s ease;
+        }
+        
+        .commands button:hover {
+            background: rgba(74, 144, 226, 0.5);
+        }
+        
+        .memory {
+            color: #ffd700;
+            font-style: italic;
+        }
+        
+        .hope-positive {
+            color: #4ade80;
+        }
+        
+        .hope-negative {
+            color: #f87171;
+        }
+        
+        .hidden {
+            display: none;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
             }
+            .title {
+                font-size: 2em;
+            }
+            .input-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .input-section button {
+                margin-left: 0;
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">THE LAST LIGHT</div>
+        
+        <div class="stats" id="stats">
+            <div id="player-stats"></div>
+        </div>
+        
+        <div class="game-text" id="game-text">
+            <div id="story-text">The world ended not with fire, but with the slow death of hope.<br>
+            You are one of the few who still remember what it means to be human.<br>
+            In this broken world, every choice matters.<br>
+            Every life you touch changes the fate of what remains.</div>
+        </div>
+        
+        <div class="input-section" id="name-input">
+            <input type="text" id="player-name" placeholder="What do they call you, wanderer?" autocomplete="off">
+            <button onclick="startGame()">Begin Journey</button>
+        </div>
+        
+        <div class="input-section hidden" id="game-input">
+            <input type="text" id="command-input" placeholder="Enter your choice..." autocomplete="off">
+            <button onclick="processCommand()">Execute</button>
+        </div>
+        
+        <div class="commands hidden" id="commands">
+            <button onclick="executeCommand('stats')">Stats</button>
+            <button onclick="executeCommand('wander')">Wander</button>
+            <button onclick="executeCommand('rest')">Rest</button>
+            <button onclick="executeCommand('remember')">Remember</button>
+            <button onclick="executeCommand('inventory')">Inventory</button>
+            <button onclick="executeCommand('meditate')">Meditate</button>
+            <button onclick="executeCommand('quit')">Quit</button>
+        </div>
+        <div class="input-section hidden" id="restart-game-section">
+            <button onclick="resetGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Game Data and Constants ---
+        const ITEM_DATA = {
+            "bread": { name: "Bread", desc: "A stale piece of bread. Might offer some sustenance.", consumed: true, effects: { hp: 15, sanity: 5 } },
+            "water": { name: "Water", desc: "A bottle of murky water. Better than nothing.", consumed: true, effects: { hp: 10 } },
+            "faded photo": { name: "Faded Photo", desc: "A picture of a smiling family, long faded. A reminder of what was lost.", consumed: false, effects: { sanity: 10, karma: 2 } },
+            "bitter memory": { name: "Bitter Memory", desc: "A fragment of past suffering. Heavy to carry.", consumed: false, effects: { sanity: -10, karma: -5 } },
+            "shelter": { name: "Shelter", desc: "A makeshift shelter, offering some protection from the elements.", consumed: false, special: "rest_bonus" },
+            "lucky charm": { name: "Lucky Charm", desc: "A small, smooth stone. It feels warm in your hand.", consumed: false, effects: { hope: 5, sanity: 5 } },
+            "ancient tome": { name: "Ancient Tome", desc: "A brittle book filled with forgotten wisdom.", consumed: false, effects: { karma: 5, sanity: 10 } },
+            "mysterious seed": { name: "Mysterious Seed", desc: "A tiny seed, pulsating with faint light. What will it grow?", consumed: true, effects: { hope: 15, hp: 10 } }
+        };
+
+        const HOPE_TIERS_REWARDS = [
+            { threshold: 55, reward: { item: "Lucky Charm", sanity: 5, message: "You feel a renewed sense of purpose. Sanity +5." } },
+            { threshold: 89, reward: { max_hp: 10, memory: "Witnessed a glimmer of true hope in the wasteland.", message: "Your spirit hardens. Max HP +10. You feel truly alive." } }
+        ];
+
+        const SANITY_TIERS_REWARDS = [
+            { threshold: 55, reward: { gold: 20, message: "You find some forgotten valuables. Gold +20." } },
+            { threshold: 89, reward: { karma: 10, item: "Ancient Tome", message: "Your understanding of the world deepens. Karma +10. You feel more connected." } }
+        ];
+
+        const KARMA_TIERS_REWARDS = [
+            { threshold: 55, reward: { hope: 10, message: "Your good deeds inspire others. Hope +10." } },
+            { threshold: 89, reward: { item: "Mysterious Seed", hp: 25, message: "Your compassion heals your body and soul. HP +25." } },
+            { threshold: 144, reward: { max_hp: 20, sanity: 20, memory: "Became a beacon of humanity in the darkness.", message: "You transcend your limitations, becoming a true legend. Max HP +20, Sanity +20." } }
+        ];
+
+        const LOCATIONS = [
+            { id: "abandoned_school", desc: "You find an abandoned school, children's drawings still on the walls...", choices: ["Search the school", "Leave respectfully"] },
+            { id: "broken_bridge", desc: "A bridge spans a chasm. Someone is calling for help from below...", choices: ["Try to help", "Keep walking"] },
+            { id: "dying_tree", desc: "An ancient tree withers. A small girl sits beneath it, crying...", choices: ["Approach the girl", "Observe from distance"] },
+            { id: "refugee_camp", desc: "Desperate people huddle around dying fires...", choices: ["Share your gold", "Keep walking"] },
+            { id: "memory_shrine", desc: "A shrine to the lost. Fresh flowers suggest someone still cares...", choices: ["Add a name", "Leave an offering"] }
+        ];
+
+        const NPCS = [
+            { name: "Elena", desc: "A doctor who still treats the wounded, though medicine is scarce", choices: ["Offer to help", "Ask for healing"] },
+            { name: "Marcus", desc: "A father searching for his lost daughter", choices: ["Promise to look", "Offer comfort"] },
+            { name: "The Chronicler", desc: "An old man who records the stories of the lost", choices: ["Share your story", "Listen to his"] },
+            { name: "Anna", desc: "A young woman who maintains the last garden in the wasteland", choices: ["Help with the garden", "Ask about the past"] }
+        ];
+
+        const ENEMIES = [
+            { name: "Hollow Survivor", desc: "A person who lost everything, now consumed by rage", base_hp: 30 },
+            { name: "Shadow of Regret", desc: "Your past mistakes given form", base_hp: 40 },
+            { name: "Despair Wraith", desc: "The embodiment of hopelessness", base_hp: 50 },
+            { name: "Corrupted Guardian", desc: "A protector who failed and turned dark", base_hp: 60 }
+        ];
+
+        // --- Player Class ---
+        class Player {
+            constructor(name) {
+                this.name = name;
+                this.hp = 100;
+                this.max_hp = 100;
+                this.level = 1;
+                this.exp = 0;
+                this.gold = 10;
+                this.inventory = [
+                    { name: "Bread", desc: ITEM_DATA["bread"].desc },
+                    { name: "Water", desc: ITEM_DATA["water"].desc },
+                    { name: "Faded Photo", desc: ITEM_DATA["faded photo"].desc }
+                ];
+                this.karma = 0;
+                this.relationships = {};
+                this.memories = ["Left the safety of the vault"];
+                this.sanity = 100;
+                this.hope = 50;
+                this.days_survived = 0;
+                this.awarded_tiers = {
+                    hope: [],
+                    sanity: [],
+                    karma: []
+                };
+            }
+            
+            stats() {
+                let inventoryList = this.inventory.map(item => item.name).join(', ') || 'Empty';
+                return `${this.name} | HP:${this.hp}/${this.max_hp} | Level:${this.level} | ` +
+                       `EXP:${this.exp} | Gold:${this.gold} | Karma:${this.karma} | ` +
+                       `Sanity:${this.sanity} | Hope:${this.hope} | Days:${this.days_survived}<br>` +
+                       `Inventory: ${inventoryList}`;
+            }
+            
+            addMemory(memory) {
+                this.memories.push(memory);
+                addToStory(`<span class="memory">[Memory added: ${memory}]</span>`);
+            }
+            
+            changeHope(amount) {
+                this.hope = Math.max(0, Math.min(100, this.hope + amount));
+                if (amount > 0) {
+                    addToStory(`<span class="hope-positive">The world feels a little brighter... (Hope +${amount})</span>`);
+                } else {
+                    addToStory(`<span class="hope-negative">Darkness spreads... (Hope ${amount})</span>`);
+                }
+                checkStatRewards(); 
+            }
+            
+            addLoot(item_id, item_desc) {
+                const itemData = ITEM_DATA[item_id.toLowerCase()];
+                if (!itemData) {
+                    console.error("Attempted to add unknown item:", item_id);
+                    return;
+                }
+
+                // Check if item already exists if it's a non-consumable like Shelter
+                if (!itemData.consumed && this.inventory.some(item => item.name === itemData.name)) {
+                    addToStory(`You already have a ${itemData.name}.`);
+                    return;
+                }
+                this.inventory.push({ name: itemData.name, desc: item_desc || itemData.desc });
+                addToStory(`You found: ${itemData.name}`);
+            }
+        }
+        
+        // --- Game State Variables ---
+        let player = null;
+        let gameState = "init"; // init, playing, choosing, battle, game_over, using_inventory
+        let currentChoiceContext = null; // Stores context for choices (e.g., location, NPC name, critical choice type)
+        let enemy = null; // Stores current enemy in battle
+        let battleState = false; // Flag to indicate if currently in battle
+
+        // --- DOM Elements ---
+        const gameTextPanel = document.getElementById('game-text');
+        const storyTextContent = document.getElementById('story-text');
+        const commandInput = document.getElementById('command-input');
+        const nameInputSection = document.getElementById('name-input');
+        const gameInputSection = document.getElementById('game-input');
+        const commandsSection = document.getElementById('commands');
+        const restartGameSection = document.getElementById('restart-game-section');
+
+        // --- Core Game Functions ---
+
+        function addToStory(text) {
+            storyTextContent.innerHTML += (storyTextContent.innerHTML ? '<br>' : '') + text;
+            gameTextPanel.scrollTop = gameTextPanel.scrollHeight;
+            updateStats();
+        }
+        
+        function clearStory() {
+            storyTextContent.innerHTML = '';
+        }
+        
+        function updateStats() {
+            if (player) {
+                document.getElementById('player-stats').innerHTML = player.stats();
+            }
+        }
+        
+        function startGame() {
+            const playerNameInput = document.getElementById('player-name');
+            const name = playerNameInput.value.trim();
+            
+            if (!name) {
+                displayMessage("Please enter your name, wanderer.");
+                return;
+            }
+            
+            player = new Player(name);
+            
+            nameInputSection.classList.add('hidden');
+            gameInputSection.classList.remove('hidden');
+            commandsSection.classList.remove('hidden');
+            restartGameSection.classList.add('hidden'); // Hide restart button on new game
+            
+            clearStory();
+            addToStory(`Welcome to the wasteland, ${player.name}.`);
+            addToStory('Your choices will determine not just your fate, but the fate of hope itself.');
+            
+            gameState = "playing";
+            startDay();
+            
+            commandInput.focus();
+        }
+
+        function resetGame() {
+            // Clear all game state variables
+            player = null;
+            gameState = "init";
+            currentChoiceContext = null;
+            enemy = null;
+            battleState = false;
+
+            // Reset UI elements
+            clearStory();
+            document.getElementById('player-name').value = ''; // Clear name input
+            nameInputSection.classList.remove('hidden');
+            gameInputSection.classList.add('hidden');
+            commandsSection.classList.add('hidden');
+            restartGameSection.classList.add('hidden');
+            document.querySelector('#game-input button').disabled = false; // Re-enable execute button
+            document.querySelectorAll('#commands button').forEach(btn => btn.disabled = false); // Re-enable command buttons
+
+            addToStory("The world ended not with fire, but with the slow death of hope.<br>" +
+                       "You are one of the few who still remember what it means to be human.<br>" +
+                       "In this broken world, every choice matters.<br>" +
+                       "Every life you touch changes the fate of what remains.");
+            document.getElementById('player-name').focus(); // Focus on name input for new game
+        }
+        
+        function processCommand() {
+            const command = commandInput.value.trim().toLowerCase();
+            commandInput.value = '';
+            
+            if (command) {
+                executeCommand(command);
+            }
+        }
+        
+        function executeCommand(cmd) {
+            if (gameState === "game_over") return;
+
+            if (gameState === "choosing" || gameState === "using_inventory") {
+                handleChoice(cmd);
+                return;
+            }
+            
+            if (gameState === "battle") {
+                handleBattle(cmd);
+                return;
+            }
+            
+            switch (cmd) {
+                case 'stats':
+                    addToStory(player.stats());
+                    break;
+                case 'wander':
+                    wander();
+                    break;
+                case 'rest':
+                    rest();
+                    break;
+                case 'remember':
+                    addToStory('You remember...');
+                    player.memories.forEach(memory => {
+                        addToStory(`- ${memory}`);
+                    });
+                    player.sanity = Math.min(100, player.sanity + 5);
+                    checkStatRewards();
+                    break;
+                case 'inventory':
+                    if (player.inventory.length > 0) {
+                        addToStory('You carry:');
+                        player.inventory.forEach((item, index) => {
+                            addToStory(`${index + 1}. ${item.name}: ${item.desc}`);
+                        });
+                        const inventoryChoices = player.inventory.map(item => item.name);
+                        inventoryChoices.push("Cancel");
+                        currentChoiceContext = { type: "using_inventory", choices: inventoryChoices };
+                        gameState = "using_inventory";
+                    } else {
+                        addToStory('You carry: Nothing but hope');
+                        currentChoiceContext = null;
+                        gameState = "playing";
+                    }
+                    displayOptions(); // This call is needed to show the "Type the number..." prompt
+                    break;
+                case 'meditate':
+                    meditate();
+                    break;
+                case 'quit':
+                    addToStory('Even in quitting, you make a choice.');
+                    addToStory('The world will remember what you did here.');
+                    gameOver();
+                    return;
+                default:
+                    addToStory('In confusion, you hesitate. Time passes.');
+                    displayOptions();
+                    break;
+            }
+        }
+
+        function endDay() {
+            if (Math.random() < 0.1) {
+                player.sanity = Math.max(0, player.sanity - 1);
+                player.changeHope(-1);
+            }
+            checkStatRewards();
+            checkGameOver();
+
+            if (gameState === "game_over") return;
+
+            const randomEvent = Math.random();
+            if (randomEvent < 0.2) { 
+                meetNPC();
+            } else if (randomEvent < 0.3) {
+                criticalChoice();
+            } else {
+                startDay(); 
+            }
+        }
+
+        function startDay() {
+            player.days_survived += 1;
+            addToStory('<br>' + '='.repeat(50));
+            addToStory(`Day ${player.days_survived}`);
+            addToStory('='.repeat(50));
+            displayOptions();
+        }
+        
+        function wander() {
+            const randomEncounter = Math.random();
+            if (randomEncounter < 0.4) { 
+                explore();
+            } else {
+                battle();
+            }
+        }
+        
+        function rest() {
+            const hasShelter = player.inventory.some(item => item.name === "Shelter");
+            if (hasShelter) {
+                player.hp = Math.min(player.max_hp, player.hp + 20);
+                player.sanity = Math.min(100, player.sanity + 10);
+                addToStory('You rest safely. Tomorrow brings new challenges.');
+            } else {
+                player.hp = Math.min(player.max_hp, player.hp + 10);
+                player.sanity -= 5;
+                addToStory('You rest fitfully in the open. The cold seeps into your bones.');
+            }
+            checkStatRewards();
+            endDay();
+        }
+        
+        function meditate() {
+            addToStory('You sit in silence, remembering who you were before the world ended.');
+            player.sanity = Math.min(100, player.sanity + 10);
+            player.hp = Math.min(player.max_hp, player.hp + 5);
+            checkStatRewards();
+            endDay();
+        }
+        
+        function checkGameOver() {
+            if (player.hp <= 0) {
+                addToStory("\nDarkness consumes you...");
+                gameOver();
+            } else if (player.sanity <= 0) {
+                addToStory("You lose yourself to madness...");
+                gameOver();
+            } else if (player.days_survived >= 100) {
+                addToStory("You've survived 100 days. The world is changing because of you.");
+                gameOver();
+            }
+        }
+
+        function gameOver() {
+            gameState = "game_over";
+            addToStory('<br>' + '='.repeat(50));
+            addToStory('YOUR JOURNEY ENDS');
+            addToStory('='.repeat(50));
+            
+            addToStory(`You survived ${player.days_survived} days in this broken world.`);
+            addToStory(`Your final karma: ${player.karma}`);
+            addToStory(`The world's hope when you left: ${player.hope}`);
+            
+            if (player.karma > 50) {
+                addToStory('\nYou died as you lived - with compassion.');
+                addToStory('The people you helped remember your name.');
+                addToStory('In the darkness, you were a light.');
+            } else if (player.karma > 0) {
+                addToStory('\nYou tried to do good in an impossible world.');
+                addToStory('It wasn\'t always enough, but you tried.');
+            } else {
+                addToStory('\nThe world broke you, as it broke so many others.');
+                addToStory('In trying to survive, you lost what made you human.');
+            }
+            
+            addToStory('\nYour memories:');
+            if (player.memories.length > 0) {
+                player.memories.forEach(memory => {
+                    addToStory(`- ${memory}`);
+                });
+            } else {
+                addToStory('- None');
+            }
+            
+            addToStory(`\nFinal Hope Level: ${player.hope}/100`);
+            if (player.hope > 70) {
+                addToStory('Against all odds, hope survived. The world might heal.');
+            } else if (player.hope > 30) {
+                addToStory('A flicker of hope remains. Perhaps it\'s enough.');
+            } else {
+                addToStory('Hope is nearly dead. The world grows darker.');
+            }
+
+            commandInput.disabled = true;
+            document.querySelector('#game-input button').disabled = true;
+            commandsSection.classList.add('hidden'); // Hide command buttons
+            restartGameSection.classList.remove('hidden'); // Show restart button
+        }
+
+        function levelUp() {
+            const required_exp = player.level * 30;
+            if (player.exp >= required_exp) {
+                player.level += 1;
+                player.max_hp += 15;
+                player.hp = player.max_hp;
+                player.exp = 0;
+                addToStory(`\nYou've grown stronger... Level ${player.level}`);
+                addToStory(`Max HP increased to ${player.max_hp}.`);
+                addToStory("But strength alone won't save this world.");
+            }
+        }
+
+        function explore() {
+            const randomLocation = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
+            currentChoiceContext = { type: "explore", location: randomLocation.id, choices: randomLocation.choices };
+            gameState = "choosing";
+            addToStory(`\n${randomLocation.desc}`);
+            if (randomLocation.id === "refugee_camp" && player.gold < 20) {
+                addToStory("You have nothing to give. Your empty hands feel like betrayal.");
+                player.sanity -= 10;
+                checkStatRewards();
+                gameState = "playing";
+                endDay();
+            } else {
+                displayOptions();
+            }
+        }
+
+        // --- Choice Handling Functions ---
+
+        /**
+         * Converts a user command (which might be a number) into the actual choice string.
+         * @param {string} cmd - The raw user input command.
+         * @param {string[]} choices - An array of available choice strings.
+         * @returns {string|null} The actual choice string (lowercase) or null if invalid.
+         */
+        function getActualChoiceFromInput(cmd, choices) {
+            const isNumeric = /^\d+$/.test(cmd);
+            if (isNumeric) {
+                const choiceIndex = parseInt(cmd, 10) - 1;
+                if (choiceIndex >= 0 && choiceIndex < choices.length) {
+                    return choices[choiceIndex].toLowerCase();
+                }
+            }
+            // If not numeric or out of range, return the original command (lowercase)
+            // This allows for direct keyword input as well.
+            return cmd.toLowerCase();
+        }
+
+        function handleChoice(cmd) {
+            let choiceHandled = false;
+            let actualCmd = getActualChoiceFromInput(cmd, currentChoiceContext.choices);
+
+            if (actualCmd === null) { // Invalid numeric input
+                addToStory("Invalid choice number. Please enter a valid number.");
+                displayOptions();
+                return;
+            }
+
+            switch (currentChoiceContext.type) {
+                case "explore":
+                    choiceHandled = handleExploreChoice(currentChoiceContext.location, actualCmd);
+                    break;
+                case "explore_dying_tree_comfort":
+                    choiceHandled = handleDyingTreeComfortChoice(actualCmd);
+                    break;
+                case "explore_memory_shrine_add_name":
+                    // This is a direct text input, not a numbered choice from a list
+                    addToStory(`You carve '${actualCmd}' into the stone. They will not be forgotten.`);
+                    player.addMemory(`Honored ${actualCmd} at the shrine`);
+                    player.changeHope(5);
+                    choiceHandled = true;
+                    break;
+                case "meet_npc_elena":
+                case "meet_npc_marcus":
+                case "meet_npc_chronicler":
+                case "meet_npc_anna":
+                    choiceHandled = handleNpcChoice(currentChoiceContext.type, actualCmd);
+                    break;
+                case "critical_choice":
+                    choiceHandled = handleCriticalChoice(actualCmd);
+                    break;
+                case "using_inventory":
+                    choiceHandled = handleInventoryUse(actualCmd);
+                    break;
+                default:
+                    addToStory("Invalid choice. Please choose one of the available options.");
+                    displayOptions();
+                    return;
+            }
+
+            if (choiceHandled) {
+                currentChoiceContext = null;
+                gameState = "playing";
+                endDay();
+            } else {
+                addToStory("Invalid choice. Please choose one of the available options.");
+                displayOptions();
+            }
+        }
+
+        function handleExploreChoice(locationId, cmd) {
+            switch (locationId) {
+                case "abandoned_school":
+                    if (cmd === "search the school" || cmd === "search") {
+                        if (Math.random() < 0.5) {
+                            addToStory("You find a child's diary. The last entry: 'I hope someone remembers us.'");
+                            player.addMemory("Found a child's final hope");
+                            player.changeHope(10);
+                        } else {
+                            addToStory("You find nothing but echoes of laughter that will never return.");
+                            player.sanity -= 10;
+                            checkStatRewards();
+                        }
+                        if (Math.random() < 0.2 && !player.inventory.some(item => item.name === ITEM_DATA["shelter"].name)) {
+                            player.addLoot("shelter");
+                        }
+                        return true;
+                    } else if (cmd === "leave respectfully" || cmd === "leave") {
+                        addToStory("You whisper a prayer and move on. Some places deserve peace.");
+                        player.karma += 5;
+                        checkStatRewards();
+                        return true;
+                    }
+                    return false;
+                case "broken_bridge":
+                    if (cmd === "try to help" || cmd === "help") {
+                        if (Math.random() < 0.6) {
+                            addToStory("You risk everything to save them. They're just a child, lost and alone.");
+                            addToStory("'Thank you,' they whisper. 'I thought no one cared anymore.'");
+                            player.addMemory("Saved a child from the chasm");
+                            player.changeHope(15);
+                            player.karma += 15;
+                            player.sanity += 10;
+                        } else {
+                            addToStory("You try to help, but the rope breaks. You watch them fall...");
+                            addToStory("Their final scream echoes in your mind forever.");
+                            player.sanity -= 25;
+                            player.karma -= 10;
+                            player.addMemory("Failed to save someone");
+                        }
+                        checkStatRewards();
+                        return true;
+                    } else if (cmd === "keep walking" || cmd === "walk") {
+                        addToStory("You walk away. Their cries follow you into the night.");
+                        player.sanity -= 15;
+                        player.karma -= 5;
+                        checkStatRewards();
+                        return true;
+                    }
+                    return false;
+                case "dying_tree":
+                    if (cmd === "approach the girl" || cmd === "approach") {
+                        addToStory("'My grandmother planted this tree,' she says without looking up.");
+                        addToStory("'She said it would outlive us all. She was wrong.'");
+                        currentChoiceContext = { type: "explore_dying_tree_comfort", choices: ["Comfort her", "Share your food"] };
+                        displayOptions();
+                        return false; // Wait for next choice
+                    } else if (cmd === "observe from distance" || cmd === "observe") {
+                        addToStory("You watch her for a moment, then move on. Some pains are too deep to touch.");
+                        player.sanity -= 2;
+                        checkStatRewards();
+                        return true;
+                    }
+                    return false;
+                case "refugee_camp":
+                    if (cmd === "share your gold" || cmd === "share") {
+                        if (player.gold >= 20) {
+                            player.gold -= 20;
+                            addToStory("Your gold feeds them for one more day. It's not much, but it's hope.");
+                            player.changeHope(10);
+                            player.karma += 10;
+                        } else {
+                            addToStory("You don't have enough gold to share.");
+                        }
+                        checkStatRewards();
+                        return true;
+                    } else if (cmd === "keep walking" || cmd === "walk") {
+                        addToStory("You walk away. Their desperate eyes burn into your memory.");
+                        player.sanity -= 5;
+                        checkStatRewards();
+                        return true;
+                    }
+                    return false;
+                case "memory_shrine":
+                    if (cmd === "add a name" || cmd === "add") {
+                        currentChoiceContext = { type: "explore_memory_shrine_add_name" };
+                        addToStory("Whose name do you carve? (Type the name)");
+                        return false; // Wait for name input
+                    } else if (cmd === "leave an offering" || cmd === "leave" || cmd === "offering") {
+                        if (player.inventory.length > 0) {
+                            const offerableItems = player.inventory.filter(item => item.name !== ITEM_DATA["shelter"].name && item.name !== ITEM_DATA["bitter memory"].name);
+                            if (offerableItems.length > 0) {
+                                const itemToOffer = offerableItems[Math.floor(Math.random() * offerableItems.length)];
+                                const itemIndex = player.inventory.indexOf(itemToOffer);
+                                player.inventory.splice(itemIndex, 1);
+                                addToStory(`You leave your ${itemToOffer.name}. The dead deserve remembrance.`);
+                                player.karma += 5;
+                                checkStatRewards();
+                            } else {
+                                addToStory("You have nothing suitable to offer.");
+                            }
+                        } else {
+                            addToStory("You have nothing to offer.");
+                        }
+                        return true;
+                    }
+                    return false;
+                default:
+                    return false;
+            }
+        }
+
+        function handleDyingTreeComfortChoice(cmd) {
+            if (cmd === "comfort her" || cmd === "comfort") {
+                addToStory("You sit beside her. Sometimes presence is enough.");
+                player.sanity += 5;
+                player.karma += 5;
+                checkStatRewards();
+                return true;
+            } else if (cmd === "share your food" || cmd === "share" || cmd === "food") {
+                const breadItem = player.inventory.find(item => item.name === ITEM_DATA["bread"].name);
+                if (breadItem) {
+                    const breadIndex = player.inventory.indexOf(breadItem);
+                    player.inventory.splice(breadIndex, 1);
+                    addToStory("You share your bread. She smiles for the first time in months.");
+                    player.changeHope(10);
+                    player.karma += 10;
+                } else {
+                    addToStory("You have no food to share. The guilt cuts deep.");
+                    player.sanity -= 5;
+                }
+                checkStatRewards();
+                return true;
+            }
+            return false;
+        }
+
+        function handleNpcChoice(npcType, cmd) {
+            let npcName;
+            switch(npcType) {
+                case "meet_npc_elena": npcName = "Elena"; break;
+                case "meet_npc_marcus": npcName = "Marcus"; break;
+                case "meet_npc_chronicler": npcName = "The Chronicler"; break;
+                case "meet_npc_anna": npcName = "Anna"; break;
+                default: return false;
+            }
+
+            if (!player.relationships[npcName]) {
+                player.relationships[npcName] = 0;
+            }
+
+            // Use the full lowercased command string for comparison
+            if (npcName === "Elena") {
+                if (cmd === "offer to help" || cmd === "help") {
+                    addToStory("You spend the day helping her tend to the wounded.");
+                    player.relationships.Elena += 10;
+                    player.karma += 10;
+                    player.changeHope(5);
+                    addToStory("Elena smiles sadly. 'Thank you. I'd forgotten what kindness looked like.'");
+                    checkStatRewards(); // Moved inside successful branch
+                    return true;
+                } else if (cmd === "ask for healing" || cmd === "healing") {
+                    if (player.hp < player.max_hp) {
+                        player.hp = Math.min(player.max_hp, player.hp + 20);
+                        addToStory("Elena tends to your wounds without asking for payment.");
+                        player.relationships.Elena += 5;
+                    } else {
+                        addToStory("You are already at full health.");
+                    }
+                    checkStatRewards(); // Moved inside successful branch
+                    return true;
+                }
+            } else if (npcName === "Marcus") {
+                if (cmd === "promise to look" || cmd === "promise") {
+                    addToStory("'Thank you,' he weeps. 'I won't give up. I can't give up.'");
+                    player.addMemory("Promised to help Marcus find his daughter");
+                    player.relationships.Marcus += 15;
+                    player.karma += 10;
+                    checkStatRewards(); // Moved inside successful branch
+                    return true;
+                } else if (cmd === "offer comfort" || cmd === "comfort") {
+                    addToStory("You offer words of solace. He nods, tears in his eyes.");
+                    player.sanity += 5;
+                    player.relationships.Marcus += 5;
+                    checkStatRewards(); // Moved inside successful branch
+                    return true;
+                }
+            } else if (npcName === "The Chronicler") {
+                if (cmd === "share your story" || cmd === "share") {
+                    addToStory("You tell him of your journey. He writes it down with shaking hands.");
+                    player.addMemory("Shared your story with the Chronicler");
+                    player.sanity += 10;
+                    player.relationships["The Chronicler"] += 10;
+                    checkStatRewards(); // Moved inside successful branch
+                    return true;
+                } else if (cmd === "listen to his" || cmd === "listen") {
+                    addToStory("He recounts tales of a forgotten world, of heroes and villains long turned to dust.");
+                    player.sanity += 5;
+                    player.relationships["The Chronicler"] += 5;
+                    checkStatRewards(); // Moved inside successful branch
+                    return true;
+                }
+            } else if (npcName === "Anna") {
+                if (cmd === "help with the garden" || cmd === "help") {
+                    addToStory("You work together in silence. New shoots push through the ash.");
+                    player.changeHope(10);
+                    player.relationships.Anna += 10;
+                    player.sanity += 5;
+                    checkStatRewards(); // Moved inside successful branch
+                    return true;
+                } else if (cmd === "ask about the past" || cmd === "ask") {
+                    addToStory("She speaks of vibrant colors and bustling cities, a world that exists only in memory.");
+                    player.sanity += 5;
+                    player.relationships.Anna += 5;
+                    checkStatRewards(); // Moved inside successful branch
+                    return true;
+                }
+            }
+            return false; // If no valid command was matched
+        }
+
+        function handleCriticalChoice(cmd) {
+            if (cmd === "take the food" || cmd === "take") {
+                addToStory("You take the food. The children scatter like frightened birds.");
+                addToStory("You eat well tonight, but their faces haunt your dreams.");
+                player.gold += 10;
+                player.sanity -= 30;
+                player.karma -= 25;
+                player.changeHope(-15);
+                player.addMemory("Took food from starving children");
+                checkStatRewards(); // Moved inside successful branch
+                return true;
+            } else if (cmd === "share your supplies" || cmd === "share") {
+                addToStory("You empty your pack, sharing everything you have.");
+                addToStory("The children stare in disbelief. 'Why?' one asks.");
+                addToStory("'Because someone has to care,' you reply.");
+                player.inventory = [];
+                player.gold = Math.max(0, player.gold - 10);
+                player.karma += 25;
+                player.changeHope(20);
+                player.sanity += 15;
+                player.addMemory("Shared everything with starving children");
+                checkStatRewards(); // Moved inside successful branch
+                return true;
+            } else if (cmd === "walk away" || cmd === "walk") {
+                addToStory("You walk away. Sometimes the right choice is the hardest.");
+                player.sanity -= 10;
+                player.karma += 5;
+                checkStatRewards(); // Moved inside successful branch
+                return true;
+            }
+            return false; // If no valid command was matched
+        }
+
+        function handleInventoryUse(cmd) {
+            if (cmd === "cancel") {
+                addToStory("You decide not to use an item.");
+                return true; // Handled, return to playing state
+            } else {
+                // The cmd is already the item name (lowercase) from getActualChoiceFromInput
+                useItem(cmd);
+                return true; // useItem will handle state transition and options
+            }
+        }
+
+        function useItem(item_name_lower) {
+            const itemData = ITEM_DATA[item_name_lower];
+            if (!itemData) {
+                addToStory(`You don't have '${item_name_lower}' in your inventory.`);
+                gameState = "playing";
+                displayOptions();
+                return;
+            }
+
+            const itemInInventoryIndex = player.inventory.findIndex(item => item.name.toLowerCase() === item_name_lower);
+            if (itemInInventoryIndex === -1) {
+                addToStory(`You don't have '${item_name_lower}' in your inventory.`);
+                gameState = "playing";
+                displayOptions();
+                return;
+            }
+
+            addToStory(`You use the ${itemData.name}.`);
+            
+            if (itemData.effects) {
+                if (itemData.effects.hp) player.hp = Math.min(player.max_hp, player.hp + itemData.effects.hp);
+                if (itemData.effects.sanity) player.sanity = Math.min(100, player.sanity + itemData.effects.sanity);
+                if (itemData.effects.karma) player.karma += itemData.effects.karma;
+                if (itemData.effects.hope) player.changeHope(itemData.effects.hope);
+            }
+
+            if (itemData.consumed) {
+                player.inventory.splice(itemInInventoryIndex, 1);
+            } else if (itemData.special === "rest_bonus") {
+                addToStory("This item provides a bonus when you 'rest'.");
+            } else {
+                addToStory(`It seems using the ${itemData.name} had an effect.`);
+            }
+            
+            checkStatRewards();
+            gameState = "playing";
+            displayOptions();
+        }
+
+        // --- Battle Functions ---
+        function battle() {
+            const randomEnemyData = ENEMIES[Math.floor(Math.random() * ENEMIES.length)];
+            enemy = {
+                name: randomEnemyData.name,
+                desc: randomEnemyData.desc,
+                hp: Math.floor(Math.random() * (randomEnemyData.base_hp + 30 - randomEnemyData.base_hp + 1)) + randomEnemyData.base_hp
+            };
+            
+            battleState = true;
+            gameState = "battle";
+            
+            addToStory(`\n${enemy.desc}`);
+            addToStory(`The ${enemy.name} emerges from the shadows... HP: ${enemy.hp}`);
+            // Set currentChoiceContext for battle options to be numbered
+            currentChoiceContext = { type: "battle", choices: ["Fight", "Mercy", "Flee"] };
+            displayOptions();
+        }
+
+        function handleBattle(cmd) {
+            if (!battleState) return; 
+
+            // Use getActualChoiceFromInput to parse numeric commands for battle
+            let actualCmd = getActualChoiceFromInput(cmd, ["Fight", "Mercy", "Flee"]);
+
+            if (actualCmd === null) {
+                addToStory("Invalid battle command. Options: fight, mercy, flee.");
+                displayOptions();
+                return;
+            }
+
+            let enemy_hp = enemy.hp;
+            const enemy_name = enemy.name;
+            
+            addToStory(`\nYour HP: ${player.hp} | Enemy HP: ${enemy_hp}`);
+            
+            let actionTaken = false;
+
+            if (actualCmd === "fight") {
+                const dmg = Math.floor(Math.random() * (25 - 15 + 1)) + 15;
+                enemy_hp -= dmg;
+                addToStory(`You strike with desperate fury! ${dmg} damage!`);
+                
+                if (enemy_hp > 0) {
+                    const enemy_dmg = Math.floor(Math.random() * (20 - 10 + 1)) + 10;
+                    player.hp -= enemy_dmg;
+                    player.sanity -= 2;
+                    addToStory(`The ${enemy_name} claws at your soul! ${enemy_dmg} damage!`);
+                }
+                actionTaken = true;
+            } else if (actualCmd === "mercy") {
+                if (Math.random() < 0.3) {
+                    addToStory(`Your compassion reaches through the darkness...`);
+                    addToStory(`The ${enemy_name} remembers what they once were and fades peacefully.`);
+                    player.karma += 10;
+                    player.changeHope(5);
+                    player.addMemory(`Showed mercy to ${enemy_name}`);
+                    battleState = false; 
+                    enemy = null;
+                    gameState = "playing"; 
+                    endDay(); 
+                    return;
+                } else {
+                    addToStory("Your mercy is rejected! The enemy attacks with renewed fury!");
+                    const enemy_dmg = Math.floor(Math.random() * (25 - 15 + 1)) + 15;
+                    player.hp -= enemy_dmg;
+                    player.sanity -= 5;
+                }
+                actionTaken = true;
+            } else if (actualCmd === "flee") {
+                addToStory("You escape into the darkness...");
+                player.sanity -= 5;
+                battleState = false; 
+                enemy = null;
+                gameState = "playing"; 
+                endDay(); 
+                return;
+            } else {
+                // This case should ideally not be hit if getActualChoiceFromInput works correctly
+                // but kept for robustness.
+                addToStory("Invalid battle command. Options: fight, mercy, flee.");
+            }
+
+            enemy.hp = enemy_hp;
+
+            if (player.hp <= 0) {
+                addToStory("\nDarkness consumes you...");
+                gameOver();
+                return;
+            }
+
+            if (enemy.hp <= 0) {
+                addToStory(`The ${enemy_name} falls... but victory feels hollow.`);
+                const gainedExp = Math.floor(Math.random() * (20 - 10 + 1)) + 10;
+                player.exp += gainedExp;
+                player.gold += Math.floor(Math.random() * (8 - 3 + 1)) + 3;
+                player.karma -= 2;
+                addToStory(`Gained ${gainedExp} EXP. Your soul feels heavier.`);
+                
+                if (Math.random() < 0.4) {
+                    player.addLoot("bitter memory");
+                }
+                
+                levelUp();
+                battleState = false; 
+                enemy = null;
+                gameState = "playing"; 
+                endDay(); 
+            } else if (actionTaken) {
+                displayOptions();
+            } else {
+                displayOptions();
+            }
+            checkStatRewards();
+        }
+
+        // --- NPC and Event Functions ---
+        function meetNPC() {
+            const randomNPC = NPCS[Math.floor(Math.random() * NPCS.length)];
+            const npcName = randomNPC.name;
+            
+            if (!player.relationships[npcName]) {
+                player.relationships[npcName] = 0;
+            }
+            
+            addToStory(`\nYou meet ${npcName}.`);
+            addToStory(randomNPC.desc);
+            
+            currentChoiceContext = { type: `meet_npc_${npcName.toLowerCase().replace(/ /g, '_')}`, choices: randomNPC.choices };
+            gameState = "choosing";
+            displayOptions();
+        }
+
+        function criticalChoice() {
+            addToStory("\n" + '='.repeat(50));
+            addToStory("A MOMENT OF TRUTH");
+            addToStory('='.repeat(50));
+            
+            addToStory("You find a group of starving children guarding a cache of food.");
+            addToStory("They're armed with broken glass and desperation.");
+            addToStory("You could easily take the food... but they would starve.");
+            
+            addToStory("\nWhat defines you in this moment?");
+            currentChoiceContext = { type: "critical_choice", choices: ["Take the food", "Share your supplies", "Walk away"] };
+            gameState = "choosing";
+            displayOptions();
+        }
+
+        // --- Display and Utility Functions ---
+        function displayOptions() {
+            let optionsText = '';
+            if (gameState === "playing") {
+                optionsText = "What do you do? Options: stats, wander, rest, remember, inventory, meditate, quit";
+            } else if (gameState === "choosing" && currentChoiceContext && currentChoiceContext.choices) {
+                optionsText = "Enter the number of your choice:";
+                currentChoiceContext.choices.forEach((choice, index) => {
+                    optionsText += `<br>${index + 1}. ${choice}`;
+                });
+            } else if (gameState === "battle" && currentChoiceContext && currentChoiceContext.choices) { // Added currentChoiceContext check
+                optionsText = "Your turn. Enter the number of your choice:";
+                currentChoiceContext.choices.forEach((choice, index) => {
+                    optionsText += `<br>${index + 1}. ${choice}`;
+                });
+            } else if (gameState === "using_inventory") {
+                optionsText = "Type the number of the item to use it, or 'cancel' to go back.";
+            } else if (gameState === "choosing" && currentChoiceContext && currentChoiceContext.type === "explore_memory_shrine_add_name") {
+                optionsText = "Whose name do you carve? (Type the name)";
+            }
+
+            if (optionsText) {
+                addToStory(optionsText);
+            }
+            commandInput.focus();
+        }
+
+        function displayMessage(message) {
+            const messageBox = document.createElement('div');
+            messageBox.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0, 0, 0, 0.9);
+                color: #ffd700;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+                z-index: 1000;
+                text-align: center;
+                font-family: 'Courier New', monospace;
+                border: 2px solid #ffd700;
+            `;
+            messageBox.innerHTML = `
+                <p>${message}</p>
+                <button style="
+                    background: #ffd700;
+                    color: #1a1a2e;
+                    border: none;
+                    padding: 8px 15px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    margin-top: 15px;
+                    font-weight: bold;
+                ">OK</button>
+            `;
+            document.body.appendChild(messageBox);
+
+            messageBox.querySelector('button').onclick = () => {
+                document.body.removeChild(messageBox);
+                commandInput.focus();
+            };
+        }
+
+        function checkStatRewards() {
+            if (!player) return;
+
+            HOPE_TIERS_REWARDS.forEach(tier => {
+                if (player.hope >= tier.threshold && !player.awarded_tiers.hope.includes(tier.threshold)) {
+                    player.awarded_tiers.hope.push(tier.threshold);
+                    addToStory(`\n<span class="hope-positive">*** A surge of hope washes over you! (Hope Tier ${tier.threshold} Reached!) ***</span>`);
+                    if (tier.reward.item) player.addLoot(tier.reward.item.toLowerCase(), ITEM_DATA[tier.reward.item.toLowerCase()].desc);
+                    if (tier.reward.sanity) player.sanity = Math.min(100, player.sanity + tier.reward.sanity);
+                    if (tier.reward.max_hp) { player.max_hp += tier.reward.max_hp; player.hp = player.max_hp; }
+                    if (tier.reward.memory) player.addMemory(tier.reward.memory);
+                    if (tier.reward.message) addToStory(tier.reward.message);
+                }
+            });
+
+            SANITY_TIERS_REWARDS.forEach(tier => {
+                if (player.sanity >= tier.threshold && !player.awarded_tiers.sanity.includes(tier.threshold)) {
+                    player.awarded_tiers.sanity.push(tier.threshold);
+                    addToStory(`\n<span style="color:#8b5cf6;">*** Your mind finds a moment of clarity! (Sanity Tier ${tier.threshold} Reached!) ***</span>`);
+                    if (tier.reward.gold) player.gold += tier.reward.gold;
+                    if (tier.reward.item) player.addLoot(tier.reward.item.toLowerCase(), ITEM_DATA[tier.reward.item.toLowerCase()].desc);
+                    if (tier.reward.karma) player.karma += tier.reward.karma;
+                    if (tier.reward.message) addToStory(tier.reward.message);
+                }
+            });
+
+            KARMA_TIERS_REWARDS.forEach(tier => {
+                if (player.karma >= tier.threshold && !player.awarded_tiers.karma.includes(tier.threshold)) {
+                    player.awarded_tiers.karma.push(tier.threshold);
+                    addToStory(`\n<span style="color:#facc15;">*** The universe acknowledges your deeds! (Karma Tier ${tier.threshold} Reached!) ***</span>`);
+                    if (tier.reward.hope) player.changeHope(tier.reward.hope);
+                    if (tier.reward.item) player.addLoot(tier.reward.item.toLowerCase(), ITEM_DATA[tier.reward.item.toLowerCase()].desc);
+                    if (tier.reward.hp) player.hp = Math.min(player.max_hp, player.hp + tier.reward.hp);
+                    if (tier.reward.max_hp) { player.max_hp += tier.reward.max_hp; player.hp = player.max_hp; }
+                    if (tier.reward.sanity) player.sanity = Math.min(100, player.sanity + tier.reward.sanity);
+                    if (tier.reward.memory) player.addMemory(tier.reward.memory);
+                    if (tier.reward.message) addToStory(tier.reward.message);
+                }
+            });
+        }
+
+        // --- Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const playerNameInput = document.getElementById('player-name');
+            playerNameInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    startGame();
+                }
+            });
+            playerNameInput.focus();
         });
-    });
-</script>
+    </script>
+</body>
+</html>
