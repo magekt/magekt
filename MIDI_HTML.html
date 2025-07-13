@@ -107,7 +107,7 @@
             font-size: 0.9em;
             display: none; /* Hidden by default */
             opacity: 0;
-            transition: opacity 0.3s ease; /* Fade in/out effect */
+            transition: opacity 0.3s ease;
         }
         /* Class to show the message box */
         .message-box.show {
@@ -855,6 +855,7 @@
             console.log("Attempting to initialize audio context...");
             if (!audioContext) {
                 try {
+                    showMessage("Initializing audio system...");
                     // Create a new AudioContext (or use webkitAudioContext for older browsers)
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     // Create a master gain node to control overall volume
@@ -883,6 +884,9 @@
                     // Analyser Node for Visualization
                     analyserNode = audioContext.createAnalyser();
                     analyserNode.fftSize = 256; // Smaller FFT size for quicker visualization response
+                    analyserNode.smoothingTimeConstant = 0.8; // Added smoothing for visualization
+                    analyserNode.minDecibels = -90; // Default minDecibels
+                    analyserNode.maxDecibels = -10; // Default maxDecibels
                     const bufferLength = analyserNode.frequencyBinCount;
                     dataArray = new Uint8Array(bufferLength); // For time domain data
 
