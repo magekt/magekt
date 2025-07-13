@@ -687,7 +687,7 @@
                     choiceHandled = handleExploreChoice(currentChoiceContext.location, actualCmd);
                     break;
                 case "explore_dying_tree_comfort":
-                    choiceHandled = handleDyingTreeComfortChoice(actualCmd);
+                    choiceHandled = handleDyingTreeComfortChoice(actualChoiceFromInput);
                     break;
                 case "explore_memory_shrine_add_name":
                     // This is a direct text input, not a numbered choice from a list
@@ -912,18 +912,19 @@
                     return true;
                 }
             } else if (npcName === "The Chronicler") {
-                if (cmd === "share your story" || cmd === "share") {
+                // Modified to only match full lowercased strings from NPCS data
+                if (cmd === "share your story") {
                     addToStory("You tell him of your journey. He writes it down with shaking hands.");
                     player.addMemory("Shared your story with the Chronicler");
                     player.sanity += 10;
                     player.relationships["The Chronicler"] += 10;
-                    checkStatRewards(); // Moved inside successful branch
+                    checkStatRewards();
                     return true;
-                } else if (cmd === "listen to his" || cmd === "listen") {
+                } else if (cmd === "listen to his") {
                     addToStory("He recounts tales of a forgotten world, of heroes and villains long turned to dust.");
                     player.sanity += 5;
                     player.relationships["The Chronicler"] += 5;
-                    checkStatRewards(); // Moved inside successful branch
+                    checkStatRewards();
                     return true;
                 }
             } else if (npcName === "Anna") {
