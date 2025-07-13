@@ -126,6 +126,12 @@
             font-size: 1.3em;
             color: #a0ffa0;
             font-weight: bold;
+            transition: color 0.3s ease; /* Smooth color transition for highlight */
+        }
+        /* Highlight for current section */
+        #currentSectionDisplay.highlight {
+            color: #ffcc00; /* Yellowish highlight */
+            text-shadow: 0 0 8px rgba(255, 204, 0, 0.6); /* Subtle glow */
         }
         /* Flex container for control buttons */
         .controls {
@@ -194,6 +200,68 @@
             color: #a0ffa0;
         }
 
+        /* Audio Visualizer */
+        #audioVisualizer {
+            background-color: #000;
+            border: 1px solid #4CAF50;
+            border-radius: 8px;
+            margin-top: 20px;
+            width: 100%; /* Make it responsive */
+            max-width: 400px; /* Max width for desktop */
+            height: 100px; /* Fixed height */
+        }
+
+        /* Volume Meter */
+        .volume-meter-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 15px;
+            gap: 10px;
+        }
+        .volume-meter-label {
+            font-size: 0.9em;
+            color: #ccc;
+        }
+        #volumeMeter {
+            width: 150px;
+            height: 15px;
+            background-color: #555;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #4CAF50;
+        }
+        #volumeMeterFill {
+            height: 100%;
+            width: 0%; /* Starts empty */
+            background-color: #90ee90;
+            transition: width 0.05s ease-out; /* Smooth transition for volume changes */
+        }
+
+        /* Preset controls */
+        .preset-controls {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+        .preset-controls input[type="text"] {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #555;
+            background-color: #3a3a3a;
+            color: #e0e0e0;
+            width: 80%;
+            max-width: 200px;
+        }
+        .preset-controls button {
+            padding: 10px 20px;
+            font-size: 1em;
+            width: 100%;
+            max-width: 200px;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .main-layout-container {
@@ -203,6 +271,9 @@
             .left-panel, .central-content {
                 width: 95%; /* Make panels take more width */
                 flex: none; /* Remove flex grow/shrink */
+            }
+            #audioVisualizer {
+                width: 95%; /* Make visualizer wider on small screens */
             }
         }
     </style>
@@ -282,6 +353,25 @@
             </div>
             <div id="currentSectionDisplay">Current Section: --</div>
             <div id="messageBox" class="message-box"></div>
+
+            <!-- Audio Visualization Canvas -->
+            <canvas id="audioVisualizer" width="400" height="100"></canvas>
+
+            <!-- Master Volume Meter -->
+            <div class="volume-meter-container">
+                <span class="volume-meter-label">Master Volume:</span>
+                <div id="volumeMeter">
+                    <div id="volumeMeterFill"></div>
+                </div>
+            </div>
+
+            <!-- Preset Controls -->
+            <div class="preset-controls knob-section">
+                <h3>Presets</h3>
+                <input type="text" id="presetNameInput" placeholder="Enter preset name">
+                <button id="savePresetButton">Save Preset</button>
+                <button id="loadPresetButton">Load Preset</button>
+            </div>
         </div>
     </div>
 
@@ -329,6 +419,13 @@
         let delayFeedbackValue = 0.4;
         let delaySendLevel = 0.5;
 
+        // Visualizer and Volume Meter elements
+        let analyserNode;
+        let audioVisualizerCanvas;
+        let audioVisualizerCtx;
+        let volumeMeterElement;
+        let volumeMeterFillElement;
+        let dataArray; // For analyser data
 
         // For cycling through verse patterns (normal and Raga)
         const normalVerseOptions = {
@@ -717,12 +814,20 @@
         }
 
         /**
-         * Updates the display with the current song section.
+         * Updates the display with the current song section and applies a highlight.
          */
         function updateSectionDisplay() {
             const displayElement = document.getElementById('currentSectionDisplay');
             if (displayElement) {
+                // Remove highlight from previous section
+                if (displayElement.textContent !== `Current Section: ${currentSectionName.toUpperCase()}`) {
+                     displayElement.classList.remove('highlight');
+                }
                 displayElement.textContent = `Current Section: ${currentSectionName.toUpperCase()}`;
+                // Add highlight for the current section
+                requestAnimationFrame(() => { // Use rAF to ensure class is added after potential text update
+                    displayElement.classList.add('highlight');
+                });
             }
         }
 
@@ -774,6 +879,24 @@
 
                     // Connect delay output (wet signal) to destination
                     delayNode.connect(audioContext.destination);
+
+                    // Analyser Node for Visualization
+                    analyserNode = audioContext.createAnalyser();
+                    analyserNode.fftSize = 256; // Smaller FFT size for quicker visualization response
+                    const bufferLength = analyserNode.frequencyBinCount;
+                    dataArray = new Uint8Array(bufferLength); // For time domain data
+
+                    // Connect masterGainNode to analyserNode, then analyserNode to destination
+                    masterGainNode.disconnect(audioContext.destination); // Disconnect direct connection
+                    masterGainNode.connect(analyserNode);
+                    analyserNode.connect(audioContext.destination);
+
+                    // Get canvas and volume meter elements
+                    audioVisualizerCanvas = document.getElementById('audioVisualizer');
+                    audioVisualizerCtx = audioVisualizerCanvas.getContext('2d');
+                    volumeMeterElement = document.getElementById('volumeMeter');
+                    volumeMeterFillElement = document.getElementById('volumeMeterFill');
+
 
                     // Set initial delay parameters
                     delayNode.delayTime.value = delayTimeValue;
@@ -1355,6 +1478,7 @@
             masterGainNode.gain.linearRampToValueAtTime(masterVolume, audioContext.currentTime + 4); // Fade in over 4 seconds to masterVolume
 
             scheduler(); // Start the main scheduling loop
+            drawVisualization(); // Start the visualization loop
 
             // Update button states
             document.getElementById('startButton').disabled = true;
@@ -1400,6 +1524,167 @@
             console.log("Music loop stopped.");
         }
 
+        /**
+         * Draws the audio visualization on the canvas and updates the volume meter.
+         * This function is called repeatedly using requestAnimationFrame.
+         */
+        function drawVisualization() {
+            if (!isPlaying || !analyserNode || !audioVisualizerCtx) {
+                // Clear canvas if not playing
+                if (audioVisualizerCtx) {
+                    audioVisualizerCtx.clearRect(0, 0, audioVisualizerCanvas.width, audioVisualizerCanvas.height);
+                }
+                // Reset volume meter
+                if (volumeMeterFillElement) {
+                    volumeMeterFillElement.style.width = '0%';
+                }
+                return;
+            }
+
+            requestAnimationFrame(drawVisualization);
+
+            // Get time domain data for waveform and volume meter
+            analyserNode.getByteTimeDomainData(dataArray);
+
+            // Clear the canvas
+            audioVisualizerCtx.clearRect(0, 0, audioVisualizerCanvas.width, audioVisualizerCanvas.height);
+            audioVisualizerCtx.lineWidth = 2;
+            audioVisualizerCtx.strokeStyle = '#90ee90'; // Green waveform
+            audioVisualizerCtx.beginPath();
+
+            const sliceWidth = audioVisualizerCanvas.width * 1.0 / dataArray.length;
+            let x = 0;
+
+            let sumOfSquares = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+                const v = dataArray[i] / 128.0; // Normalize to -1 to 1
+                const y = v * audioVisualizerCanvas.height / 2; // Scale to canvas height
+
+                if (i === 0) {
+                    audioVisualizerCtx.moveTo(x, y);
+                } else {
+                    audioVisualizerCtx.lineTo(x, y);
+                }
+
+                x += sliceWidth;
+
+                // Calculate sum of squares for RMS (Root Mean Square) for volume meter
+                const normalizedValue = (dataArray[i] - 128) / 128; // Normalize to -1 to 1
+                sumOfSquares += normalizedValue * normalizedValue;
+            }
+
+            audioVisualizerCtx.lineTo(audioVisualizerCanvas.width, audioVisualizerCanvas.height / 2);
+            audioVisualizerCtx.stroke();
+
+            // Update Volume Meter
+            const rms = Math.sqrt(sumOfSquares / dataArray.length);
+            // Scale RMS to a 0-100% range for the meter, adjust sensitivity as needed
+            const volumePercentage = Math.min(100, rms * 200); // Multiply by 200 for more visual response
+            if (volumeMeterFillElement) {
+                volumeMeterFillElement.style.width = `${volumePercentage}%`;
+            }
+        }
+
+        /**
+         * Collects all current knob values into an object.
+         * @returns {Object} An object containing all current settings.
+         */
+        function getCurrentSettings() {
+            return {
+                masterVolume: parseFloat(document.getElementById('masterVolume').value),
+                tempo: parseFloat(document.getElementById('tempo').value),
+                bassVolume: parseFloat(document.getElementById('bassVolume').value),
+                synthVolume: parseFloat(document.getElementById('synthVolume').value),
+                kickVolume: parseFloat(document.getElementById('kickVolume').value),
+                snareVolume: parseFloat(document.getElementById('snareVolume').value),
+                hihatVolume: parseFloat(document.getElementById('hihatVolume').value),
+                delayTime: parseFloat(document.getElementById('delayTime').value),
+                delayFeedback: parseFloat(document.getElementById('delayFeedback').value),
+                delaySendLevel: parseFloat(document.getElementById('delaySendLevel').value),
+                // Add other dynamic parameters if you want them saved with presets
+                currentDetune: currentDetune,
+                currentFilterFrequency: currentFilterFrequency,
+                currentFilterQ: currentFilterQ,
+                baseNoteDuration: baseNoteDuration,
+                humanizationFactor: humanizationFactor
+            };
+        }
+
+        /**
+         * Applies saved settings to the knobs and global variables.
+         * @param {Object} settings - An object containing settings to apply.
+         */
+        function applySettings(settings) {
+            // Update knob values and trigger their callbacks
+            setupKnob('masterVolume', 'masterVolumeValue', settings.masterVolume, 2, (value) => { masterVolume = value; if (audioContext && masterGainNode) masterGainNode.gain.setValueAtTime(masterVolume, audioContext.currentTime); });
+            setupKnob('tempo', 'tempoValue', settings.tempo, 0, (value) => { currentTempo = value; });
+            setupKnob('bassVolume', 'bassVolumeValue', settings.bassVolume, 2, (value) => { bassVolume = value; });
+            setupKnob('synthVolume', 'synthVolumeValue', settings.synthVolume, 2, (value) => { synthVolume = value; });
+            setupKnob('kickVolume', 'kickVolumeValue', settings.kickVolume, 2, (value) => { kickVolume = value; });
+            setupKnob('snareVolume', 'snareVolumeValue', settings.snareVolume, 2, (value) => { snareVolume = value; });
+            setupKnob('hihatVolume', 'hihatVolumeValue', settings.hihatVolume, 2, (value) => { hihatVolume = value; });
+            setupKnob('delayTime', 'delayTimeValue', settings.delayTime, 2, (value) => { delayTimeValue = value; if (audioContext && delayNode) delayNode.delayTime.setValueAtTime(delayTimeValue, audioContext.currentTime); });
+            setupKnob('delayFeedback', 'delayFeedbackValue', settings.delayFeedback, 2, (value) => { delayFeedbackValue = value; if (audioContext && delayFeedbackGain) delayFeedbackGain.gain.setValueAtTime(delayFeedbackValue, audioContext.currentTime); });
+            setupKnob('delaySendLevel', 'delaySendLevelValue', settings.delaySendLevel, 2, (value) => { delaySendLevel = value; });
+
+            // Update other global dynamic parameters
+            currentDetune = settings.currentDetune;
+            currentFilterFrequency = settings.currentFilterFrequency;
+            currentFilterQ = settings.currentFilterQ;
+            baseNoteDuration = settings.baseNoteDuration;
+            humanizationFactor = settings.humanizationFactor;
+
+            showMessage("Preset loaded successfully!");
+            console.log("Settings applied:", settings);
+        }
+
+        /**
+         * Saves the current knob settings to local storage.
+         */
+        function savePreset() {
+            const presetNameInput = document.getElementById('presetNameInput');
+            const presetName = presetNameInput.value.trim();
+            if (!presetName) {
+                showMessage("Please enter a name for your preset.", 2000);
+                return;
+            }
+            try {
+                const settings = getCurrentSettings();
+                localStorage.setItem(`looper_preset_${presetName}`, JSON.stringify(settings));
+                showMessage(`Preset "${presetName}" saved!`);
+                console.log(`Preset "${presetName}" saved:`, settings);
+            } catch (e) {
+                showMessage("Failed to save preset. Local storage might be full or unavailable.", 3000);
+                console.error("Error saving preset:", e);
+            }
+        }
+
+        /**
+         * Loads a preset from local storage and applies its settings.
+         */
+        function loadPreset() {
+            const presetNameInput = document.getElementById('presetNameInput');
+            const presetName = presetNameInput.value.trim();
+            if (!presetName) {
+                showMessage("Please enter the name of the preset to load.", 2000);
+                return;
+            }
+            try {
+                const savedSettings = localStorage.getItem(`looper_preset_${presetName}`);
+                if (savedSettings) {
+                    const settings = JSON.parse(savedSettings);
+                    applySettings(settings);
+                } else {
+                    showMessage(`Preset "${presetName}" not found.`, 2000);
+                    console.warn(`Preset "${presetName}" not found.`);
+                }
+            } catch (e) {
+                showMessage("Failed to load preset. Data might be corrupted.", 3000);
+                console.error("Error loading preset:", e);
+            }
+        }
+
+
         // --- Knob Event Listeners and Value Display ---
         // Modified setupKnob function to directly use initial values and a callback for updates
         function setupKnob(knobId, valueSpanId, initialValue, displayPrecision = 2, onInputChangeCallback) {
@@ -1424,6 +1709,8 @@
             console.log("DOM Content Loaded. Attaching event listeners.");
             document.getElementById('startButton').addEventListener('click', startLoop);
             document.getElementById('stopButton').addEventListener('click', stopLoop);
+            document.getElementById('savePresetButton').addEventListener('click', savePreset);
+            document.getElementById('loadPresetButton').addEventListener('click', loadPreset);
             updateSectionDisplay(); // Initialize display
 
             // Setup all knobs with their initial values and specific update logic
