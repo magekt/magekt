@@ -179,6 +179,39 @@
                 margin-top: 10px;
             }
         }
+
+        /* Debug Overlay Styles */
+        .debug-overlay {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #4a90e2;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #00ff00;
+            z-index: 1000;
+            max-width: 300px;
+            min-width: 200px;
+            display: none; /* Hidden by default */
+        }
+        .debug-header {
+            color: #4a90e2;
+            border-bottom: 1px solid #4a90e2;
+            margin-bottom: 5px;
+            padding-bottom: 5px;
+            font-weight: bold;
+        }
+        .debug-content {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .debug-content div {
+            word-wrap: break-word;
+        }
     </style>
 </head>
 <body>
@@ -219,6 +252,18 @@
         </div>
         <div class="input-section hidden" id="restart-game-section">
             <button onclick="resetGame()">Play Again</button>
+        </div>
+    </div>
+
+    <!-- Debug Overlay HTML -->
+    <div id="debug-overlay" class="debug-overlay">
+        <div class="debug-header">Debug Information</div>
+        <div class="debug-content">
+            <div id="debug-time"></div>
+            <div id="debug-user"></div>
+            <div id="debug-game-state"></div>
+            <div id="debug-player-stats"></div>
+            <div id="debug-system-info"></div>
         </div>
     </div>
 
@@ -360,15 +405,15 @@
             
             addMemory(memory) {
                 this.memories.push(memory);
-                addToStoryDebounced(`<span class="memory">[Memory added: ${memory}]</span>`);
+                addToStory(`<span class="memory">[Memory added: ${memory}]</span>`); // Changed to non-debounced
             }
             
             changeHope(amount) {
                 this.hope = Math.max(0, Math.min(100, this.hope + amount));
                 if (amount > 0) {
-                    addToStoryDebounced(`<span class="hope-positive">The world feels a little brighter... (Hope +${amount})</span>`);
+                    addToStory(`<span class="hope-positive">The world feels a little brighter... (Hope +${amount})</span>`); // Changed to non-debounced
                 } else {
-                    addToStoryDebounced(`<span class="hope-negative">Darkness spreads... (Hope ${amount})</span>`);
+                    addToStory(`<span class="hope-negative">Darkness spreads... (Hope ${amount})</span>`); // Changed to non-debounced
                 }
                 checkStatRewards(); 
             }
@@ -382,11 +427,11 @@
 
                 // Check if item already exists if it's a non-consumable like Shelter
                 if (!itemData.consumed && this.inventory.some(item => item.name === itemData.name)) {
-                    addToStoryDebounced(`You already have a ${itemData.name}.`);
+                    addToStory(`You already have a ${itemData.name}.`); // Changed to non-debounced
                     return;
                 }
                 this.inventory.push({ name: itemData.name, desc: item_desc || itemData.desc });
-                addToStoryDebounced(`You found: ${itemData.name}`);
+                addToStory(`You found: ${itemData.name}`); // Changed to non-debounced
             }
         }
         
@@ -396,9 +441,10 @@
         let currentChoiceContext = null; // Stores context for choices (e.g., location, NPC name, critical choice type)
         let enemy = null; // Stores current enemy in battle
         let battleState = BATTLE_STATES.END; // Initialize battle state
-        let storyBuffer = []; // Buffer for debounced story updates
+        // Removed storyBuffer as it's no longer needed for direct appending
         let achievementSystem = null;
         let weatherSystem = null;
+        let debugSystem = null; 
 
         // --- DOM Elements (using DOMCache) ---
         class DOMCache {
@@ -434,13 +480,13 @@
             };
         }
 
-        // Optimize story text updates
-        const addToStoryDebounced = debounce((text) => {
-            storyBuffer.push(text);
-            storyTextContent.innerHTML = storyBuffer.join('<br>');
-            gameTextPanel.scrollTop = gameTextPanel.scrollHeight;
+        // Modified addToStoryDebounced to directly append, removing debounce for content
+        // The name is kept for consistency with existing calls, but its behavior is now immediate.
+        function addToStoryDebounced(text) {
+            storyTextContent.innerHTML += (storyTextContent.innerHTML ? '<br>' : '') + text;
+            gameTextPanel.scrollTop = gameTextPanel.scrollHeight; // Scrolling can still be debounced if needed, but for now, it's immediate.
             updateStats(); // Update stats immediately after story text is rendered
-        }, 50); // Adjust debounce time as needed
+        }
 
 
         // --- Enhanced Error Handling ---
@@ -465,7 +511,7 @@
 
         // --- Core Game Functions ---
 
-        function addToStory(text) { // Non-debounced version for immediate critical messages
+        function addToStory(text) { // This function is now the primary way to add text
             storyTextContent.innerHTML += (storyTextContent.innerHTML ? '<br>' : '') + text;
             gameTextPanel.scrollTop = gameTextPanel.scrollHeight;
             updateStats();
@@ -473,7 +519,7 @@
         
         function clearStory() {
             storyTextContent.innerHTML = '';
-            storyBuffer = []; // Clear the buffer as well
+            // storyBuffer = []; // No longer needed
         }
         
         function updateStats() {
@@ -502,8 +548,8 @@
                 restartGameSection.classList.add('hidden'); // Hide restart button on new game
                 
                 clearStory();
-                addToStoryDebounced(`Welcome to the wasteland, ${player.name}.`);
-                addToStoryDebounced('Your choices will determine not just your fate, but the fate of hope itself.');
+                addToStory(`Welcome to the wasteland, ${player.name}.`); // Changed to non-debounced
+                addToStory('Your choices will determine not just your fate, but the fate of hope itself.'); // Changed to non-debounced
                 
                 gameState = "playing";
                 startDay();
@@ -522,7 +568,7 @@
                 currentChoiceContext = null;
                 enemy = null;
                 battleState = BATTLE_STATES.END;
-                storyBuffer = [];
+                // storyBuffer = []; // No longer needed
                 achievementSystem = null;
                 weatherSystem = null;
 
@@ -577,7 +623,7 @@
 
                 switch (cmd) {
                     case 'stats':
-                        addToStoryDebounced(player.stats());
+                        addToStory(player.stats()); // Changed to non-debounced
                         shouldDisplayGeneralOptions = false; // Don't re-display general options
                         break;
                     case 'wander':
@@ -589,9 +635,9 @@
                         shouldDisplayGeneralOptions = false;
                         break;
                     case 'remember':
-                        addToStoryDebounced('You remember...');
+                        addToStory('You remember...'); // Changed to non-debounced
                         player.memories.forEach(memory => {
-                            addToStoryDebounced(`- ${memory}`);
+                            addToStory(`- ${memory}`); // Changed to non-debounced
                         });
                         player.sanity = Math.min(100, player.sanity + 5);
                         checkStatRewards();
@@ -599,9 +645,9 @@
                         break;
                     case 'inventory':
                         if (player.inventory.length > 0) {
-                            addToStoryDebounced('You carry:');
+                            addToStory('You carry:'); // Changed to non-debounced
                             player.inventory.forEach((item, index) => {
-                                addToStoryDebounced(`${index + 1}. ${item.name}: ${item.desc}`);
+                                addToStory(`${index + 1}. ${item.name}: ${item.desc}`); // Changed to non-debounced
                             });
                             const inventoryChoices = player.inventory.map(item => item.name);
                             inventoryChoices.push("Cancel");
@@ -609,7 +655,7 @@
                             gameState = "using_inventory";
                             displayOptions(); // Call here to show the specific inventory prompt
                         } else {
-                            addToStoryDebounced('You carry: Nothing but hope');
+                            addToStory('You carry: Nothing but hope'); // Changed to non-debounced
                             currentChoiceContext = null;
                             gameState = "playing"; // Revert to playing if inventory is empty
                             // No need for displayOptions() here, as it will be handled by the outer check if shouldDisplayGeneralOptions is true
@@ -621,13 +667,13 @@
                         shouldDisplayGeneralOptions = false;
                         break;
                     case 'quit':
-                        addToStoryDebounced('Even in quitting, you make a choice.');
-                        addToStoryDebounced('The world will remember what you did here.');
+                        addToStory('Even in quitting, you make a choice.'); // Changed to non-debounced
+                        addToStory('The world will remember what you did here.'); // Changed to non-debounced
                         gameOver();
                         shouldDisplayGeneralOptions = false; // Game over, no more options
                         return;
                     default:
-                        addToStoryDebounced('In confusion, you hesitate. Time passes.');
+                        addToStory('In confusion, you hesitate. Time passes.'); // Changed to non-debounced
                         // shouldDisplayGeneralOptions remains true, so displayOptions() will be called below
                         break;
                 }
@@ -673,9 +719,9 @@
         function startDay() {
             try {
                 player.days_survived += 1;
-                addToStoryDebounced('<br>' + '='.repeat(50));
-                addToStoryDebounced(`Day ${player.days_survived}`);
-                addToStoryDebounced('='.repeat(50));
+                addToStory('<br>' + '='.repeat(50)); // Changed to non-debounced
+                addToStory(`Day ${player.days_survived}`); // Changed to non-debounced
+                addToStory('='.repeat(50)); // Changed to non-debounced
                 displayOptions();
             } catch (error) {
                 handleGameError(new GameError('Error starting new day', 'START_DAY_ERROR'));
@@ -701,11 +747,11 @@
                 if (hasShelter) {
                     player.hp = Math.min(player.max_hp, player.hp + 20);
                     player.sanity = Math.min(100, player.sanity + 10);
-                    addToStoryDebounced('You rest safely. Tomorrow brings new challenges.');
+                    addToStory('You rest safely. Tomorrow brings new challenges.'); // Changed to non-debounced
                 } else {
                     player.hp = Math.min(player.max_hp, player.hp + 10);
                     player.sanity -= 5;
-                    addToStoryDebounced('You rest fitfully in the open. The cold seeps into your bones.');
+                    addToStory('You rest fitfully in the open. The cold seeps into your bones.'); // Changed to non-debounced
                 }
                 checkStatRewards();
                 endDay();
@@ -716,7 +762,7 @@
         
         function meditate() {
             try {
-                addToStoryDebounced('You sit in silence, remembering who you were before the world ended.');
+                addToStory('You sit in silence, remembering who you were before the world ended.'); // Changed to non-debounced
                 player.sanity = Math.min(100, player.sanity + 10);
                 player.hp = Math.min(player.max_hp, player.hp + 5);
                 checkStatRewards();
@@ -729,13 +775,13 @@
         function checkGameOver() {
             try {
                 if (player.hp <= 0) {
-                    addToStoryDebounced("\nDarkness consumes you...");
+                    addToStory("\nDarkness consumes you..."); // Changed to non-debounced
                     gameOver();
                 } else if (player.sanity <= 0) {
-                    addToStoryDebounced("You lose yourself to madness...");
+                    addToStory("You lose yourself to madness..."); // Changed to non-debounced
                     gameOver();
                 } else if (player.days_survived >= 100) {
-                    addToStoryDebounced("You've survived 100 days. The world is changing because of you.");
+                    addToStory("You've survived 100 days. The world is changing because of you."); // Changed to non-debounced
                     gameOver();
                 }
             } catch (error) {
@@ -746,42 +792,42 @@
         function gameOver() {
             try {
                 gameState = "game_over";
-                addToStoryDebounced('<br>' + '='.repeat(50));
-                addToStoryDebounced('YOUR JOURNEY ENDS');
-                addToStoryDebounced('='.repeat(50));
+                addToStory('<br>' + '='.repeat(50)); // Changed to non-debounced
+                addToStory('YOUR JOURNEY ENDS'); // Changed to non-debounced
+                addToStory('='.repeat(50)); // Changed to non-debounced
                 
-                addToStoryDebounced(`You survived ${player.days_survived} days in this broken world.`);
-                addToStoryDebounced(`Your final karma: ${player.karma}`);
-                addToStoryDebounced(`The world's hope when you left: ${player.hope}`);
+                addToStory(`You survived ${player.days_survived} days in this broken world.`); // Changed to non-debounced
+                addToStory(`Your final karma: ${player.karma}`); // Changed to non-debounced
+                addToStory(`The world's hope when you left: ${player.hope}`); // Changed to non-debounced
                 
                 if (player.karma > 50) {
-                    addToStoryDebounced('\nYou died as you lived - with compassion.');
-                    addToStoryDebounced('The people you helped remember your name.');
-                    addToStoryDebounced('In the darkness, you were a light.');
+                    addToStory('\nYou died as you lived - with compassion.'); // Changed to non-debounced
+                    addToStory('The people you helped remember your name.'); // Changed to non-debounced
+                    addToStory('In the darkness, you were a light.'); // Changed to non-debounced
                 } else if (player.karma > 0) {
-                    addToStoryDebounced('\nYou tried to do good in an impossible world.');
-                    addToStoryDebounced('It wasn\'t always enough, but you tried.');
+                    addToStory('\nYou tried to do good in an impossible world.'); // Changed to non-debounced
+                    addToStory('It wasn\'t always enough, but you tried.'); // Changed to non-debounced
                 } else {
-                    addToStoryDebounced('\nThe world broke you, as it broke so many others.');
-                    addToStoryDebounced('In trying to survive, you lost what made you human.');
+                    addToStory('\nThe world broke you, as it broke so many others.'); // Changed to non-debounced
+                    addToStory('In trying to survive, you lost what made you human.'); // Changed to non-debounced
                 }
                 
-                addToStoryDebounced('\nYour memories:');
+                addToStory('\nYour memories:'); // Changed to non-debounced
                 if (player.memories.length > 0) {
                     player.memories.forEach(memory => {
-                        addToStoryDebounced(`- ${memory}`);
+                        addToStory(`- ${memory}`); // Changed to non-debounced
                     });
                 } else {
-                    addToStoryDebounced('- None');
+                    addToStory('- None'); // Changed to non-debounced
                 }
                 
-                addToStoryDebounced(`\nFinal Hope Level: ${player.hope}/100`);
+                addToStory(`\nFinal Hope Level: ${player.hope}/100`); // Changed to non-debounced
                 if (player.hope > 70) {
-                    addToStoryDebounced('Against all odds, hope survived. The world might heal.');
+                    addToStory('Against all odds, hope survived. The world might heal.'); // Changed to non-debounced
                 } else if (player.hope > 30) {
-                    addToStoryDebounced('A flicker of hope remains. Perhaps it\'s enough.');
+                    addToStory('A flicker of hope remains. Perhaps it\'s enough.'); // Changed to non-debounced
                 } else {
-                    addToStoryDebounced('Hope is nearly dead. The world grows darker.');
+                    addToStory('Hope is nearly dead. The world grows darker.'); // Changed to non-debounced
                 }
 
                 commandInput.disabled = true;
@@ -801,9 +847,9 @@
                     player.max_hp += 15;
                     player.hp = player.max_hp;
                     player.exp = 0;
-                    addToStoryDebounced(`\nYou've grown stronger... Level ${player.level}`);
-                    addToStoryDebounced(`Max HP increased to ${player.max_hp}.`);
-                    addToStoryDebounced("But strength alone won't save this world.");
+                    addToStory(`\nYou've grown stronger... Level ${player.level}`); // Changed to non-debounced
+                    addToStory(`Max HP increased to ${player.max_hp}.`); // Changed to non-debounced
+                    addToStory("But strength alone won't save this world."); // Changed to non-debounced
                 }
             } catch (error) {
                 handleGameError(new GameError('Error during level up', 'LEVEL_UP_ERROR'));
@@ -815,9 +861,9 @@
                 const randomLocation = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
                 currentChoiceContext = { type: "explore", location: randomLocation.id, choices: randomLocation.choices };
                 gameState = "choosing";
-                addToStoryDebounced(`\n${randomLocation.desc}`);
+                addToStory(`\n${randomLocation.desc}`); // Changed to non-debounced
                 if (randomLocation.id === "refugee_camp" && player.gold < 20) {
-                    addToStoryDebounced("You have nothing to give. Your empty hands feel like betrayal.");
+                    addToStory("You have nothing to give. Your empty hands feel like betrayal."); // Changed to non-debounced
                     player.sanity -= 10;
                     checkStatRewards();
                     gameState = "playing";
@@ -857,7 +903,7 @@
                 let actualCmd = getActualChoiceFromInput(cmd, currentChoiceContext.choices);
 
                 if (actualCmd === null) { // Invalid numeric input
-                    addToStoryDebounced("Invalid choice number. Please enter a valid number.");
+                    addToStory("Invalid choice number. Please enter a valid number."); // Changed to non-debounced
                     displayOptions();
                     return;
                 }
@@ -873,7 +919,7 @@
                         break;
                     case "explore_memory_shrine_add_name":
                         // This is a direct text input, not a numbered choice from a list
-                        addToStoryDebounced(`You carve '${actualCmd}' into the stone. They will not be forgotten.`);
+                        addToStory(`You carve '${actualCmd}' into the stone. They will not be forgotten.`); // Changed to non-debounced
                         player.addMemory(`Honored ${actualCmd} at the shrine`);
                         player.changeHope(5);
                         choiceHandled = true;
@@ -891,7 +937,7 @@
                         choiceHandled = handleInventoryUse(actualCmd);
                         break;
                     default:
-                        addToStoryDebounced("Invalid choice. Please choose one of the available options.");
+                        addToStory("Invalid choice. Please choose one of the available options."); // Changed to non-debounced
                         displayOptions();
                         return;
                 }
@@ -901,7 +947,7 @@
                     gameState = "playing";
                     endDay();
                 } else {
-                    addToStoryDebounced("Invalid choice. Please choose one of the available options.");
+                    addToStory("Invalid choice. Please choose one of the available options."); // Changed to non-debounced
                     displayOptions();
                 }
             } catch (error) {
@@ -915,11 +961,11 @@
                     case "abandoned_school":
                         if (cmd === "search the school" || cmd === "search") {
                             if (Math.random() < 0.5) {
-                                addToStoryDebounced("You find a child's diary. The last entry: 'I hope someone remembers us.'");
+                                addToStory("You find a child's diary. The last entry: 'I hope someone remembers us.'"); // Changed to non-debounced
                                 player.addMemory("Found a child's final hope");
                                 player.changeHope(10);
                             } else {
-                                addToStoryDebounced("You find nothing but echoes of laughter that will never return.");
+                                addToStory("You find nothing but echoes of laughter that will never return."); // Changed to non-debounced
                                 player.sanity -= 10;
                                 checkStatRewards();
                             }
@@ -928,7 +974,7 @@
                             }
                             return true;
                         } else if (cmd === "leave respectfully" || cmd === "leave") {
-                            addToStoryDebounced("You whisper a prayer and move on. Some places deserve peace.");
+                            addToStory("You whisper a prayer and move on. Some places deserve peace."); // Changed to non-debounced
                             player.karma += 5;
                             checkStatRewards();
                             return true;
@@ -937,15 +983,15 @@
                     case "broken_bridge":
                         if (cmd === "try to help" || cmd === "help") {
                             if (Math.random() < 0.6) {
-                                addToStoryDebounced("You risk everything to save them. They're just a child, lost and alone.");
-                                addToStoryDebounced("'Thank you,' they whisper. 'I thought no one cared anymore.'");
+                                addToStory("You risk everything to save them. They're just a child, lost and alone."); // Changed to non-debounced
+                                addToStory("'Thank you,' they whisper. 'I thought no one cared anymore.'"); // Changed to non-debounced
                                 player.addMemory("Saved a child from the chasm");
                                 player.changeHope(15);
                                 player.karma += 15;
                                 player.sanity += 10;
                             } else {
-                                addToStoryDebounced("You try to help, but the rope breaks. You watch them fall...");
-                                addToStoryDebounced("Their final scream echoes in your mind forever.");
+                                addToStory("You try to help, but the rope breaks. You watch them fall..."); // Changed to non-debounced
+                                addToStory("Their final scream echoes in your mind forever."); // Changed to non-debounced
                                 player.sanity -= 25;
                                 player.karma -= 10;
                                 player.addMemory("Failed to save someone");
@@ -953,7 +999,7 @@
                             checkStatRewards();
                             return true;
                         } else if (cmd === "keep walking" || cmd === "walk") {
-                            addToStoryDebounced("You walk away. Their cries follow you into the night.");
+                            addToStory("You walk away. Their cries follow you into the night."); // Changed to non-debounced
                             player.sanity -= 15;
                             player.karma -= 5;
                             checkStatRewards();
@@ -962,13 +1008,13 @@
                         return false;
                     case "dying_tree":
                         if (cmd === "approach the girl" || cmd === "approach") {
-                            addToStoryDebounced("'My grandmother planted this tree,' she says without looking up.");
-                            addToStoryDebounced("'She said it would outlive us all. She was wrong.'");
+                            addToStory("'My grandmother planted this tree,' she says without looking up."); // Changed to non-debounced
+                            addToStory("'She said it would outlive us all. She was wrong.'"); // Changed to non-debounced
                             currentChoiceContext = { type: "explore_dying_tree_comfort", choices: ["Comfort her", "Share your food"] };
                             displayOptions();
                             return false; // Wait for next choice
                         } else if (cmd === "observe from distance" || cmd === "observe") {
-                            addToStoryDebounced("You watch her for a moment, then move on. Some pains are too deep to touch.");
+                            addToStory("You watch her for a moment, then move on. Some pains are too deep to touch."); // Changed to non-debounced
                             player.sanity -= 2;
                             checkStatRewards();
                             return true;
@@ -978,16 +1024,16 @@
                         if (cmd === "share your gold" || cmd === "share") {
                             if (player.gold >= 20) {
                                 player.gold -= 20;
-                                addToStoryDebounced("Your gold feeds them for one more day. It's not much, but it's hope.");
+                                addToStory("Your gold feeds them for one more day. It's not much, but it's hope."); // Changed to non-debounced
                                 player.changeHope(10);
                                 player.karma += 10;
                             } else {
-                                addToStoryDebounced("You don't have enough gold to share.");
+                                addToStory("You don't have enough gold to share."); // Changed to non-debounced
                             }
                             checkStatRewards();
                             return true;
                         } else if (cmd === "keep walking" || cmd === "walk") {
-                            addToStoryDebounced("You walk away. Their desperate eyes burn into your memory.");
+                            addToStory("You walk away. Their desperate eyes burn into your memory."); // Changed to non-debounced
                             player.sanity -= 5;
                             checkStatRewards();
                             return true;
@@ -996,7 +1042,7 @@
                     case "memory_shrine":
                         if (cmd === "add a name" || cmd === "add") {
                             currentChoiceContext = { type: "explore_memory_shrine_add_name" };
-                            addToStoryDebounced("Whose name do you carve? (Type the name)");
+                            addToStory("Whose name do you carve? (Type the name)"); // Changed to non-debounced
                             return false; // Wait for name input
                         } else if (cmd === "leave an offering" || cmd === "leave" || cmd === "offering") {
                             if (player.inventory.length > 0) {
@@ -1005,14 +1051,14 @@
                                     const itemToOffer = offerableItems[Math.floor(Math.random() * offerableItems.length)];
                                     const itemIndex = player.inventory.indexOf(itemToOffer);
                                     player.inventory.splice(itemIndex, 1);
-                                    addToStoryDebounced(`You leave your ${itemToOffer.name}. The dead deserve remembrance.`);
+                                    addToStory(`You leave your ${itemToOffer.name}. The dead deserve remembrance.`); // Changed to non-debounced
                                     player.karma += 5;
                                     checkStatRewards();
                                 } else {
-                                    addToStoryDebounced("You have nothing suitable to offer.");
+                                    addToStory("You have nothing suitable to offer."); // Changed to non-debounced
                                 }
                             } else {
-                                addToStoryDebounced("You have nothing to offer.");
+                                addToStory("You have nothing to offer."); // Changed to non-debounced
                             }
                             return true;
                         }
@@ -1029,7 +1075,7 @@
         function handleDyingTreeComfortChoice(cmd) {
             try {
                 if (cmd === "comfort her" || cmd === "comfort") {
-                    addToStoryDebounced("You sit beside her. Sometimes presence is enough.");
+                    addToStory("You sit beside her. Sometimes presence is enough."); // Changed to non-debounced
                     player.sanity += 5;
                     player.karma += 5;
                     checkStatRewards();
@@ -1039,11 +1085,11 @@
                     if (breadItem) {
                         const breadIndex = player.inventory.indexOf(breadItem);
                         player.inventory.splice(breadIndex, 1);
-                        addToStoryDebounced("You share your bread. She smiles for the first time in months.");
+                        addToStory("You share your bread. She smiles for the first time in months."); // Changed to non-debounced
                         player.changeHope(10);
                         player.karma += 10;
                     } else {
-                        addToStoryDebounced("You have no food to share. The guilt cuts deep.");
+                        addToStory("You have no food to share. The guilt cuts deep."); // Changed to non-debounced
                         player.sanity -= 5;
                     }
                     checkStatRewards();
@@ -1074,34 +1120,34 @@
                 // Use the full lowercased command string for comparison
                 if (npcName === "Elena") {
                     if (cmd === "offer to help" || cmd === "help") {
-                        addToStoryDebounced("You spend the day helping her tend to the wounded.");
+                        addToStory("You spend the day helping her tend to the wounded."); // Changed to non-debounced
                         player.relationships.Elena += 10;
                         player.karma += 10;
                         player.changeHope(5);
-                        addToStoryDebounced("Elena smiles sadly. 'Thank you. I'd forgotten what kindness looked like.'");
+                        addToStory("Elena smiles sadly. 'Thank you. I'd forgotten what kindness looked like.'"); // Changed to non-debounced
                         checkStatRewards(); // Moved inside successful branch
                         return true;
                     } else if (cmd === "ask for healing" || cmd === "healing") {
                         if (player.hp < player.max_hp) {
                             player.hp = Math.min(player.max_hp, player.hp + 20);
-                            addToStoryDebounced("Elena tends to your wounds without asking for payment.");
+                            addToStory("Elena tends to your wounds without asking for payment."); // Changed to non-debounced
                             player.relationships.Elena += 5;
                         } else {
-                            addToStoryDebounced("You are already at full health.");
+                            addToStory("You are already at full health."); // Changed to non-debounced
                         }
                         checkStatRewards(); // Moved inside successful branch
                         return true;
                     }
                 } else if (npcName === "Marcus") {
                     if (cmd === "promise to look" || cmd === "promise") {
-                        addToStoryDebounced("'Thank you,' he weeps. 'I won't give up. I can't give up.'");
+                        addToStory("'Thank you,' he weeps. 'I won't give up. I can't give up.'"); // Changed to non-debounced
                         player.addMemory("Promised to help Marcus find his daughter");
                         player.relationships.Marcus += 15;
                         player.karma += 10;
                         checkStatRewards(); // Moved inside successful branch
                         return true;
                     } else if (cmd === "offer comfort" || cmd === "comfort") {
-                        addToStoryDebounced("You offer words of solace. He nods, tears in his eyes.");
+                        addToStory("You offer words of solace. He nods, tears in his eyes."); // Changed to non-debounced
                         player.sanity += 5;
                         player.relationships.Marcus += 5;
                         checkStatRewards(); // Moved inside successful branch
@@ -1110,14 +1156,14 @@
                 } else if (npcName === "The Chronicler") {
                     // Modified to only match full lowercased strings from NPCS data
                     if (cmd === "share your story") {
-                        addToStoryDebounced("You tell him of your journey. He writes it down with shaking hands.");
+                        addToStory("You tell him of your journey. He writes it down with shaking hands."); // Changed to non-debounced
                         player.addMemory("Shared your story with the Chronicler");
                         player.sanity += 10;
                         player.relationships["The Chronicler"] += 10;
                         checkStatRewards();
                         return true;
                     } else if (cmd === "listen to his") {
-                        addToStoryDebounced("He recounts tales of a forgotten world, of heroes and villains long turned to dust.");
+                        addToStory("He recounts tales of a forgotten world, of heroes and villains long turned to dust."); // Changed to non-debounced
                         player.sanity += 5;
                         player.relationships["The Chronicler"] += 5;
                         checkStatRewards();
@@ -1125,14 +1171,14 @@
                     }
                 } else if (npcName === "Anna") {
                     if (cmd === "help with the garden" || cmd === "help") {
-                        addToStoryDebounced("You work together in silence. New shoots push through the ash.");
+                        addToStory("You work together in silence. New shoots push through the ash."); // Changed to non-debounced
                         player.changeHope(10);
                         player.relationships.Anna += 10;
                         player.sanity += 5;
                         checkStatRewards(); // Moved inside successful branch
                         return true;
                     } else if (cmd === "ask about the past" || cmd === "ask") {
-                        addToStoryDebounced("She speaks of vibrant colors and bustling cities, a world that exists only in memory.");
+                        addToStory("She speaks of vibrant colors and bustling cities, a world that exists only in memory."); // Changed to non-debounced
                         player.sanity += 5;
                         player.relationships.Anna += 5;
                         checkStatRewards(); // Moved inside successful branch
@@ -1149,8 +1195,8 @@
         function handleCriticalChoice(cmd) {
             try {
                 if (cmd === "take the food" || cmd === "take") {
-                    addToStoryDebounced("You take the food. The children scatter like frightened birds.");
-                    addToStoryDebounced("You eat well tonight, but their faces haunt your dreams.");
+                    addToStory("You take the food. The children scatter like frightened birds."); // Changed to non-debounced
+                    addToStory("You eat well tonight, but their faces haunt your dreams."); // Changed to non-debounced
                     player.gold += 10;
                     player.sanity -= 30;
                     player.karma -= 25;
@@ -1159,9 +1205,9 @@
                     checkStatRewards(); // Moved inside successful branch
                     return true;
                 } else if (cmd === "share your supplies" || cmd === "share") {
-                    addToStoryDebounced("You empty your pack, sharing everything you have.");
-                    addToStoryDebounced("The children stare in disbelief. 'Why?' one asks.");
-                    addToStoryDebounced("'Because someone has to care,' you reply.");
+                    addToStory("You empty your pack, sharing everything you have."); // Changed to non-debounced
+                    addToStory("The children stare in disbelief. 'Why?' one asks."); // Changed to non-debounced
+                    addToStory("'Because someone has to care,' you reply."); // Changed to non-debounced
                     player.inventory = [];
                     player.gold = Math.max(0, player.gold - 10);
                     player.karma += 25;
@@ -1171,7 +1217,7 @@
                     checkStatRewards(); // Moved inside successful branch
                     return true;
                 } else if (cmd === "walk away" || cmd === "walk") {
-                    addToStoryDebounced("You walk away. Sometimes the right choice is the hardest.");
+                    addToStory("You walk away. Sometimes the right choice is the hardest."); // Changed to non-debounced
                     player.sanity -= 10;
                     player.karma += 5;
                     checkStatRewards(); // Moved inside successful branch
@@ -1187,7 +1233,7 @@
         function handleInventoryUse(cmd) {
             try {
                 if (cmd === "cancel") {
-                    addToStoryDebounced("You decide not to use an item.");
+                    addToStory("You decide not to use an item."); // Changed to non-debounced
                     return true; // Handled, return to playing state
                 } else {
                     // The cmd is already the item name (lowercase) from getActualChoiceFromInput
@@ -1204,7 +1250,7 @@
             try {
                 const itemData = ITEM_DATA[item_name_lower];
                 if (!itemData) {
-                    addToStoryDebounced(`You don't have '${item_name_lower}' in your inventory.`);
+                    addToStory(`You don't have '${item_name_lower}' in your inventory.`); // Changed to non-debounced
                     gameState = "playing";
                     displayOptions();
                     return;
@@ -1212,13 +1258,13 @@
 
                 const itemInInventoryIndex = player.inventory.findIndex(item => item.name.toLowerCase() === item_name_lower);
                 if (itemInInventoryIndex === -1) {
-                    addToStoryDebounced(`You don't have '${item_name_lower}' in your inventory.`);
+                    addToStory(`You don't have '${item_name_lower}' in your inventory.`); // Changed to non-debounced
                     gameState = "playing";
                     displayOptions();
                     return;
                 }
 
-                addToStoryDebounced(`You use the ${itemData.name}.`);
+                addToStory(`You use the ${itemData.name}.`); // Changed to non-debounced
                 
                 if (itemData.effects) {
                     if (itemData.effects.hp) player.hp = Math.min(player.max_hp, player.hp + itemData.effects.hp);
@@ -1230,9 +1276,9 @@
                 if (itemData.consumed) {
                     player.inventory.splice(itemInInventoryIndex, 1);
                 } else if (itemData.special === "rest_bonus") {
-                    addToStoryDebounced("This item provides a bonus when you 'rest'.");
+                    addToStory("This item provides a bonus when you 'rest'."); // Changed to non-debounced
                 } else {
-                    addToStoryDebounced(`It seems using the ${itemData.name} had an effect.`);
+                    addToStory(`It seems using the ${itemData.name} had an effect.`); // Changed to non-debounced
                 }
                 
                 checkStatRewards();
@@ -1262,8 +1308,8 @@
             };
             battleState = BATTLE_STATES.PLAYER_TURN; // Set to player turn initially
             gameState = "battle";
-            addToStoryDebounced(`\nA ${enemy.name} appears!\n${enemy.desc}`);
-            addToStoryDebounced(`The ${enemy.name} emerges from the shadows... HP: ${enemy.hp}`);
+            addToStory(`\nA ${enemy.name} appears!\n${enemy.desc}`); // Changed to non-debounced
+            addToStory(`The ${enemy.name} emerges from the shadows... HP: ${enemy.hp}`); // Changed to non-debounced
             currentChoiceContext = { type: "battle", choices: ["Fight", "Mercy", "Flee"] }; // Set choices for displayOptions
         }
 
@@ -1275,7 +1321,7 @@
                 let actualCmd = getActualChoiceFromInput(cmd, currentChoiceContext.choices); // Use choices from context
 
                 if (actualCmd === null) {
-                    addToStoryDebounced("Invalid battle command. Please enter a valid number or command.");
+                    addToStory("Invalid battle command. Please enter a valid number or command."); // Changed to non-debounced
                     displayOptions();
                     return;
                 }
@@ -1283,20 +1329,20 @@
                 let enemy_hp = enemy.hp;
                 const enemy_name = enemy.name;
                 
-                addToStoryDebounced(`\nYour HP: ${player.hp} | Enemy HP: ${enemy_hp}`);
+                addToStory(`\nYour HP: ${player.hp} | Enemy HP: ${enemy_hp}`); // Changed to non-debounced
                 
                 let actionTaken = false;
 
                 if (actualCmd === BATTLE_ACTIONS.ATTACK) { // Using BATTLE_ACTIONS constant
                     const dmg = Math.floor(Math.random() * (25 - 15 + 1)) + 15;
                     enemy_hp -= dmg;
-                    addToStoryDebounced(`You strike with desperate fury! ${dmg} damage!`);
+                    addToStory(`You strike with desperate fury! ${dmg} damage!`); // Changed to non-debounced
                     actionTaken = true;
                 } else if (actualCmd === BATTLE_ACTIONS.DEFEND) { // Placeholder for defend
-                    addToStoryDebounced("You brace for impact, but it's not very effective yet.");
+                    addToStory("You brace for impact, but it's not very effective yet."); // Changed to non-debounced
                     actionTaken = true;
                 } else if (actualCmd === BATTLE_ACTIONS.FLEE) { // Using BATTLE_ACTIONS constant
-                    addToStoryDebounced("You escape into the darkness...");
+                    addToStory("You escape into the darkness..."); // Changed to non-debounced
                     player.sanity -= 5;
                     battleState = BATTLE_STATES.END; 
                     enemy = null;
@@ -1304,7 +1350,7 @@
                     endDay(); 
                     return;
                 } else {
-                    addToStoryDebounced("Invalid battle command. Options: fight, mercy, flee.");
+                    addToStory("Invalid battle command. Options: fight, mercy, flee."); // Changed to non-debounced
                     displayOptions();
                     return;
                 }
@@ -1312,13 +1358,13 @@
                 enemy.hp = enemy_hp;
 
                 if (enemy.hp <= 0) {
-                    addToStoryDebounced(`The ${enemy_name} falls... but victory feels hollow.`);
+                    addToStory(`The ${enemy_name} falls... but victory feels hollow.`); // Changed to non-debounced
                     const gainedExp = Math.floor(Math.random() * (20 - 10 + 1)) + 10;
                     player.exp += gainedExp;
                     player.gold += Math.floor(Math.random() * (8 - 3 + 1)) + 3;
                     player.karma -= 2;
                     player.total_enemies_defeated += 1; // Increment for achievement
-                    addToStoryDebounced(`Gained ${gainedExp} EXP. Your soul feels heavier.`);
+                    addToStory(`Gained ${gainedExp} EXP. Your soul feels heavier.`); // Changed to non-debounced
                     
                     if (Math.random() < 0.4) {
                         player.addLoot("bitter memory");
@@ -1334,10 +1380,10 @@
                     const enemy_dmg = Math.floor(Math.random() * (20 - 10 + 1)) + 10;
                     player.hp -= enemy_dmg;
                     player.sanity -= 2;
-                    addToStoryDebounced(`The ${enemy_name} claws at your soul! ${enemy_dmg} damage!`);
+                    addToStory(`The ${enemy_name} claws at your soul! ${enemy_dmg} damage!`); // Changed to non-debounced
 
                     if (player.hp <= 0) {
-                        addToStoryDebounced("\nDarkness consumes you...");
+                        addToStory("\nDarkness consumes you..."); // Changed to non-debounced
                         gameOver();
                         return;
                     }
@@ -1361,8 +1407,8 @@
                     player.relationships[npcName] = 0;
                 }
                 
-                addToStoryDebounced(`\nYou meet ${npcName}.`);
-                addToStoryDebounced(randomNPC.desc);
+                addToStory(`\nYou meet ${npcName}.`); // Changed to non-debounced
+                addToStory(randomNPC.desc); // Changed to non-debounced
                 
                 currentChoiceContext = { type: `meet_npc_${npcName.toLowerCase().replace(/ /g, '_')}`, choices: randomNPC.choices };
                 gameState = "choosing";
@@ -1374,15 +1420,15 @@
 
         function criticalChoice() {
             try {
-                addToStoryDebounced("\n" + '='.repeat(50));
-                addToStoryDebounced("A MOMENT OF TRUTH");
-                addToStoryDebounced('='.repeat(50));
+                addToStory("\n" + '='.repeat(50)); // Changed to non-debounced
+                addToStory("A MOMENT OF TRUTH"); // Changed to non-debounced
+                addToStory('='.repeat(50)); // Changed to non-debounced
                 
-                addToStoryDebounced("You find a group of starving children guarding a cache of food.");
-                addToStoryDebounced("They're armed with broken glass and desperation.");
-                addToStoryDebounced("You could easily take the food... but they would starve.");
+                addToStory("You find a group of starving children guarding a cache of food."); // Changed to non-debounced
+                addToStory("They're armed with broken glass and desperation."); // Changed to non-debounced
+                addToStory("You could easily take the food... but they would starve."); // Changed to non-debounced
                 
-                addToStoryDebounced("\nWhat defines you in this moment?");
+                addToStory("\nWhat defines you in this moment?"); // Changed to non-debounced
                 currentChoiceContext = { type: "critical_choice", choices: ["Take the food", "Share your supplies", "Walk away"] };
                 gameState = "choosing";
                 displayOptions();
@@ -1413,7 +1459,7 @@
             }
 
             if (optionsText) {
-                addToStoryDebounced(optionsText);
+                addToStory(optionsText); // Changed to non-debounced
             }
             commandInput.focus();
         }
@@ -1462,37 +1508,37 @@
             HOPE_TIERS_REWARDS.forEach(tier => {
                 if (player.hope >= tier.threshold && !player.awarded_tiers.hope.includes(tier.threshold)) {
                     player.awarded_tiers.hope.push(tier.threshold);
-                    addToStoryDebounced(`\n<span class="hope-positive">*** A surge of hope washes over you! (Hope Tier ${tier.threshold} Reached!) ***</span>`);
+                    addToStory(`\n<span class="hope-positive">*** A surge of hope washes over you! (Hope Tier ${tier.threshold} Reached!) ***</span>`); // Changed to non-debounced
                     if (tier.reward.item) player.addLoot(tier.reward.item.toLowerCase(), ITEM_DATA[tier.reward.item.toLowerCase()].desc);
                     if (tier.reward.sanity) player.sanity = Math.min(100, player.sanity + tier.reward.sanity);
                     if (tier.reward.max_hp) { player.max_hp += tier.reward.max_hp; player.hp = player.max_hp; }
                     if (tier.reward.memory) player.addMemory(tier.reward.memory);
-                    if (tier.reward.message) addToStoryDebounced(tier.reward.message);
+                    if (tier.reward.message) addToStory(tier.reward.message); // Changed to non-debounced
                 }
             });
 
             SANITY_TIERS_REWARDS.forEach(tier => {
                 if (player.sanity >= tier.threshold && !player.awarded_tiers.sanity.includes(tier.threshold)) {
                     player.awarded_tiers.sanity.push(tier.threshold);
-                    addToStoryDebounced(`\n<span style="color:#8b5cf6;">*** Your mind finds a moment of clarity! (Sanity Tier ${tier.threshold} Reached!) ***</span>`);
+                    addToStory(`\n<span style="color:#8b5cf6;">*** Your mind finds a moment of clarity! (Sanity Tier ${tier.threshold} Reached!) ***</span>`); // Changed to non-debounced
                     if (tier.reward.gold) player.gold += tier.reward.gold;
                     if (tier.reward.item) player.addLoot(tier.reward.item.toLowerCase(), ITEM_DATA[tier.reward.item.toLowerCase()].desc);
                     if (tier.reward.karma) player.karma += tier.reward.karma;
-                    if (tier.reward.message) addToStoryDebounced(tier.reward.message);
+                    if (tier.reward.message) addToStory(tier.reward.message); // Changed to non-debounced
                 }
             });
 
             KARMA_TIERS_REWARDS.forEach(tier => {
                 if (player.karma >= tier.threshold && !player.awarded_tiers.karma.includes(tier.threshold)) {
                     player.awarded_tiers.karma.push(tier.threshold);
-                    addToStoryDebounced(`\n<span style="color:#facc15;">*** The universe acknowledges your deeds! (Karma Tier ${tier.threshold} Reached!) ***</span>`);
+                    addToStory(`\n<span style="color:#facc15;">*** The universe acknowledges your deeds! (Karma Tier ${tier.threshold} Reached!) ***</span>`); // Changed to non-debounced
                     if (tier.reward.hope) player.changeHope(tier.reward.hope);
                     if (tier.reward.item) player.addLoot(tier.reward.item.toLowerCase(), ITEM_DATA[tier.reward.item.toLowerCase()].desc);
                     if (tier.reward.hp) player.hp = Math.min(player.max_hp, player.hp + tier.reward.hp);
                     if (tier.reward.max_hp) { player.max_hp += tier.reward.max_hp; player.hp = player.max_hp; }
                     if (tier.reward.sanity) player.sanity = Math.min(100, player.sanity + tier.reward.sanity);
                     if (tier.reward.memory) player.addMemory(tier.reward.memory);
-                    if (tier.reward.message) addToStoryDebounced(tier.reward.message);
+                    if (tier.reward.message) addToStory(tier.reward.message); // Changed to non-debounced
                 }
             });
         }
@@ -1534,7 +1580,7 @@
                     };
                     
                     localStorage.setItem('lastLight_save', JSON.stringify(gameData));
-                    addToStoryDebounced('Game saved successfully.');
+                    addToStory('Game saved successfully.'); // Changed to non-debounced
                 } catch (error) {
                     handleGameError(new GameError('Failed to save game to local storage', 'SAVE_ERROR'));
                 }
@@ -1560,17 +1606,17 @@
                         weatherSystem = new WeatherSystem();
                         weatherSystem.current = savedData.weatherSystem.current;
 
-                        addToStoryDebounced('Game loaded successfully.');
+                        addToStory('Game loaded successfully.'); // Changed to non-debounced
                         updateStats();
                         // If loaded into a choice or battle state, redisplay options
                         if (gameState === "choosing" || gameState === "battle" || gameState === "using_inventory") {
                             displayOptions();
                         } else {
                             // If loading into playing state, ensure general options are shown
-                            addToStoryDebounced("What do you do? Options: stats, wander, rest, remember, inventory, meditate, quit");
+                            addToStory("What do you do? Options: stats, wander, rest, remember, inventory, meditate, quit"); // Changed to non-debounced
                         }
                     } else {
-                        addToStoryDebounced('No saved game found or save data is incompatible.');
+                        addToStory('No saved game found or save data is incompatible.'); // Changed to non-debounced
                     }
                 } catch (error) {
                     handleGameError(new GameError('Failed to load game from local storage', 'LOAD_ERROR'));
@@ -1594,7 +1640,7 @@
 
             unlock(achievement) {
                 this.unlocked.add(achievement.id);
-                addToStoryDebounced(`<span class="achievement">Achievement Unlocked: ${achievement.name} - ${achievement.desc}</span>`);
+                addToStory(`<span class="achievement">Achievement Unlocked: ${achievement.name} - ${achievement.desc}</span>`); // Changed to non-debounced
             }
         }
 
@@ -1621,7 +1667,7 @@
 
                 if (newWeather !== this.current) {
                     this.current = newWeather;
-                    addToStoryDebounced(`\nWeather changes: ${this.current.description}`);
+                    addToStory(`\nWeather changes: ${this.current.description}`); // Changed to non-debounced
                 }
                 this.applyWeatherEffects();
             }
@@ -1650,9 +1696,64 @@
             }
         }
 
+        // --- Debug System ---
+        class DebugSystem {
+            constructor() {
+                this.overlay = DOMCache.get('debug-overlay');
+                this.timeElement = DOMCache.get('debug-time');
+                this.userElement = DOMCache.get('debug-user');
+                this.gameStateElement = DOMCache.get('debug-game-state');
+                this.playerStatsElement = DOMCache.get('debug-player-stats');
+                this.systemInfoElement = DOMCache.get('debug-system-info');
+                
+                // Initialize update interval
+                setInterval(() => this.update(), 1000);
+            }
+
+            update() {
+                // Update time
+                const now = new Date();
+                const timeString = now.toISOString().replace('T', ' ').substr(0, 19);
+                this.timeElement.textContent = `Time: ${timeString}`;
+
+                // Update user
+                this.userElement.textContent = `User: ${player ? player.name : 'N/A'}`; // Use player name if available
+
+                // Update game state
+                this.gameStateElement.textContent = `Game State: ${gameState}`;
+
+                // Update player stats if available
+                if (player) {
+                    this.playerStatsElement.innerHTML = 
+                        `Player: ${player.name}<br>` +
+                        `HP: ${player.hp}/${player.max_hp}<br>` +
+                        `Level: ${player.level}<br>` +
+                        `Exp: ${player.exp}<br>` +
+                        `Hope: ${player.hope}<br>` +
+                        `Sanity: ${player.sanity}`;
+                } else {
+                    this.playerStatsElement.textContent = 'Player: Not initialized';
+                }
+
+                // Update system info
+                this.systemInfoElement.innerHTML = 
+                    `Battle State: ${battleState}<br>` +
+                    `Choice Context: ${currentChoiceContext ? currentChoiceContext.type : 'none'}<br>` +
+                    `Current Weather: ${weatherSystem ? weatherSystem.current.name : 'N/A'}`;
+            }
+
+            static toggle() {
+                const overlay = DOMCache.get('debug-overlay');
+                overlay.style.display = overlay.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+
 
         // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize DebugSystem after DOM is ready
+            debugSystem = new DebugSystem(); 
+
             const playerNameInput = DOMCache.get('player-name');
             playerNameInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
@@ -1660,6 +1761,14 @@
                 }
             });
             playerNameInput.focus();
+
+            // Add keyboard shortcut to toggle debug overlay (Ctrl + D)
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key === 'd') {
+                    e.preventDefault();
+                    DebugSystem.toggle();
+                }
+            });
         });
     </script>
 </body>
