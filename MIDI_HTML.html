@@ -369,6 +369,36 @@
                     <label for="chorusBypass">Bypass Chorus</label>
                 </div>
             </div>
+
+            <!-- New Compressor Controls -->
+            <div class="knob-section">
+                <h3>Compressor</h3>
+                <div class="knob-group">
+                    <label for="compThreshold">Threshold</label>
+                    <input type="range" id="compThreshold" min="-60" max="0" step="1" value="-24">
+                    <span class="knob-value" id="compThresholdValue">-24 dB</span>
+                </div>
+                <div class="knob-group">
+                    <label for="compRatio">Ratio</label>
+                    <input type="range" id="compRatio" min="1" max="20" step="0.1" value="12">
+                    <span class="knob-value" id="compRatioValue">12:1</span>
+                </div>
+            </div>
+
+            <!-- New Reverb Controls -->
+            <div class="knob-section">
+                <h3>Reverb</h3>
+                <div class="knob-group">
+                    <label for="reverbMix">Mix</label>
+                    <input type="range" id="reverbMix" min="0" max="1" step="0.01" value="0.5">
+                    <span class="knob-value" id="reverbMixValue">50%</span>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="reverbBypass" checked>
+                    <label for="reverbBypass">Bypass Reverb</label>
+                </div>
+            </div>
+
         </div>
 
         <div class="central-content">
@@ -399,6 +429,11 @@
                 <input type="text" id="presetNameInput" placeholder="Enter preset name">
                 <button id="savePresetButton">Save Preset</button>
                 <button id="loadPresetButton">Load Preset</button>
+            </div>
+
+            <!-- New Recording Controls -->
+            <div class="controls recording-controls">
+                <button id="recordButton">Start Recording</button>
             </div>
         </div>
     </div>
@@ -453,6 +488,21 @@
         let chorusDepth = 0.002; // Default chorus depth (delay time modulation amount)
         let isChorusBypassed = true; // Default to bypassed
 
+        // New: Compressor nodes and parameters
+        let compressorNode;
+        let compThreshold = -24;
+        let compRatio = 12;
+
+        // New: Reverb nodes and parameters
+        let convolverNode;
+        let reverbGainNode;
+        let dryGainNode;
+        let reverbMix = 0.5;
+        let isReverbBypassed = true;
+
+        // New: Recording
+        let looperRecorder;
+
         // Visualizer and Volume Meter elements
         let analyserNode;
         let audioVisualizerCanvas;
@@ -469,7 +519,8 @@
             verse2: ['verse2_A', 'verse2_B', 'verse2_C', 'verse2_D'],
             verse3: ['verse3_A', 'verse3_B', 'verse3_C']
         };
-        const ragaVerseOptions = ['ragaYamanPhrase', 'ragaBhairaviPhrase'];
+        // Updated: Added more Raga scales
+        const ragaVerseOptions = ['ragaYamanPhrase', 'ragaBhairaviPhrase', 'ragaBhoopaliPhrase', 'ragaKhamajPhrase'];
         let availableRagas = [...ragaVerseOptions];
         let normalVerseIndex = 0;
         let verseIterationCount = 0;
@@ -489,7 +540,10 @@
         // New Raga scale definitions (using C as tonic for simplicity)
         const ragaScales = {
             yaman: ['C4', 'D4', 'E4', 'F#4', 'G4', 'A4', 'B4', 'C5'],
-            bhairavi: ['C4', 'C#4', 'D#4', 'F4', 'G4', 'G#4', 'A#4', 'C5']
+            bhairavi: ['C4', 'C#4', 'D#4', 'F4', 'G4', 'G#4', 'A#4', 'C5'],
+            // New Raga scales
+            bhoopali: ['C4', 'D4', 'E4', 'G4', 'A4', 'C5'], // Pentatonic scale
+            khamaj: ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'A#4', 'C5'] // Natural minor with major 7th
         };
 
         /**
@@ -504,8 +558,9 @@
             let currentNoteIndex = Math.floor(Math.random() * scale.length);
             let lastDirection = Math.random() < 0.5 ? 1 : -1;
 
+            // Ensure scale has enough elements before accessing specific indices
             const vadiNote = scale[0];
-            const samvadiNote = scale[4];
+            const samvadiNote = scale.length > 4 ? scale[4] : scale[scale.length - 1]; // Fallback for scales with less than 5 notes
 
             for (let i = 0; i < phraseLength; i++) {
                 const step = {
@@ -519,7 +574,7 @@
                 if (i % 4 === 0) {
                     step.bass.push(scale[0].replace('4', '2'));
                 } else if (i % 2 === 0 && Math.random() < 0.6) {
-                    const bassOptions = [scale[0].replace('4', '2'), scale[4].replace('4', '2')];
+                    const bassOptions = [scale[0].replace('4', '2'), (scale.length > 4 ? scale[4] : scale[scale.length -1]).replace('4', '2')];
                     if (scale.length > 5 && Math.random() < 0.3) {
                         bassOptions.push(scale[2].replace('4', '2'));
                     }
@@ -559,7 +614,7 @@
                     if (Math.abs(currentNoteFreq - vadiFreq) > 50 && Math.random() < 0.4) {
                         lastDirection = (currentNoteFreq < vadiFreq) ? 1 : -1;
                         nextNoteIndex = scale.indexOf(vadiNote);
-                    } else if (Math.abs(currentNoteFreq - samvadiFreq) > 50 && Math.random() < 0.2) {
+                    } else if (samvadiNote && Math.abs(currentNoteFreq - samvadiFreq) > 50 && Math.random() < 0.2) {
                         lastDirection = (currentNoteFreq < samvadiFreq) ? 1 : -1;
                         nextNoteIndex = scale.indexOf(samvadiNote);
                     }
@@ -596,7 +651,7 @@
                     if (Math.random() < 1.0) { // 100% probability for hi-hat
                         step.percussion.hihat = { active: true, type: 'closed', velocity: 0.8 }; // Slightly lower velocity for closed hi-hat
                     }
-                }
+                    }
 
                 generatedPhrase.push(step);
             }
@@ -632,7 +687,7 @@
                 { bass: ['G2'], synth: ['D4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['A2'], synth: ['A3', 'C4', 'E4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
                 { bass: ['A2'], synth: ['C4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
-                { bass: ['F2'], synth: ['F3', 'A3', 'C4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
+                { bass: ['F2'], synth: ['A3', 'C4', 'F4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
                 { bass: ['F2'], synth: ['A3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
             verse1_B: [
@@ -658,7 +713,7 @@
             verse1_D: [
                 { bass: ['C2'], synth: ['C4', 'E4', 'G4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
                 { bass: ['C2'], synth: ['G4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
-                { bass: ['G2'], synth: ['B3', 'D4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
+                { bass: ['G2'], synth: ['B3', 'D4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } } },
                 { bass: ['G2'], synth: ['E4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['A2'], synth: ['A3', 'C4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
                 { bass: ['A2'], synth: ['E4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
@@ -694,8 +749,10 @@
                 { bass: ['A2'], synth: ['A3', 'E4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['C2'], synth: ['C4', 'E4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            ragaYamanPhrase: [], // Changed from new Array(8).fill({})
-            ragaBhairaviPhrase: [], // Changed from new Array(8).fill({})
+            ragaYamanPhrase: [],
+            ragaBhairaviPhrase: [],
+            ragaBhoopaliPhrase: [], // New Raga phrase placeholder
+            ragaKhamajPhrase: [],   // New Raga phrase placeholder
             
             chorus: [
                 { bass: ['A2'], synth: ['A4', 'C5', 'E4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'open', velocity: 0.9 } }, delaySend: 0.6 },
@@ -851,7 +908,36 @@
                     
                     chorusLFO.connect(chorusLfoGain);
                     chorusLfoGain.connect(chorusNode.delayTime);
-                    chorusLFO.start(0); // Start LFO immediately
+                    chorusLFO.start(audioContext.currentTime); // Start LFO immediately
+
+                    // Compressor setup
+                    compressorNode = audioContext.createDynamicsCompressor();
+                    compressorNode.threshold.value = compThreshold;
+                    compressorNode.knee.value = 30; // Default value, not exposed to UI
+                    compressorNode.ratio.value = compRatio;
+                    compressorNode.attack.value = 0.003; // Default value
+                    compressorNode.release.value = 0.25; // Default value
+
+                    // Reverb setup
+                    convolverNode = audioContext.createConvolver();
+                    reverbGainNode = audioContext.createGain();
+                    dryGainNode = audioContext.createGain();
+
+                    // Create a simple synthetic impulse response for reverb
+                    const impulseLength = 2; // seconds
+                    const sampleRate = audioContext.sampleRate;
+                    const impulseBuffer = audioContext.createBuffer(2, sampleRate * impulseLength, sampleRate);
+                    const leftChannel = impulseBuffer.getChannelData(0);
+                    const rightChannel = impulseBuffer.getChannelData(1);
+
+                    for (let i = 0; i < sampleRate * impulseLength; i++) {
+                        // Simple decaying noise burst
+                        leftChannel[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / (sampleRate * impulseLength), 2);
+                        rightChannel[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / (sampleRate * impulseLength), 2);
+                    }
+                    convolverNode.buffer = impulseBuffer;
+                    reverbGainNode.gain.value = reverbMix;
+                    dryGainNode.gain.value = 1 - reverbMix; // Initial dry mix
 
                     // Analyser Node for Visualization and Volume Meter
                     analyserNode = audioContext.createAnalyser();
@@ -862,30 +948,49 @@
                     const bufferLength = analyserNode.frequencyBinCount;
                     dataArray = new Uint8Array(bufferLength);
 
-                    // Connect nodes: Master -> Delay Send -> Delay -> Analyser -> Destination
-                    // Master -> Chorus (if not bypassed) -> Analyser -> Destination
+                    // Connect nodes:
+                    // Master -> Delay Send -> Delay -> Destination
+                    // Master -> Compressor -> (Dry Signal / Reverb Wet Signal) -> Analyser -> Destination
+                    
+                    // Main audio path: Master -> Compressor
+                    masterGainNode.connect(compressorNode);
+
+                    // Delay path: Master -> Delay Send -> Delay -> Destination
                     masterGainNode.connect(delaySendGain);
                     delaySendGain.connect(delayNode);
-                    delayNode.connect(audioContext.destination); // Delay output directly to destination
+                    delayNode.connect(audioContext.destination);
 
-                    // Connect master to chorus or analyser based on bypass state
-                    if (!isChorusBypassed) {
-                        masterGainNode.connect(chorusNode);
-                        chorusNode.connect(analyserNode);
-                    } else {
-                        masterGainNode.connect(analyserNode);
-                    }
+                    // Reverb path: Compressor -> (Dry Gain / Convolver + Reverb Gain) -> Analyser
+                    // Disconnect analyser from masterGainNode if it was connected directly
+                    try {
+                        masterGainNode.disconnect(analyserNode);
+                    } catch (e) { /* ignore */ }
+
+                    // Connect compressor to dry and wet reverb paths
+                    compressorNode.connect(dryGainNode);
+                    dryGainNode.connect(analyserNode); // Dry signal to analyser
+
+                    compressorNode.connect(convolverNode);
+                    convolverNode.connect(reverbGainNode);
+                    reverbGainNode.connect(analyserNode); // Wet signal to analyser
+
+                    // Analyser always connects to destination
                     analyserNode.connect(audioContext.destination);
 
+                    // Initialize UI elements for visualization and volume meter
                     audioVisualizerCanvas = document.getElementById('audioVisualizer');
                     audioVisualizerCtx = audioVisualizerCanvas.getContext('2d');
                     volumeMeterElement = document.getElementById('volumeMeter');
                     volumeMeterFillElement = document.getElementById('volumeMeterFill');
                     volumePeakElement = document.getElementById('volumePeak');
 
+                    // Set initial values for delay
                     delayNode.delayTime.value = delayTimeValue;
                     delayFeedbackGain.gain.value = delayFeedbackValue;
                     delaySendGain.gain.value = delaySendLevel;
+
+                    // Initialize recorder
+                    looperRecorder = new LooperRecorder(audioContext);
 
                     showMessage(`Audio context initialized. Master Gain: ${masterVolume.toFixed(2)}`);
                     console.log("AudioContext initialized successfully. State:", audioContext.state);
@@ -1324,8 +1429,18 @@
                             console.log(`Forcing first verse to start with: ${currentSectionName}`);
                         } else if (verseIterationCount % 2 === 0) { // This is where Ragas are introduced
                             currentSectionName = getNextRagaPhrase();
-                            const ragaScaleName = currentSectionName === 'ragaYamanPhrase' ? 'yaman' : 'bhairavi';
-                            phraseToUse = generateRagaMelody(ragaScales[ragaScaleName], 8, humanizationFactor);
+                            // FIX: Remove 'raga' prefix and convert to lowercase to correctly match keys in ragaScales
+                            const ragaScaleName = currentSectionName.replace('raga', '').replace('Phrase', '').toLowerCase(); 
+                            const selectedRagaScale = ragaScales[ragaScaleName]; // Get the actual scale array
+
+                            // Safeguard: Ensure selectedRagaScale is a valid, non-empty array
+                            if (selectedRagaScale && Array.isArray(selectedRagaScale) && selectedRagaScale.length > 0) {
+                                phraseToUse = generateRagaMelody(selectedRagaScale, 8, humanizationFactor);
+                            } else {
+                                console.error(`Invalid or empty Raga scale found for name: ${ragaScaleName}. Falling back to a default verse.`);
+                                currentSectionName = getRandomNormalVerseVariation('verse1'); // Fallback to a known good verse
+                                phraseToUse = musicalPhrases[currentSectionName];
+                            }
                         } else {
                             currentSectionName = getRandomNormalVerseVariation(nextSectionDef.baseName);
                             phraseToUse = musicalPhrases[currentSectionName];
@@ -1641,7 +1756,13 @@
                 currentFilterFrequency: currentFilterFrequency,
                 currentFilterQ: currentFilterQ,
                 baseNoteDuration: baseNoteDuration,
-                humanizationFactor: humanizationFactor
+                humanizationFactor: humanizationFactor,
+                // New: Compressor settings
+                compThreshold: parseFloat(document.getElementById('compThreshold').value),
+                compRatio: parseFloat(document.getElementById('compRatio').value),
+                // New: Reverb settings
+                reverbMix: parseFloat(document.getElementById('reverbMix').value),
+                isReverbBypassed: document.getElementById('reverbBypass').checked
             };
         }
 
@@ -1665,6 +1786,16 @@
             document.getElementById('chorusBypass').checked = settings.isChorusBypassed;
             isChorusBypassed = settings.isChorusBypassed;
             updateChorusBypassConnection();
+
+            // Apply new settings for Compressor
+            setupKnob('compThreshold', 'compThresholdValue', settings.compThreshold, 0, (value) => { compThreshold = value; if (audioContext && compressorNode) compressorNode.threshold.setValueAtTime(compThreshold, audioContext.currentTime); });
+            setupKnob('compRatio', 'compRatioValue', settings.compRatio, 1, (value) => { compRatio = value; if (audioContext && compressorNode) compressorNode.ratio.setValueAtTime(compRatio, audioContext.currentTime); });
+            
+            // Apply new settings for Reverb
+            setupKnob('reverbMix', 'reverbMixValue', settings.reverbMix, 2, (value) => { reverbMix = value; if (audioContext && reverbGainNode && dryGainNode) { reverbGainNode.gain.setValueAtTime(reverbMix, audioContext.currentTime); dryGainNode.gain.setValueAtTime(1 - reverbMix, audioContext.currentTime); } });
+            document.getElementById('reverbBypass').checked = settings.isReverbBypassed;
+            isReverbBypassed = settings.isReverbBypassed;
+            updateReverbBypassConnection();
 
             currentDetune = settings.currentDetune;
             currentFilterFrequency = settings.currentFilterFrequency;
@@ -1718,23 +1849,51 @@
          * Updates the audio graph connection for chorus bypass.
          */
         function updateChorusBypassConnection() {
-            if (!audioContext || !masterGainNode || !analyserNode || !chorusNode) return;
+            if (!audioContext || !masterGainNode || !analyserNode || !chorusNode || !compressorNode) return;
 
-            // Disconnect all previous connections from masterGainNode to analyser/chorus
-            masterGainNode.disconnect();
-            // Only disconnect chorusNode if it was previously connected to analyserNode
+            // Disconnect masterGainNode from compressor (its direct connection)
+            masterGainNode.disconnect(compressorNode);
+            // Disconnect chorusNode from analyserNode if it was connected
             try {
-                chorusNode.disconnect(analyserNode);
-            } catch (e) {
-                // Ignore error if not connected
-            }
+                chorusNode.disconnect(compressorNode); // Chorus connects to compressor now
+            } catch (e) { /* ignore */ }
 
-            // Reconnect based on bypass state
+            // Reconnect masterGainNode to chorus or compressor based on bypass state
             if (isChorusBypassed) {
-                masterGainNode.connect(analyserNode);
+                masterGainNode.connect(compressorNode);
             } else {
                 masterGainNode.connect(chorusNode);
-                chorusNode.connect(analyserNode);
+                chorusNode.connect(compressorNode); // Chorus output connects to compressor
+            }
+        }
+
+        /**
+         * Updates the audio graph connection for reverb bypass.
+         */
+        function updateReverbBypassConnection() {
+            if (!audioContext || !compressorNode || !analyserNode || !convolverNode || !reverbGainNode || !dryGainNode) return;
+
+            // Disconnect all previous connections from compressor to dry/wet paths
+            compressorNode.disconnect(dryGainNode);
+            compressorNode.disconnect(convolverNode);
+            
+            // Disconnect dry/wet paths from analyser
+            try {
+                dryGainNode.disconnect(analyserNode);
+                reverbGainNode.disconnect(analyserNode);
+            } catch (e) { /* ignore */ }
+
+            if (isReverbBypassed) {
+                // If bypassed, connect compressor directly to analyser
+                compressorNode.connect(analyserNode);
+            } else {
+                // If active, connect compressor to dry and wet paths
+                compressorNode.connect(dryGainNode);
+                dryGainNode.connect(analyserNode);
+
+                compressorNode.connect(convolverNode);
+                convolverNode.connect(reverbGainNode);
+                reverbGainNode.connect(analyserNode);
             }
             analyserNode.connect(audioContext.destination); // Analyser always connects to destination
         }
@@ -1744,17 +1903,211 @@
             const knob = document.getElementById(knobId);
             const valueSpan = document.getElementById(valueSpanId);
 
-            knob.value = initialValue;
-            valueSpan.textContent = initialValue.toFixed(displayPrecision);
+            if (knob) {
+                knob.value = initialValue;
+                valueSpan.textContent = initialValue.toFixed(displayPrecision);
 
-            knob.addEventListener('input', (event) => {
-                let value = parseFloat(event.target.value);
-                valueSpan.textContent = value.toFixed(displayPrecision);
-                if (onInputChangeCallback) {
-                    onInputChangeCallback(value);
+                knob.addEventListener('input', (event) => {
+                    let value = parseFloat(event.target.value);
+                    valueSpan.textContent = value.toFixed(displayPrecision);
+                    if (onInputChangeCallback) {
+                        onInputChangeCallback(value);
+                    }
+                });
+            } else {
+                console.warn(`Knob with ID '${knobId}' not found.`);
+            }
+        }
+
+        // New: LooperRecorder Class
+        class LooperRecorder {
+            constructor(audioContext) {
+                this.audioContext = audioContext;
+                this.chunks = [];
+                this.mediaRecorder = null;
+                this.isRecording = false;
+                
+                // Initialize recorder only if audioContext is available
+                if (this.audioContext) {
+                    this.initializeRecorder();
+                } else {
+                    console.warn("AudioContext not available for LooperRecorder initialization.");
+                }
+            }
+            
+            async initializeRecorder() {
+                // Create a MediaStreamDestination to capture audio from the analyserNode
+                const dest = this.audioContext.createMediaStreamDestination();
+                // Connect the main output (analyserNode) to the recording destination
+                analyserNode.connect(dest); 
+                
+                this.mediaRecorder = new MediaRecorder(dest.stream);
+                this.mediaRecorder.ondataavailable = (e) => this.chunks.push(e.data);
+                this.mediaRecorder.onstop = () => this.createDownload();
+            }
+            
+            startRecording() {
+                if (!this.mediaRecorder) {
+                    showMessage("Recording not initialized. Please start audio first.", 3000);
+                    return;
+                }
+                this.chunks = [];
+                this.mediaRecorder.start();
+                this.isRecording = true;
+                showMessage("Recording started!");
+                console.log("Recording started.");
+            }
+            
+            stopRecording() {
+                if (!this.mediaRecorder || !this.isRecording) {
+                    showMessage("Not currently recording.", 2000);
+                    return;
+                }
+                this.mediaRecorder.stop();
+                this.isRecording = false;
+                showMessage("Recording stopped. Preparing download...");
+                console.log("Recording stopped.");
+            }
+            
+            createDownload() {
+                const blob = new Blob(this.chunks, { type: 'audio/wav' }); // Using WAV for broader compatibility
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `relax_loop_${new Date().toISOString().replace(/:/g, '-')}.wav`; // Sanitize filename
+                document.body.appendChild(a); // Append to body to make it clickable
+                a.click();
+                document.body.removeChild(a); // Clean up
+                URL.revokeObjectURL(url); // Release object URL
+                showMessage("Recording downloaded!", 3000);
+                console.log("Recording download initiated.");
+            }
+        }
+
+        // New: Add Recording Controls to UI
+        function addRecordingControls() {
+            const recordButton = document.getElementById('recordButton');
+            if (recordButton) {
+                recordButton.addEventListener('click', () => {
+                    if (looperRecorder.isRecording) {
+                        looperRecorder.stopRecording();
+                        recordButton.textContent = 'Start Recording';
+                    } else {
+                        // Ensure audio context is initialized before starting recording
+                        if (!audioContext || audioContext.state === 'suspended') {
+                            showMessage("Please start the music loop before recording.", 3000);
+                            return;
+                        }
+                        looperRecorder.startRecording();
+                        recordButton.textContent = 'Stop Recording';
+                    }
+                });
+            }
+        }
+
+        // New: Keyboard Controls Initialization
+        function initializeKeyboardControls() {
+            document.addEventListener('keydown', (e) => {
+                // Only handle shortcuts if not typing in an input
+                if (e.target.tagName === 'INPUT') return;
+                
+                const startButton = document.getElementById('startButton');
+                const stopButton = document.getElementById('stopButton');
+
+                switch(e.code) {
+                    case 'Space':
+                        e.preventDefault(); // Prevent default spacebar action (e.g., scrolling)
+                        if (isPlaying) {
+                            stopButton.click();
+                        } else {
+                            startButton.click();
+                        }
+                        break;
+                    case 'KeyM':
+                        // Master volume mute/unmute
+                        const volKnob = document.getElementById('masterVolume');
+                        if (volKnob) {
+                            if (parseFloat(volKnob.value) > 0) {
+                                volKnob.dataset.lastValue = volKnob.value; // Store current value
+                                volKnob.value = 0;
+                            } else {
+                                volKnob.value = volKnob.dataset.lastValue || 0.55; // Restore or default
+                            }
+                            volKnob.dispatchEvent(new Event('input')); // Trigger input event to update UI and audio
+                            showMessage(`Master Volume: ${parseFloat(volKnob.value) === 0 ? 'Muted' : 'Unmuted'}`, 1500);
+                        }
+                        break;
+                    case 'ArrowUp':
+                    case 'ArrowDown':
+                        // Tempo control
+                        const tempoKnob = document.getElementById('tempo');
+                        if (tempoKnob) {
+                            e.preventDefault(); // Prevent default scrolling
+                            const step = e.code === 'ArrowUp' ? 10 : -10;
+                            tempoKnob.value = Math.min(parseFloat(tempoKnob.max), Math.max(parseFloat(tempoKnob.min), parseInt(tempoKnob.value) + step));
+                            tempoKnob.dispatchEvent(new Event('input')); // Trigger input event to update UI and audio
+                            showMessage(`Tempo: ${tempoKnob.value} ms`, 1000);
+                        }
+                        break;
                 }
             });
         }
+
+        // MIDI Input Initialization (Removed due to permissions policy in this environment)
+        // function initializeMidi() {
+        //     if (navigator.requestMIDIAccess) {
+        //         navigator.requestMIDIAccess()
+        //             .then(onMIDISuccess, onMIDIFailure);
+        //     } else {
+        //         console.warn("Web MIDI API is not supported in this browser.");
+        //         showMessage("MIDI input not supported by your browser.", 3000);
+        //     }
+        // }
+
+        // function onMIDISuccess(midiAccess) {
+        //     console.log("Web MIDI API access granted.", midiAccess);
+        //     showMessage("MIDI access granted! Looking for devices...", 2000);
+
+        //     // Get MIDI inputs
+        //     const inputs = midiAccess.inputs;
+        //     if (inputs.size === 0) {
+        //         console.log("No MIDI input devices found.");
+        //         showMessage("No MIDI input devices found.", 2000);
+        //         return;
+        //     }
+
+        //     inputs.forEach(input => {
+        //         console.log(`MIDI Input: Name: ${input.name}, Manufacturer: ${input.manufacturer}, ID: ${input.id}`);
+        //         input.onmidimessage = onMIDIMessage;
+        //     });
+        // }
+
+        // function onMIDIFailure(error) {
+        //     console.error(`Failed to get MIDI access: ${error.code} - ${error.message}`);
+        //     showMessage(`Failed to get MIDI access: ${error.message}`, 5000);
+        // }
+
+        // function onMIDIMessage(event) {
+        //     const data = event.data; // [status, note, velocity]
+        //     const status = data[0];
+        //     const note = data[1];
+        //     const velocity = data[2];
+
+        //     // Example: Log MIDI messages
+        //     console.log(`MIDI Message: Status: ${status}, Note: ${note}, Velocity: ${velocity}`);
+
+        //     // Basic MIDI note on/off handling (for future expansion)
+        //     if (status === 144) { // Note On (0x90)
+        //         // console.log(`MIDI Note On: ${note} with velocity ${velocity}`);
+        //         // Future: Map MIDI note to play a specific sound or trigger a sequence
+        //     } else if (status === 128) { // Note Off (0x80)
+        //         // console.log(`MIDI Note Off: ${note}`);
+        //     } else if (status >= 176 && status <= 191) { // Control Change (0xB0-0xBF)
+        //         // console.log(`MIDI Control Change: Controller: ${note}, Value: ${velocity}`);
+        //         // Future: Map MIDI CC to control knobs
+        //     }
+        // }
+
 
         // Add event listeners once the DOM is fully loaded
         document.addEventListener('DOMContentLoaded', () => {
@@ -1763,13 +2116,22 @@
             document.getElementById('stopButton').addEventListener('click', stopLoop);
             document.getElementById('savePresetButton').addEventListener('click', savePreset);
             document.getElementById('loadPresetButton').addEventListener('click', loadPreset);
+            
             document.getElementById('chorusBypass').addEventListener('change', (event) => {
                 isChorusBypassed = event.target.checked;
                 updateChorusBypassConnection();
                 showMessage(`Chorus is now ${isChorusBypassed ? 'bypassed' : 'active'}.`);
             });
+
+            document.getElementById('reverbBypass').addEventListener('change', (event) => {
+                isReverbBypassed = event.target.checked;
+                updateReverbBypassConnection();
+                showMessage(`Reverb is now ${isReverbBypassed ? 'bypassed' : 'active'}.`);
+            });
+
             updateSectionDisplay();
 
+            // Setup all knobs
             setupKnob('masterVolume', 'masterVolumeValue', masterVolume, 2, (value) => {
                 masterVolume = value;
                 if (audioContext && masterGainNode) masterGainNode.gain.setValueAtTime(masterVolume, audioContext.currentTime);
@@ -1807,6 +2169,40 @@
                 chorusDepth = value;
                 if (audioContext && chorusLfoGain) chorusLfoGain.gain.setValueAtTime(chorusDepth, audioContext.currentTime);
             });
+            // New: Compressor knob setup
+            setupKnob('compThreshold', 'compThresholdValue', compThreshold, 0, (value) => {
+                compThreshold = value;
+                if (audioContext && compressorNode) compressorNode.threshold.setValueAtTime(compThreshold, audioContext.currentTime);
+                document.getElementById('compThresholdValue').textContent = `${value} dB`;
+            });
+            setupKnob('compRatio', 'compRatioValue', compRatio, 1, (value) => {
+                compRatio = value;
+                if (audioContext && compressorNode) compressorNode.ratio.setValueAtTime(compRatio, audioContext.currentTime);
+                document.getElementById('compRatioValue').textContent = `${value}:1`;
+            });
+            // New: Reverb knob setup
+            setupKnob('reverbMix', 'reverbMixValue', reverbMix, 2, (value) => {
+                reverbMix = value;
+                if (audioContext && reverbGainNode && dryGainNode) {
+                    reverbGainNode.gain.setValueAtTime(reverbMix, audioContext.currentTime);
+                    dryGainNode.gain.setValueAtTime(1 - reverbMix, audioContext.currentTime);
+                }
+                document.getElementById('reverbMixValue').textContent = `${(value * 100).toFixed(0)}%`;
+            });
+
+            // Initialize keyboard controls
+            initializeKeyboardControls();
+            
+            // Add recording controls (looperRecorder is initialized in initAudio)
+            addRecordingControls();
+
+            // Initial connection update for chorus and reverb
+            updateChorusBypassConnection();
+            updateReverbBypassConnection();
+
+            // MIDI initialization is commented out because it requires specific browser permissions
+            // that are not available in this sandboxed environment.
+            // initializeMidi();
         });
     </script>
 </body>
