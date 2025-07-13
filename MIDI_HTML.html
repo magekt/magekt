@@ -230,6 +230,7 @@
             border-radius: 8px;
             overflow: hidden;
             border: 1px solid #4CAF50;
+            position: relative; /* Added for peak positioning */
         }
         #volumeMeterFill {
             height: 100%;
@@ -437,7 +438,7 @@
             <!-- Master Volume Meter -->
             <div class="volume-meter-container">
                 <span class="volume-meter-label">Master Volume:</span>
-                <div id="volumeMeter" style="position: relative;">
+                <div id="volumeMeter">
                     <div id="volumeMeterFill"></div>
                     <div id="volumePeak"></div>
                 </div>
@@ -530,9 +531,9 @@
         let volumeMeterElement;
         let volumeMeterFillElement;
         let volumePeakElement; // For peak indicator
-        let dataArray; // For analyser data
-        let frequencyDataArray; // For frequency visualization
-        let peakValue = 0; // Stores the highest volume peak
+        let dataArray; // For analyser time domain data
+        let frequencyDataArray; // For analyser frequency data
+        let peakValue = 0; // Stores the highest volume peak (0-1 normalized)
 
         // For cycling through verse patterns (normal and Raga)
         const normalVerseOptions = {
@@ -1002,12 +1003,14 @@
 
                     // Analyser Node for Visualization and Volume Meter
                     analyserNode = audioContext.createAnalyser();
-                    analyserNode.fftSize = 256;
+                    analyserNode.fftSize = 256; // For time domain data
                     analyserNode.smoothingTimeConstant = 0.8; // Smoother visualization
                     analyserNode.minDecibels = -90;
                     analyserNode.maxDecibels = -10;
+                    
+                    // Initialize data arrays with correct sizes
                     dataArray = new Uint8Array(analyserNode.fftSize); // For time domain visualization
-                    frequencyDataArray = new Uint8Array(analyserNode.frequencyBinCount); // For frequency visualization
+                    frequencyDataArray = new Uint8Array(analyserNode.frequencyBinCount); // For frequency visualization and volume meter
 
                     // Connect nodes:
                     // Master -> Delay Send -> Delay -> Destination
@@ -1051,7 +1054,9 @@
                     delaySendGain.gain.value = delaySendLevel;
 
                     // Initialize recorder
-                    looperRecorder = new EnhancedLooperRecorder(audioContext); // Use EnhancedLooperRecorder
+                    looperRecorder = new EnhancedLooperRecorder(audioContext);
+                    // Initialize the recorder's internal MediaRecorder instance
+                    looperRecorder.initializeRecorder(); 
 
                     showMessage(`Audio context initialized. Master Gain: ${masterVolume.toFixed(2)}`);
                     console.log("AudioContext initialized successfully. State:", audioContext.state);
@@ -1374,7 +1379,7 @@
                 delayTimeDriftDirection = 1;
             }
             delayTimeValue = Math.max(0.01, Math.min(2.0, delayTimeValue));
-            if (delayNode) delayNode.delayTime.setValueAtTime(delayTimeValue, audioContext.currentTime);
+            if (audioContext && delayNode) delayNode.delayTime.setValueAtTime(delayTimeValue, audioContext.currentTime);
 
             delayFeedbackValue += delayFeedbackDriftDirection * (Math.random() - 0.5) * driftScale * 0.01;
             if (delayFeedbackValue > 0.8) {
@@ -1383,7 +1388,7 @@
                 delayFeedbackDriftDirection = 1;
             }
             delayFeedbackValue = Math.max(0, Math.min(0.95, delayFeedbackValue));
-            if (delayFeedbackGain) delayFeedbackGain.gain.setValueAtTime(delayFeedbackValue, audioContext.currentTime);
+            if (audioContext && delayFeedbackGain) delayFeedbackGain.gain.setValueAtTime(delayFeedbackValue, audioContext.currentTime);
         }
 
         /**
@@ -1412,7 +1417,7 @@
                 const duration = baseNoteDuration;
 
                 const effectiveDelaySend = (currentStep.delaySend !== undefined ? currentStep.delaySend : 0.5) * delaySendLevel;
-                if (delaySendGain) {
+                if (audioContext && delaySendGain) {
                     delaySendGain.gain.linearRampToValueAtTime(effectiveDelaySend, audioContext.currentTime + 0.05);
                 }
 
@@ -1657,11 +1662,22 @@
         }
 
         /**
-         * Draws the audio visualization on the canvas and updates the volume meter.
-         * This function is called repeatedly using requestAnimationFrame.
+         * Initializes the audio visualization.
+         * This function sets up the continuous drawing loop for the visualizer.
          */
-        function drawVisualization() {
+        function initializeVisualization() {
+            if (!audioVisualizerCtx || !analyserNode) return;
+            // Start the drawing loop
+            drawVisualizationLoop();
+        }
+
+        /**
+         * The main drawing loop for audio visualization.
+         * Draws waveform, frequency bars, and updates the volume meter.
+         */
+        function drawVisualizationLoop() {
             if (!isPlaying || !analyserNode || !audioVisualizerCtx) {
+                // Clear canvas and reset meters when not playing
                 if (audioVisualizerCtx) {
                     audioVisualizerCtx.clearRect(0, 0, audioVisualizerCanvas.width, audioVisualizerCanvas.height);
                 }
@@ -1674,109 +1690,96 @@
                 return;
             }
 
-            requestAnimationFrame(drawVisualization);
+            requestAnimationFrame(drawVisualizationLoop);
 
-            // Time domain data for waveform and RMS
+            const width = audioVisualizerCanvas.width;
+            const height = audioVisualizerCanvas.height;
+
+            // Clear canvas for fresh drawing
+            audioVisualizerCtx.fillStyle = '#000';
+            audioVisualizerCtx.fillRect(0, 0, width, height);
+
+            // Get both time domain and frequency data
             analyserNode.getByteTimeDomainData(dataArray);
+            analyserNode.getByteFrequencyData(frequencyDataArray);
 
-            audioVisualizerCtx.clearRect(0, 0, audioVisualizerCanvas.width, audioVisualizerCanvas.height);
-            audioVisualizerCtx.lineWidth = 2;
-            audioVisualizerCtx.strokeStyle = '#90ee90';
+            // Draw waveform
             audioVisualizerCtx.beginPath();
-
-            const sliceWidth = audioVisualizerCanvas.width * 1.0 / dataArray.length;
+            audioVisualizerCtx.lineWidth = 2;
+            audioVisualizerCtx.strokeStyle = '#90ee90'; // Waveform color
+            
+            const sliceWidth = width * 1.0 / dataArray.length;
             let x = 0;
 
-            let sumOfSquares = 0;
-            let maxAmplitude = 0; // For peak detection
-
             for (let i = 0; i < dataArray.length; i++) {
-                const v = dataArray[i] / 128.0;
-                const y = v * audioVisualizerCanvas.height / 2;
+                const v = dataArray[i] / 128.0; // Normalize to 0-2
+                const y = v * height / 2;
 
                 if (i === 0) {
                     audioVisualizerCtx.moveTo(x, y);
                 } else {
                     audioVisualizerCtx.lineTo(x, y);
                 }
-
                 x += sliceWidth;
-
-                const normalizedValue = (dataArray[i] - 128) / 128;
-                sumOfSquares += normalizedValue * normalizedValue;
-                maxAmplitude = Math.max(maxAmplitude, Math.abs(normalizedValue)); // Track max amplitude
             }
 
-            audioVisualizerCtx.lineTo(audioVisualizerCanvas.width, audioVisualizerCanvas.height / 2);
+            audioVisualizerCtx.lineTo(width, height / 2);
             audioVisualizerCtx.stroke();
 
-            // Calculate RMS for volume meter
-            const rms = Math.sqrt(sumOfSquares / dataArray.length);
-            const volumePercentage = Math.min(100, rms * 200); // Scale RMS to a percentage for display
-            if (volumeMeterFillElement) {
-                volumeMeterFillElement.style.width = `${volumePercentage}%`;
-            }
-
-            // Peak detection logic
-            if (volumePeakElement) {
-                // Update peak if current max amplitude is higher
-                if (maxAmplitude > peakValue) {
-                    peakValue = maxAmplitude;
-                    volumePeakElement.style.opacity = 1; // Show peak indicator
-                    // Position peak line based on the current peak value
-                    volumePeakElement.style.left = `${Math.min(100, peakValue * 200)}%`; // Scale peak value to percentage
-                    
-                    // Clear previous fade-out timeout and set a new one
-                    clearTimeout(volumePeakElement.fadeTimeout);
-                    volumePeakElement.fadeTimeout = setTimeout(() => {
-                        volumePeakElement.style.opacity = 0;
-                    }, 500); // Peak fades out after 500ms
-                } else if (maxAmplitude < peakValue * 0.8 && volumePeakElement.style.opacity === '1') {
-                    // Slowly decay peak if current volume drops significantly below it
-                    clearTimeout(volumePeakElement.decayTimeout);
-                    volumePeakElement.decayTimeout = setTimeout(() => {
-                        peakValue *= 0.9; // Decay peak value
-                        if (peakValue < 0.1) peakValue = 0; // Reset if too low
-                    }, 100);
-                }
-            }
-
-            // Draw frequency bars (new visualization)
-            drawFrequencyBars();
-        }
-
-        /**
-         * Draws frequency bars on the audio visualizer canvas.
-         */
-        function drawFrequencyBars() {
-            if (!audioVisualizerCtx || !analyserNode) return;
-            
-            const width = audioVisualizerCanvas.width;
-            const height = audioVisualizerCanvas.height;
-            
-            // Get frequency data
-            analyserNode.getByteFrequencyData(frequencyDataArray);
-            
             // Draw frequency bars
-            const barWidth = (width / analyserNode.frequencyBinCount) * 2.5; // Adjusted for better visual
-            let x = 0;
+            const barWidth = (width / analyserNode.frequencyBinCount) * 2.5;
+            x = 0; // Reset x for frequency bars
             
-            audioVisualizerCtx.fillStyle = '#90ee90'; // Green color for bars
+            audioVisualizerCtx.fillStyle = '#4CAF50'; // Bar color
             for(let i = 0; i < analyserNode.frequencyBinCount; i++) {
-                const barHeight = (frequencyDataArray[i] / 255) * height;
+                const barHeight = (frequencyDataArray[i] / 255) * height; // Normalize to canvas height
                 audioVisualizerCtx.fillRect(x, height - barHeight, barWidth, barHeight);
-                x += barWidth + 1;
+                x += barWidth + 1; // Add 1px gap between bars
             }
+
+            // Update volume meter
+            updateVolumeMeter();
         }
 
         /**
-         * Initializes the audio visualization.
-         * This function sets up the continuous drawing loop for the visualizer.
+         * Updates the master volume meter and peak indicator.
          */
-        function initializeVisualization() {
-            if (!audioVisualizerCtx || !analyserNode) return;
-            // Start the drawing loop
-            drawVisualization();
+        function updateVolumeMeter() {
+            if (!analyserNode || !volumeMeterFillElement || !volumePeakElement) return;
+
+            // Get frequency data (already done in drawVisualizationLoop, but safe to call again if this is standalone)
+            // analyserNode.getByteFrequencyData(frequencyDataArray); // No need to call again if called from drawVisualizationLoop
+
+            // Calculate RMS value from frequency data
+            let sumOfSquares = 0;
+            for (let i = 0; i < frequencyDataArray.length; i++) {
+                sumOfSquares += frequencyDataArray[i] * frequencyDataArray[i];
+            }
+            const rms = Math.sqrt(sumOfSquares / frequencyDataArray.length);
+            const volumeNormalized = rms / 255; // Normalize to 0-1
+
+            // Update meter fill
+            volumeMeterFillElement.style.width = `${volumeNormalized * 100}%`;
+
+            // Update peak
+            if (volumeNormalized > peakValue) {
+                peakValue = volumeNormalized;
+                volumePeakElement.style.left = `${peakValue * 100}%`; // Position from left
+                volumePeakElement.style.opacity = '1';
+
+                // Clear previous fade-out timeout and set a new one
+                clearTimeout(volumePeakElement.fadeTimeout);
+                volumePeakElement.fadeTimeout = setTimeout(() => {
+                    volumePeakElement.style.opacity = 0;
+                }, 500); // Peak fades out after 500ms
+            } else if (volumeNormalized < peakValue * 0.9 && volumePeakElement.style.opacity === '1') {
+                // Slowly decay peak if current volume drops significantly below it
+                clearTimeout(volumePeakElement.decayTimeout);
+                volumePeakElement.decayTimeout = setTimeout(() => {
+                    peakValue *= 0.95; // Decay peak value
+                    if (peakValue < 0.01) peakValue = 0; // Reset if too low
+                }, 100);
+            }
         }
 
 
@@ -1872,32 +1875,56 @@
          * @param {Object} settings - An object containing settings to apply.
          */
         function applySettings(settings) {
-            setupKnob('masterVolume', 'masterVolumeValue', settings.masterVolume, 2, (value) => { masterVolume = value; if (audioContext && masterGainNode) masterGainNode.gain.setValueAtTime(masterVolume, audioContext.currentTime); });
-            setupKnob('tempo', 'tempoValue', settings.tempo, 0, (value) => { currentTempo = value; });
-            setupKnob('bassVolume', 'bassVolumeValue', settings.bassVolume, 2, (value) => { bassVolume = value; });
-            setupKnob('synthVolume', 'synthVolumeValue', settings.synthVolume, 2, (value) => { synthVolume = value; });
-            setupKnob('kickVolume', 'kickVolumeValue', settings.kickVolume, 2, (value) => { kickVolume = value; });
-            setupKnob('snareVolume', 'snareVolumeValue', settings.snareVolume, 2, (value) => { snareVolume = value; });
-            setupKnob('hihatVolume', 'hihatVolumeValue', settings.hihatVolume, 2, (value) => { hihatVolume = value; });
-            setupKnob('delayTime', 'delayTimeValue', settings.delayTime, 2, (value) => { delayTimeValue = value; if (audioContext && delayNode) delayNode.delayTime.setValueAtTime(delayTimeValue, audioContext.currentTime); });
-            setupKnob('delayFeedback', 'delayFeedbackValue', settings.delayFeedback, 2, (value) => { delayFeedbackValue = value; if (audioContext && delayFeedbackGain) delayFeedbackGain.gain.setValueAtTime(delayFeedbackValue, audioContext.currentTime); });
-            setupKnob('delaySendLevel', 'delaySendLevelValue', settings.delaySendLevel, 2, (value) => { delaySendLevel = value; });
-            setupKnob('chorusDepth', 'chorusDepthValue', settings.chorusDepth, 4, (value) => { chorusDepth = value; if (audioContext && chorusLfoGain) chorusLfoGain.gain.setValueAtTime(chorusDepth, audioContext.currentTime); });
+            // Apply settings to UI elements and trigger their input events to update audio parameters
+            document.getElementById('masterVolume').value = settings.masterVolume;
+            document.getElementById('masterVolume').dispatchEvent(new Event('input'));
+
+            document.getElementById('tempo').value = settings.tempo;
+            document.getElementById('tempo').dispatchEvent(new Event('input'));
+
+            document.getElementById('bassVolume').value = settings.bassVolume;
+            document.getElementById('bassVolume').dispatchEvent(new Event('input'));
+
+            document.getElementById('synthVolume').value = settings.synthVolume;
+            document.getElementById('synthVolume').dispatchEvent(new Event('input'));
+
+            document.getElementById('kickVolume').value = settings.kickVolume;
+            document.getElementById('kickVolume').dispatchEvent(new Event('input'));
+
+            document.getElementById('snareVolume').value = settings.snareVolume;
+            document.getElementById('snareVolume').dispatchEvent(new Event('input'));
+
+            document.getElementById('hihatVolume').value = settings.hihatVolume;
+            document.getElementById('hihatVolume').dispatchEvent(new Event('input'));
+
+            document.getElementById('delayTime').value = settings.delayTime;
+            document.getElementById('delayTime').dispatchEvent(new Event('input'));
+
+            document.getElementById('delayFeedback').value = settings.delayFeedback;
+            document.getElementById('delayFeedback').dispatchEvent(new Event('input'));
+
+            document.getElementById('delaySendLevel').value = settings.delaySendLevel;
+            document.getElementById('delaySendLevel').dispatchEvent(new Event('input'));
+
+            document.getElementById('chorusDepth').value = settings.chorusDepth;
+            document.getElementById('chorusDepth').dispatchEvent(new Event('input'));
             
             document.getElementById('chorusBypass').checked = settings.isChorusBypassed;
-            isChorusBypassed = settings.isChorusBypassed;
-            updateChorusBypassConnection();
+            document.getElementById('chorusBypass').dispatchEvent(new Event('change')); // Trigger change event
 
-            // Apply new settings for Compressor
-            setupKnob('compThreshold', 'compThresholdValue', settings.compThreshold, 0, (value) => { compThreshold = value; if (audioContext && compressorNode) compressorNode.threshold.setValueAtTime(compThreshold, audioContext.currentTime); });
-            setupKnob('compRatio', 'compRatioValue', settings.compRatio, 1, (value) => { compRatio = value; if (audioContext && compressorNode) compressorNode.ratio.setValueAtTime(compRatio, audioContext.currentTime); });
+            document.getElementById('compThreshold').value = settings.compThreshold;
+            document.getElementById('compThreshold').dispatchEvent(new Event('input'));
+
+            document.getElementById('compRatio').value = settings.compRatio;
+            document.getElementById('compRatio').dispatchEvent(new Event('input'));
             
-            // Apply new settings for Reverb
-            setupKnob('reverbMix', 'reverbMixValue', settings.reverbMix, 2, (value) => { reverbMix = value; if (audioContext && reverbGainNode && dryGainNode) { reverbGainNode.gain.setValueAtTime(reverbMix, audioContext.currentTime); dryGainNode.gain.setValueAtTime(1 - reverbMix, audioContext.currentTime); } });
-            document.getElementById('reverbBypass').checked = settings.isReverbBypassed;
-            isReverbBypassed = settings.isReverbBypassed;
-            updateReverbBypassConnection();
+            document.getElementById('reverbMix').value = settings.reverbMix;
+            document.getElementById('reverbMix').dispatchEvent(new Event('input'));
 
+            document.getElementById('reverbBypass').checked = settings.isReverbBypassed;
+            document.getElementById('reverbBypass').dispatchEvent(new Event('change')); // Trigger change event
+
+            // Update global variables that are not directly tied to a knob
             currentDetune = settings.currentDetune;
             currentFilterFrequency = settings.currentFilterFrequency;
             currentFilterQ = settings.currentFilterQ;
@@ -1954,9 +1981,9 @@
 
             // Disconnect masterGainNode from compressor (its direct connection)
             masterGainNode.disconnect(compressorNode);
-            // Disconnect chorusNode from analyserNode if it was connected
+            // Disconnect chorusNode from compressor if it was connected
             try {
-                chorusNode.disconnect(compressorNode); // Chorus connects to compressor now
+                chorusNode.disconnect(compressorNode);
             } catch (e) { /* ignore */ }
 
             // Reconnect masterGainNode to chorus or compressor based on bypass state
@@ -1975,8 +2002,10 @@
             if (!audioContext || !compressorNode || !analyserNode || !convolverNode || !reverbGainNode || !dryGainNode) return;
 
             // Disconnect all previous connections from compressor to dry/wet paths
-            compressorNode.disconnect(dryGainNode);
-            compressorNode.disconnect(convolverNode);
+            try {
+                compressorNode.disconnect(dryGainNode);
+                compressorNode.disconnect(convolverNode);
+            } catch (e) { /* ignore */ }
             
             // Disconnect dry/wet paths from analyser
             try {
@@ -1999,26 +2028,85 @@
             analyserNode.connect(audioContext.destination); // Analyser always connects to destination
         }
 
-        // --- Knob Event Listeners and Value Display ---
-        function setupKnob(knobId, valueSpanId, initialValue, displayPrecision = 2, onInputChangeCallback) {
-            const knob = document.getElementById(knobId);
-            const valueSpan = document.getElementById(valueSpanId);
-
-            if (knob) {
-                knob.value = initialValue;
-                valueSpan.textContent = initialValue.toFixed(displayPrecision);
-
-                knob.addEventListener('input', (event) => {
-                    let value = parseFloat(event.target.value);
-                    valueSpan.textContent = value.toFixed(displayPrecision);
-                    if (onInputChangeCallback) {
-                        onInputChangeCallback(value);
+        /**
+         * Updates the audio parameter based on the knob ID.
+         * This centralizes the logic for knob interactions.
+         * @param {string} id - The ID of the knob.
+         * @param {number} value - The new value of the knob.
+         */
+        function updateAudioParameter(id, value) {
+            switch (id) {
+                case 'masterVolume':
+                    masterVolume = value;
+                    if (audioContext && masterGainNode) masterGainNode.gain.setValueAtTime(masterVolume, audioContext.currentTime);
+                    break;
+                case 'tempo':
+                    currentTempo = value;
+                    break;
+                case 'bassVolume':
+                    bassVolume = value;
+                    break;
+                case 'synthVolume':
+                    synthVolume = value;
+                    break;
+                case 'kickVolume':
+                    kickVolume = value;
+                    break;
+                case 'snareVolume':
+                    snareVolume = value;
+                    break;
+                case 'hihatVolume':
+                    hihatVolume = value;
+                    break;
+                case 'delayTime':
+                    delayTimeValue = value;
+                    if (audioContext && delayNode) delayNode.delayTime.setValueAtTime(delayTimeValue, audioContext.currentTime);
+                    break;
+                case 'delayFeedback':
+                    delayFeedbackValue = value;
+                    if (audioContext && delayFeedbackGain) delayFeedbackGain.gain.setValueAtTime(delayFeedbackValue, audioContext.currentTime);
+                    break;
+                case 'delaySendLevel':
+                    delaySendLevel = value;
+                    break;
+                case 'chorusDepth':
+                    chorusDepth = value;
+                    if (audioContext && chorusLfoGain) chorusLfoGain.gain.setValueAtTime(chorusDepth, audioContext.currentTime);
+                    break;
+                case 'compThreshold':
+                    compThreshold = value;
+                    if (audioContext && compressorNode) compressorNode.threshold.setValueAtTime(compThreshold, audioContext.currentTime);
+                    break;
+                case 'compRatio':
+                    compRatio = value;
+                    if (audioContext && compressorNode) compressorNode.ratio.setValueAtTime(compRatio, audioContext.currentTime);
+                    break;
+                case 'reverbMix':
+                    reverbMix = value;
+                    if (audioContext && reverbGainNode && dryGainNode) {
+                        reverbGainNode.gain.setValueAtTime(reverbMix, audioContext.currentTime);
+                        dryGainNode.gain.setValueAtTime(1 - reverbMix, audioContext.currentTime);
                     }
-                });
-            } else {
-                console.warn(`Knob with ID '${knobId}' not found.`);
+                    break;
+            }
+            // Update the display value for the knob
+            const valueSpan = document.getElementById(`${id}Value`);
+            if (valueSpan) {
+                if (id === 'compThreshold') {
+                    valueSpan.textContent = `${value.toFixed(0)} dB`;
+                } else if (id === 'compRatio') {
+                    valueSpan.textContent = `${value.toFixed(1)}:1`;
+                } else if (id === 'reverbMix') {
+                    valueSpan.textContent = `${(value * 100).toFixed(0)}%`;
+                } else if (id === 'chorusDepth') {
+                    valueSpan.textContent = value.toFixed(4);
+                }
+                else {
+                    valueSpan.textContent = value.toFixed(2);
+                }
             }
         }
+
 
         // Enhanced LooperRecorder Class
         class EnhancedLooperRecorder {
@@ -2219,62 +2307,6 @@
         }
         */
 
-        // MIDI Input Initialization (Removed due to permissions policy in this environment)
-        // function initializeMidi() {
-        //     if (navigator.requestMIDIAccess) {
-        //         navigator.requestMIDIAccess()
-        //             .then(onMIDISuccess, onMIDIFailure);
-        //     } else {
-        //         console.warn("Web MIDI API is not supported in this browser.");
-        //         showMessage("MIDI input not supported by your browser.", 3000);
-        //     }
-        // }
-
-        // function onMIDISuccess(midiAccess) {
-        //     console.log("Web MIDI API access granted.", midiAccess);
-        //     showMessage("MIDI access granted! Looking for devices...", 2000);
-
-        //     // Get MIDI inputs
-        //     const inputs = midiAccess.inputs;
-        //     if (inputs.size === 0) {
-        //         console.log("No MIDI input devices found.");
-        //         showMessage("No MIDI input devices found.", 2000);
-        //         return;
-        //     }
-
-        //     inputs.forEach(input => {
-        //         console.log(`MIDI Input: Name: ${input.name}, Manufacturer: ${input.manufacturer}, ID: ${input.id}`);
-        //         input.onmidimessage = onMIDIMessage;
-        //     });
-        // }
-
-        // function onMIDIFailure(error) {
-        //     console.error(`Failed to get MIDI access: ${error.code} - ${error.message}`);
-        //     showMessage(`Failed to get MIDI access: ${error.message}`, 5000);
-        // }
-
-        // function onMIDIMessage(event) {
-        //     const data = event.data; // [status, note, velocity]
-        //     const status = data[0];
-        //     const note = data[1];
-        //     const velocity = data[2];
-
-        //     // Example: Log MIDI messages
-        //     console.log(`MIDI Message: Status: ${status}, Note: ${note}, Velocity: ${velocity}`);
-
-        //     // Basic MIDI note on/off handling (for future expansion)
-        //     if (status === 144) { // Note On (0x90)
-        //         // console.log(`MIDI Note On: ${note} with velocity ${velocity}`);
-        //         // Future: Map MIDI note to play a specific sound or trigger a sequence
-        //     } else if (status === 128) { // Note Off (0x80)
-        //         // console.log(`MIDI Note Off: ${note}`);
-        //     } else if (status >= 176 && status <= 191) { // Control Change (0xB0-0xBF)
-        //         // console.log(`MIDI Control Change: Controller: ${note}, Value: ${velocity}`);
-        //         // Future: Map MIDI CC to control knobs
-        //     }
-        // }
-
-
         // Add event listeners once the DOM is fully loaded
         document.addEventListener('DOMContentLoaded', () => {
             console.log("DOM Content Loaded. Attaching event listeners.");
@@ -2283,6 +2315,14 @@
             document.getElementById('savePresetButton').addEventListener('click', savePreset);
             document.getElementById('loadPresetButton').addEventListener('click', loadPreset);
             
+            // Add event listeners for all range input knobs
+            document.querySelectorAll('input[type="range"]').forEach(knob => {
+                knob.addEventListener('input', (e) => {
+                    updateAudioParameter(e.target.id, parseFloat(e.target.value));
+                });
+            });
+
+            // Add checkbox event listeners
             document.getElementById('chorusBypass').addEventListener('change', (event) => {
                 isChorusBypassed = event.target.checked;
                 updateChorusBypassConnection();
@@ -2295,80 +2335,20 @@
                 showMessage(`Reverb is now ${isReverbBypassed ? 'bypassed' : 'active'}.`);
             });
 
-            updateSectionDisplay();
+            // Initial display update for all knobs
+            document.querySelectorAll('input[type="range"]').forEach(knob => {
+                // Manually trigger the update to set initial display values
+                // and ensure global variables are in sync if not already
+                updateAudioParameter(knob.id, parseFloat(knob.value));
+            });
 
-            // Setup all knobs
-            setupKnob('masterVolume', 'masterVolumeValue', masterVolume, 2, (value) => {
-                masterVolume = value;
-                if (audioContext && masterGainNode) masterGainNode.gain.setValueAtTime(masterVolume, audioContext.currentTime);
-            });
-            setupKnob('bassVolume', 'bassVolumeValue', bassVolume, 2, (value) => {
-                bassVolume = value;
-            });
-            setupKnob('synthVolume', 'synthVolumeValue', synthVolume, 2, (value) => {
-                synthVolume = value;
-            });
-            setupKnob('kickVolume', 'kickVolumeValue', kickVolume, 2, (value) => {
-                kickVolume = value;
-            });
-            setupKnob('snareVolume', 'snareVolumeValue', snareVolume, 2, (value) => {
-                snareVolume = value;
-            });
-            setupKnob('hihatVolume', 'hihatVolumeValue', hihatVolume, 2, (value) => {
-                hihatVolume = value;
-            });
-            setupKnob('tempo', 'tempoValue', currentTempo, 0, (value) => {
-                currentTempo = value;
-            });
-            setupKnob('delayTime', 'delayTimeValue', delayTimeValue, 2, (value) => {
-                delayTimeValue = value;
-                if (audioContext && delayNode) delayNode.delayTime.setValueAtTime(delayTimeValue, audioContext.currentTime);
-            });
-            setupKnob('delayFeedback', 'delayFeedbackValue', delayFeedbackValue, 2, (value) => {
-                delayFeedbackValue = value;
-                if (audioContext && delayFeedbackGain) delayFeedbackGain.gain.setValueAtTime(delayFeedbackValue, audioContext.currentTime);
-            });
-            setupKnob('delaySendLevel', 'delaySendLevelValue', delaySendLevel, 2, (value) => {
-                delaySendLevel = value;
-            });
-            setupKnob('chorusDepth', 'chorusDepthValue', chorusDepth, 4, (value) => {
-                chorusDepth = value;
-                if (audioContext && chorusLfoGain) chorusLfoGain.gain.setValueAtTime(chorusDepth, audioContext.currentTime);
-            });
-            // New: Compressor knob setup
-            setupKnob('compThreshold', 'compThresholdValue', compThreshold, 0, (value) => {
-                compThreshold = value;
-                if (audioContext && compressorNode) compressorNode.threshold.setValueAtTime(compThreshold, audioContext.currentTime);
-                document.getElementById('compThresholdValue').textContent = `${value} dB`;
-            });
-            setupKnob('compRatio', 'compRatioValue', compRatio, 1, (value) => {
-                compRatio = value;
-                if (audioContext && compressorNode) compressorNode.ratio.setValueAtTime(compRatio, audioContext.currentTime);
-                document.getElementById('compRatioValue').textContent = `${value}:1`;
-            });
-            // New: Reverb knob setup
-            setupKnob('reverbMix', 'reverbMixValue', reverbMix, 2, (value) => {
-                reverbMix = value;
-                if (audioContext && reverbGainNode && dryGainNode) {
-                    reverbGainNode.gain.setValueAtTime(reverbMix, audioContext.currentTime);
-                    dryGainNode.gain.setValueAtTime(1 - reverbMix, audioContext.currentTime);
-                }
-                document.getElementById('reverbMixValue').textContent = `${(value * 100).toFixed(0)}%`;
-            });
+            updateSectionDisplay();
 
             // Initialize keyboard controls
             initializeKeyboardControls();
             
             // Add recording controls (looperRecorder is initialized in initAudio)
             addRecordingControls();
-
-            // Initial connection update for chorus and reverb
-            updateChorusBypassConnection();
-            updateReverbBypassConnection();
-
-            // MIDI initialization is commented out because it requires specific browser permissions
-            // that are not available in this sandboxed environment.
-            // initializeMidi();
         });
     </script>
 </body>
