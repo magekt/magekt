@@ -435,15 +435,20 @@
                 return;
             }
             
+            let shouldDisplayGeneralOptions = true; // Flag to control general options display
+
             switch (cmd) {
                 case 'stats':
                     addToStory(player.stats());
+                    shouldDisplayGeneralOptions = false; // Don't re-display general options
                     break;
                 case 'wander':
-                    wander();
+                    wander(); // This will eventually call displayOptions() for new choices or new day
+                    shouldDisplayGeneralOptions = false;
                     break;
                 case 'rest':
-                    rest();
+                    rest(); // Calls endDay() -> startDay() -> displayOptions()
+                    shouldDisplayGeneralOptions = false;
                     break;
                 case 'remember':
                     addToStory('You remember...');
@@ -452,6 +457,7 @@
                     });
                     player.sanity = Math.min(100, player.sanity + 5);
                     checkStatRewards();
+                    shouldDisplayGeneralOptions = false; // Don't re-display general options
                     break;
                 case 'inventory':
                     if (player.inventory.length > 0) {
@@ -463,26 +469,38 @@
                         inventoryChoices.push("Cancel");
                         currentChoiceContext = { type: "using_inventory", choices: inventoryChoices };
                         gameState = "using_inventory";
+                        displayOptions(); // Call here to show the specific inventory prompt
                     } else {
                         addToStory('You carry: Nothing but hope');
                         currentChoiceContext = null;
-                        gameState = "playing";
+                        gameState = "playing"; // Revert to playing if inventory is empty
+                        // No need for displayOptions() here, as it will be handled by the outer check if shouldDisplayGeneralOptions is true
                     }
-                    displayOptions(); // This call is needed to show the "Type the number..." prompt
+                    shouldDisplayGeneralOptions = false; // Inventory handled its own prompt or is empty
                     break;
                 case 'meditate':
-                    meditate();
+                    meditate(); // Calls endDay() -> startDay() -> displayOptions()
+                    shouldDisplayGeneralOptions = false;
                     break;
                 case 'quit':
                     addToStory('Even in quitting, you make a choice.');
                     addToStory('The world will remember what you did here.');
                     gameOver();
+                    shouldDisplayGeneralOptions = false; // Game over, no more options
                     return;
                 default:
                     addToStory('In confusion, you hesitate. Time passes.');
-                    displayOptions();
+                    // shouldDisplayGeneralOptions remains true, so displayOptions() will be called below
                     break;
             }
+
+            // Only display general options if no specific state (like choosing, battle, inventory)
+            // or day-advancing action has already handled the prompt.
+            if (shouldDisplayGeneralOptions && gameState === "playing") {
+                displayOptions();
+            }
+            // Ensure command input is focused after any action
+            commandInput.focus();
         }
 
         function endDay() {
