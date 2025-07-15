@@ -194,8 +194,10 @@
             color: #00ff00;
             z-index: 1000;
             max-width: 300px;
+            max-height: 90vh; /* Allow overlay to take more height */
             min-width: 200px;
             display: none; /* Hidden by default */
+            overflow-y: auto; /* Allow overlay itself to scroll if content is too tall */
         }
         .debug-header {
             color: #4a90e2;
@@ -210,8 +212,14 @@
             gap: 5px;
             white-space: pre-wrap; /* Ensures newlines in debug text are rendered */
         }
-        .debug-content div {
-            word-wrap: break-word;
+        /* Removed max-height/overflow from .debug-content div to allow individual sections to manage their own overflow */
+        /* Apply scrolling specifically to the system info section */
+        #debug-system-info {
+            max-height: 200px; /* Limit height of system info log */
+            overflow-y: auto; /* Enable scrolling for system info log */
+            border-top: 1px dashed #4a90e2; /* Visual separator */
+            padding-top: 5px;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -589,7 +597,8 @@
         
         function processCommand() {
             try {
-                const command = commandInput.value.trim().toLowerCase();
+                // Aggressive sanitization of the raw input command
+                const command = commandInput.value.replace(/\s+/g, ' ').trim(); // Remove extra spaces, trim, keep original case for getActualChoiceFromInput
                 commandInput.value = '';
                 
                 if (command) {
@@ -602,7 +611,7 @@
         
         function executeCommand(cmd) {
             try {
-                debugSystem?.log(`Executing command: ${cmd}`, 'command');
+                debugSystem?.log(`Executing command: '${cmd}'`, 'command');
 
                 if (gameState === "game_over") return;
 
@@ -618,7 +627,10 @@
                 
                 let shouldDisplayGeneralOptions = true;
 
-                switch (cmd) {
+                // Normalize the command for general game state checks
+                const normalizedCmd = cmd.toLowerCase();
+
+                switch (normalizedCmd) {
                     case 'stats':
                         addToStory(player.stats());
                         shouldDisplayGeneralOptions = false;
@@ -886,53 +898,57 @@
         }
 
         // --- Choice Handling Functions ---
-        function getActualChoiceFromInput(cmd, choices) {
-            const isNumeric = /^\d+$/.test(cmd);
-            let resultCmd = cmd.toLowerCase(); // Default to lowercase of raw command
+        function getActualChoiceFromInput(rawCmd, choices) {
+            debugSystem?.log(`getActualChoiceFromInput: Raw cmd='${rawCmd}', Choices=[${choices.map(c => `'${c}'`).join(', ')}]`, 'debug');
+            
+            const cleanedRawCmd = rawCmd.trim(); // Only trim here, keep original case for now
+
+            const isNumeric = /^\d+$/.test(cleanedRawCmd);
+            let resolvedChoiceString = cleanedRawCmd; // Default to the cleaned raw input
 
             if (isNumeric) {
-                const choiceIndex = parseInt(cmd, 10) - 1;
-                // Ensure choiceIndex is within bounds of choices array
+                const choiceIndex = parseInt(cleanedRawCmd, 10) - 1;
                 if (choiceIndex >= 0 && choiceIndex < choices.length) {
-                    // Return the canonical form from the choices array, converted to lowercase.
-                    // This is important because the choices array might contain both full phrases
-                    // and short keywords, and we want to use the exact string from the array
-                    // for consistent matching with the 'validChoices' array in handleNpcChoice.
-                    resultCmd = choices[choiceIndex].toLowerCase();
+                    // Return the exact string from the choices array, without lowercasing/trimming yet
+                    resolvedChoiceString = choices[choiceIndex];
                 } else {
-                    // If numeric but out of bounds, it's an invalid numeric input.
-                    // We'll let the later validation in handleChoice/handleNpcChoice catch this.
-                    // For now, just return the lowercase of the original command.
-                    debugSystem?.log(`Numeric input '${cmd}' is out of bounds for choices (length: ${choices.length}).`, 'debug');
+                    debugSystem?.log(`getActualChoiceFromInput: Numeric input '${cleanedRawCmd}' is out of bounds for choices (length: ${choices.length}).`, 'warning');
                 }
             }
-            debugSystem?.log(`getActualChoiceFromInput('${cmd}', [${choices.map(c => `'${c}'`).join(', ')}]) returned: '${resultCmd}'`, 'debug');
-            return resultCmd;
+            debugSystem?.log(`getActualChoiceFromInput: Resolved choice string (raw) is '${resolvedChoiceString}'`, 'debug');
+            return resolvedChoiceString;
         }
 
 
         function handleChoice(cmd) {
             try {
-                debugSystem?.log(`Handling choice: ${cmd} for context ${currentChoiceContext?.type}`, 'info');
+                debugSystem?.log(`handleChoice: Received raw command '${cmd}' for context ${currentChoiceContext?.type}`, 'info');
                 let choiceHandled = false;
-                let actualCmd = getActualChoiceFromInput(cmd, currentChoiceContext.choices);
+                // getActualChoiceFromInput now returns the raw string, not lowercased/trimmed
+                let actualCmdRaw = getActualChoiceFromInput(cmd, currentChoiceContext.choices);
+                debugSystem?.log(`handleChoice: Resolved actualCmd (raw) is '${actualCmdRaw}'`, 'debug');
 
-                if (actualCmd === null) {
-                    addToStory("Invalid choice number. Please enter a valid number.");
-                    displayOptions();
-                    return;
+                // If getActualChoiceFromInput couldn't resolve a valid choice (e.g., out-of-bounds number)
+                // it would return the original (potentially invalid) rawCmd.
+                // We need to ensure it's a non-empty string before proceeding.
+                if (!actualCmdRaw) { // This handles cases where getActualChoiceFromInput might return empty string for invalid numeric input
+                     addToStory("Invalid choice. Please enter a valid option.");
+                     displayOptions();
+                     return;
                 }
 
                 switch (currentChoiceContext.type) {
                     case "explore":
-                        choiceHandled = handleExploreChoice(currentChoiceContext.location, actualCmd);
+                        choiceHandled = handleExploreChoice(currentChoiceContext.location, actualCmdRaw);
                         break;
                     case "explore_dying_tree_comfort":
-                        choiceHandled = handleDyingTreeComfortChoice(actualCmd);
+                        // Fixed: Changed 'actualChoiceRaw' to 'actualCmdRaw'
+                        choiceHandled = handleDyingTreeComfortChoice(actualCmdRaw);
                         break;
                     case "explore_memory_shrine_add_name":
-                        addToStory(`You carve '${actualCmd}' into the stone. They will not be forgotten.`);
-                        player.addMemory(`Honored ${actualCmd} at the shrine`);
+                        // For this specific case, we want the raw user input as the name
+                        addToStory(`You carve '${actualCmdRaw}' into the stone. They will not be forgotten.`);
+                        player.addMemory(`Honored ${actualCmdRaw} at the shrine`);
                         player.changeHope(5);
                         choiceHandled = true;
                         break;
@@ -940,13 +956,13 @@
                     case "meet_npc_marcus":
                     case "meet_npc_chronicler":
                     case "meet_npc_anna":
-                        choiceHandled = handleNpcChoice(currentChoiceContext.type, actualCmd);
+                        choiceHandled = handleNpcChoice(currentChoiceContext.type, actualCmdRaw);
                         break;
                     case "critical_choice":
-                        choiceHandled = handleCriticalChoice(actualCmd);
+                        choiceHandled = handleCriticalChoice(actualCmdRaw);
                         break;
                     case "using_inventory":
-                        choiceHandled = handleInventoryUse(actualCmd);
+                        choiceHandled = handleInventoryUse(actualCmdRaw);
                         break;
                     default:
                         addToStory("Invalid choice. Please choose one of the available options.");
@@ -967,9 +983,10 @@
             }
         }
 
-        function handleExploreChoice(locationId, cmd) {
+        function handleExploreChoice(locationId, cmdRaw) {
             try {
-                debugSystem?.log(`Handling explore choice for ${locationId}: ${cmd}`, 'info');
+                const cmd = cmdRaw.trim().toLowerCase(); // Normalize command here
+                debugSystem?.log(`Handling explore choice for ${locationId}: normalized command '${cmd}'`, 'info');
                 switch (locationId) {
                     case "abandoned_school":
                         if (cmd === "search the school" || cmd === "search") {
@@ -1085,9 +1102,10 @@
             }
         }
 
-        function handleDyingTreeComfortChoice(cmd) {
+        function handleDyingTreeComfortChoice(cmdRaw) {
             try {
-                debugSystem?.log(`Handling dying tree comfort choice: ${cmd}`, 'info');
+                const cmd = cmdRaw.trim().toLowerCase(); // Normalize command here
+                debugSystem?.log(`Handling dying tree comfort choice: normalized command '${cmd}'`, 'info');
                 if (cmd === "comfort her" || cmd === "comfort") {
                     addToStory("You sit beside her. Sometimes presence is enough.");
                     player.sanity += 5;
@@ -1116,7 +1134,7 @@
             }
         }
 
-        function handleNpcChoice(npcType, cmd) {
+        function handleNpcChoice(npcType, cmdRaw) {
             try {
                 let npcName;
                 switch(npcType) {
@@ -1127,7 +1145,8 @@
                     default: return false;
                 }
 
-                debugSystem?.log(`Handling NPC interaction with ${npcName}, command: '${cmd}'`, 'info');
+                const normalizedCmd = cmdRaw.trim().toLowerCase(); // Normalize command here
+                debugSystem?.log(`handleNpcChoice: Handling NPC interaction with ${npcName}, normalized command: '${normalizedCmd}'`, 'info');
 
                 if (!player.relationships[npcName]) {
                     player.relationships[npcName] = 0;
@@ -1136,33 +1155,35 @@
                 // Find the NPC data
                 const npcData = NPCS.find(npc => npc.name === npcName);
                 if (!npcData) {
-                    debugSystem?.log(`NPC data not found for ${npcName}`, 'error');
+                    debugSystem?.log(`handleNpcChoice: NPC data not found for ${npcName}`, 'error');
                     return false;
                 }
 
-                // Get the available choices for this NPC
-                const validChoices = npcData.choices.map(choice => choice.toLowerCase());
-                debugSystem?.log(`Valid choices for ${npcName}: [${validChoices.map(c => `'${c}'`).join(', ')}]`, 'debug'); // Log valid choices
+                // Get the available choices for this NPC, also normalized
+                const validChoices = npcData.choices.map(choice => choice.trim().toLowerCase());
+                debugSystem?.log(`handleNpcChoice: Valid choices for ${npcName}: [${validChoices.map(c => `'${c}'`).join(', ')}]`, 'debug'); // Log valid choices
 
-                // Check if the command matches any of the valid choices
-                // This check now works because NPCS.choices includes both full phrases and keywords.
-                if (!validChoices.includes(cmd)) {
-                    debugSystem?.log(`Command '${cmd}' NOT found in valid choices. Returning false.`, 'warning'); // Specific log
+                // Check if the normalized command matches any of the valid normalized choices
+                const isChoiceValid = validChoices.includes(normalizedCmd);
+                debugSystem?.log(`handleNpcChoice: Checking if validChoices.includes('${normalizedCmd}'). Result: ${isChoiceValid}`, 'debug');
+
+                if (!isChoiceValid) {
+                    debugSystem?.log(`handleNpcChoice: Command '${normalizedCmd}' NOT found in valid choices. Returning false.`, 'warning'); // Specific log
                     return false;
                 }
-                debugSystem?.log(`Command '${cmd}' IS found in valid choices. Proceeding.`, 'debug'); // Specific log
+                debugSystem?.log(`handleNpcChoice: Command '${normalizedCmd}' IS found in valid choices. Proceeding.`, 'debug'); // Specific log
 
 
                 switch(npcName) {
                     case "The Chronicler":
-                        if (cmd === "share your story" || cmd === "share") {
+                        if (normalizedCmd === "share your story" || normalizedCmd === "share") {
                             addToStory("You tell him of your journey. He writes it down with shaking hands.");
                             player.addMemory("Shared your story with the Chronicler");
                             player.sanity += 10;
                             player.relationships["The Chronicler"] += 10;
                             checkStatRewards();
                             return true;
-                        } else if (cmd === "listen to his" || cmd === "listen") {
+                        } else if (normalizedCmd === "listen to his" || normalizedCmd === "listen") {
                             addToStory("He recounts tales of a forgotten world, of heroes and villains long turned to dust.");
                             player.sanity += 5;
                             player.relationships["The Chronicler"] += 5;
@@ -1172,7 +1193,7 @@
                         break;
 
                     case "Elena":
-                        if (cmd === "offer to help" || cmd === "help") {
+                        if (normalizedCmd === "offer to help" || normalizedCmd === "help") {
                             addToStory("You spend the day helping her tend to the wounded.");
                             player.relationships.Elena += 10;
                             player.karma += 10;
@@ -1180,7 +1201,7 @@
                             addToStory("Elena smiles sadly. 'Thank you. I'd forgotten what kindness looked like.'");
                             checkStatRewards();
                             return true;
-                        } else if (cmd === "ask for healing" || cmd === "healing") {
+                        } else if (normalizedCmd === "ask for healing" || normalizedCmd === "healing") {
                             if (player.hp < player.max_hp) {
                                 player.hp = Math.min(player.max_hp, player.hp + 20);
                                 addToStory("Elena tends to your wounds without asking for payment.");
@@ -1194,14 +1215,14 @@
                         break;
 
                     case "Marcus":
-                        if (cmd === "promise to look" || cmd === "promise") {
+                        if (normalizedCmd === "promise to look" || normalizedCmd === "promise") {
                             addToStory("'Thank you,' he weeps. 'I won't give up. I can't give up.'");
                             player.addMemory("Promised to help Marcus find his daughter");
                             player.relationships.Marcus += 15;
                             player.karma += 10;
                             checkStatRewards();
                             return true;
-                        } else if (cmd === "offer comfort" || cmd === "comfort") {
+                        } else if (normalizedCmd === "offer comfort" || normalizedCmd === "comfort") {
                             addToStory("You offer words of solace. He nods, tears in his eyes.");
                             player.sanity += 5;
                             player.relationships.Marcus += 5;
@@ -1211,14 +1232,14 @@
                         break;
 
                     case "Anna":
-                        if (cmd === "help with the garden" || cmd === "help") {
+                        if (normalizedCmd === "help with the garden" || normalizedCmd === "help") {
                             addToStory("You work together in silence. New shoots push through the ash.");
                             player.changeHope(10);
                             player.relationships.Anna += 10;
                             player.sanity += 5;
                             checkStatRewards();
                             return true;
-                        } else if (cmd === "ask about the past" || cmd === "ask") {
+                        } else if (normalizedCmd === "ask about the past" || normalizedCmd === "ask") {
                             addToStory("She speaks of vibrant colors and bustling cities, a world that exists only in memory.");
                             player.sanity += 5;
                             player.relationships.Anna += 5;
@@ -1228,7 +1249,7 @@
                         break;
                 }
 
-                debugSystem?.log(`No valid action found for ${npcName} with command ${cmd}`, 'warning');
+                debugSystem?.log(`handleNpcChoice: No valid action found for ${npcName} with command ${normalizedCmd}`, 'warning');
                 return false;
             } catch (error) {
                 handleGameError(new GameError(`Error in NPC interaction with ${npcName}`, 'NPC_INTERACTION_ERROR'));
@@ -1236,9 +1257,10 @@
             }
         }
 
-        function handleCriticalChoice(cmd) {
+        function handleCriticalChoice(cmdRaw) {
             try {
-                debugSystem?.log(`Handling critical choice: ${cmd}`, 'info');
+                const cmd = cmdRaw.trim().toLowerCase(); // Normalize command here
+                debugSystem?.log(`Handling critical choice: normalized command '${cmd}'`, 'info');
                 if (cmd === "take the food" || cmd === "take") {
                     addToStory("You take the food. The children scatter like frightened birds.");
                     addToStory("You eat well tonight, but their faces haunt your dreams.");
@@ -1275,14 +1297,17 @@
             }
         }
 
-        function handleInventoryUse(cmd) {
+        function handleInventoryUse(cmdRaw) {
             try {
-                debugSystem?.log(`Handling inventory use: ${cmd}`, 'info');
+                const cmd = cmdRaw.trim().toLowerCase(); // Normalize command here
+                debugSystem?.log(`Handling inventory use: normalized command '${cmd}'`, 'info');
                 if (cmd === "cancel") {
                     addToStory("You decide not to use an item.");
                     return true;
                 } else {
-                    useItem(cmd);
+                    // Item names are already stored in original case in inventory, but ITEM_DATA keys are lowercase.
+                    // So we must pass the normalized (lowercase) command to useItem.
+                    useItem(cmd); 
                     return true;
                 }
             } catch (error) {
@@ -1293,8 +1318,9 @@
 
         function useItem(item_name_lower) {
             try {
-                debugSystem?.log(`Using item: ${item_name_lower}`, 'info');
-                const itemData = ITEM_DATA[item_name_lower];
+                debugSystem?.log(`Using item: '${item_name_lower}'`, 'info');
+                // ITEM_DATA keys are already lowercase, so direct lookup is fine
+                const itemData = ITEM_DATA[item_name_lower]; 
                 if (!itemData) {
                     addToStory(`You don't have '${item_name_lower}' in your inventory.`);
                     gameState = "playing";
@@ -1302,6 +1328,7 @@
                     return;
                 }
 
+                // Find item in player's inventory, comparing normalized names
                 const itemInInventoryIndex = player.inventory.findIndex(item => item.name.toLowerCase() === item_name_lower);
                 if (itemInInventoryIndex === -1) {
                     addToStory(`You don't have '${item_name_lower}' in your inventory.`);
@@ -1361,14 +1388,16 @@
             debugSystem?.log(`Enemy encountered: ${enemy.name} (HP: ${enemy.hp})`, 'info');
         }
 
-        function handleBattle(cmd) {
+        function handleBattle(cmdRaw) {
             try {
-                debugSystem?.log(`Handling battle action: ${cmd}`, 'info');
+                const cmd = cmdRaw.trim().toLowerCase(); // Normalize command here
+                debugSystem?.log(`Handling battle action: normalized command '${cmd}'`, 'info');
                 if (battleState === BATTLE_STATES.END) return; 
 
-                let actualCmd = getActualChoiceFromInput(cmd, currentChoiceContext.choices);
+                // For battle, we only expect direct commands or numbers for displayed options
+                let actualCmd = getActualChoiceFromInput(cmdRaw, currentChoiceContext.choices).trim().toLowerCase();
 
-                if (actualCmd === null) {
+                if (!actualCmd) { // Check if getActualChoiceFromInput returned an empty string for invalid input
                     addToStory("Invalid battle command. Please enter a valid number or command.");
                     displayOptions();
                     return;
@@ -1460,6 +1489,7 @@
                 addToStory(`\nYou meet ${npcName}.`);
                 addToStory(randomNPC.desc);
                 
+                // currentChoiceContext.choices should contain all valid strings (long and short)
                 currentChoiceContext = { type: `meet_npc_${npcName.toLowerCase().replace(/ /g, '_')}`, choices: randomNPC.choices };
                 gameState = "choosing";
                 displayOptions();
@@ -1497,8 +1527,15 @@
             } else if (gameState === "choosing" && currentChoiceContext && currentChoiceContext.choices) {
                 optionsText = "Enter the number of your choice:";
                 // Filter out short keywords for display, only show full phrases for numbered options
-                const displayChoices = currentChoiceContext.choices.filter(choice => !["share", "listen", "help", "healing", "promise", "comfort", "ask"].includes(choice.toLowerCase()));
-                displayChoices.forEach((choice, index) => {
+                // This assumes the first two (or N) elements of the choices array are the "primary" options.
+                const displayChoices = currentChoiceContext.choices.filter(choice => 
+                    !["share", "listen", "help", "healing", "promise", "comfort", "ask"].includes(choice.toLowerCase())
+                );
+                // To ensure only the *first* set of choices are numbered, we can slice it.
+                // Assuming the first two are always the main ones for NPCs.
+                const numberedDisplayChoices = displayChoices.slice(0, 2); // Show only first two as numbered options
+
+                numberedDisplayChoices.forEach((choice, index) => {
                     optionsText += `<br>${index + 1}. ${choice}`;
                 });
             } else if (gameState === "battle" && currentChoiceContext && currentChoiceContext.choices) { 
@@ -1842,13 +1879,8 @@
                 } else {
                     this.updateElement('debug-player-stats', 'Player: Not initialized');
                 }
-
-                this.updateElement('debug-system-info', 
-                    `System Info:\n` +
-                    `Choice Context: ${currentChoiceContext ? currentChoiceContext.type : 'none'}\n` +
-                    `Enemy: ${enemy ? enemy.name : 'none'}\n` +
-                    `Achievements: ${achievementSystem ? achievementSystem.unlocked.size : '0'}`
-                );
+                // The debug-system-info element is now updated only by the log method,
+                // so we don't need to update it here.
             }
 
             updateElement(id, text) {
@@ -1867,11 +1899,8 @@
                     const logMessage = `[${timestamp}] [${type.toUpperCase()}] ${message}`;
                     // Prepend new log message to existing content
                     element.textContent = logMessage + '\n' + element.textContent;
-                    // Keep the log content from growing indefinitely for performance, limit to last N lines
-                    const lines = element.textContent.split('\n');
-                    if (lines.length > 20) { // Limit to 20 lines
-                        element.textContent = lines.slice(0, 20).join('\n');
-                    }
+                    // Scroll to top to show latest log entry
+                    element.scrollTop = 0;
                 }
             }
         }
@@ -1880,7 +1909,7 @@
         // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
             // Initialize DebugSystem when the DOM is ready, but don't start it automatically
-            // It will be started by startGame() or the Ctrl+` shortcut.
+            // It will be started by startGame() or the new shortcut.
             debugSystem = new DebugSystem(); 
 
             const playerNameInput = DOMCache.get('player-name');
@@ -1891,10 +1920,11 @@
             });
             playerNameInput.focus();
 
-            // Add keyboard shortcut to toggle debug overlay (Ctrl + `)
+            // Add keyboard shortcut to toggle debug overlay (Cmd + D for Mac, Ctrl + D for others)
             document.addEventListener('keydown', (e) => {
-                if (e.ctrlKey && e.key === '`') {
-                    e.preventDefault();
+                // Check for 'd' key and either Command (metaKey) or Control (ctrlKey)
+                if (e.key.toLowerCase() === 'd' && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault(); // Prevent default browser actions (like bookmarking)
                     debugSystem.toggle();
                 }
             });
