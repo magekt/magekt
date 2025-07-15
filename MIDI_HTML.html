@@ -791,7 +791,7 @@
             verse3: ['verse3_A', 'verse3_B', 'verse3_C']
         };
         // Updated: Added more Raga scales
-        const ragaVerseOptions = ['ragaYamanPhrase', 'ragaBhairaviPhrase', 'ragaBhoopaliPhrase', 'ragaKhamajPhrase'];
+        const ragaVerseOptions = ['ragaYamanPhrase', 'ragaBhairaviPhrase', 'ragaBhoopaliPhrase', 'ragaKhamajPhrase', 'ragaBhimpalasiPhrase', 'ragaKedarPhrase', 'ragaBageshriPhrase', 'ragaMalkaunsPhrase', 'ragaDarbariPhrase', 'ragaBhairavPhrase'];
         let availableRagas = [...ragaVerseOptions]; // Copy for shuffling
         let normalVerseIndex = 0;
         let verseIterationCount = 0;
@@ -858,28 +858,33 @@
             });
         }
 
-        // New Raga scale definitions (using C as tonic for simplicity)
+        // Raga scale definitions (using C as tonic for simplicity)
         const ragaScales = {
             yaman: ['C4', 'D4', 'E4', 'F#4', 'G4', 'A4', 'B4', 'C5'],
             bhairavi: ['C4', 'C#4', 'D#4', 'F4', 'G4', 'G#4', 'A#4', 'C5'],
-            // New Raga scales
             bhoopali: ['C4', 'D4', 'E4', 'G4', 'A4', 'C5'], // Pentatonic scale
-            khamaj: ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'A#4', 'C5'] // Natural minor with major 7th
+            khamaj: ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'A#4', 'C5'], // Natural minor with major 7th
+            bhimpalasi: ['C4', 'Eb4', 'F4', 'G4', 'Bb4', 'C5'], // Sa Komal Ga Ma Pa Komal Ni (simplified for 6 notes)
+            kedar: ['C4', 'D4', 'E4', 'F#4', 'G4', 'A4', 'B4', 'C5'], // Sa Re Ga Tivra Ma Pa Dha Ni (similar to Yaman, but different characteristic phrases)
+            bageshri: ['C4', 'Eb4', 'F4', 'Ab4', 'Bb4', 'C5'], // Sa Komal Ga Ma Komal Dha Komal Ni (simplified for 6 notes)
+            malkauns: ['C4', 'Eb4', 'F4', 'Ab4', 'Bb4', 'C5'], // Sa Komal Ga Ma Komal Dha Komal Ni (pentatonic, no Re, Pa)
+            darbari: ['C4', 'D4', 'Eb4', 'F4', 'G4', 'Ab4', 'Bb4', 'C5'], // Sa Re Komal Ga Ma Pa Komal Dha Komal Ni
+            bhairav: ['C4', 'C#4', 'E4', 'F4', 'G4', 'G#4', 'B4', 'C5'] // Sa Komal Re Ga Ma Pa Komal Dha Ni
         };
 
-        // Raga Characteristics System
+        // Raga Characteristics System - UPDATED to include new ragas
         const ragaCharacteristics = {
             time: {
-                morning: ['yaman', 'bhairavi', 'bhoopali'], // Adjusted to use ragaScales keys
-                afternoon: ['sarang', 'bhimpalasi'], // Placeholder, not implemented in ragaScales
-                evening: ['yaman', 'purvi'], // Placeholder, not implemented in ragaScales
-                night: ['malkauns', 'darbari'] // Placeholder, not implemented in ragaScales
+                morning: ['yaman', 'bhairavi', 'bhoopali', 'bhairav'],
+                afternoon: ['bhimpalasi', 'khamaj', 'kedar'],
+                evening: ['yaman', 'kedar', 'bageshri'],
+                night: ['bageshri', 'malkauns', 'darbari']
             },
             moods: {
-                peaceful: ['bhoopali', 'yaman'],
-                energetic: ['sarang', 'bhairavi'],
-                melancholic: ['todi', 'malkauns'],
-                romantic: ['khamaj', 'bhimpalasi']
+                peaceful: ['bhoopali', 'yaman', 'bhairav'],
+                energetic: ['bhairavi', 'khamaj', 'kedar'],
+                melancholic: ['bhimpalasi', 'bageshri', 'malkauns', 'darbari'],
+                romantic: ['khamaj', 'yaman', 'bageshri']
             }
         };
 
@@ -1157,6 +1162,12 @@
             ragaBhairaviPhrase: [],
             ragaBhoopaliPhrase: [],
             ragaKhamajPhrase: [],
+            ragaBhimpalasiPhrase: [], 
+            ragaKedarPhrase: [],      
+            ragaBageshriPhrase: [],   
+            ragaMalkaunsPhrase: [],   
+            ragaDarbariPhrase: [],    
+            ragaBhairavPhrase: [],    
             
             chorus: [
                 { bass: ['A2'], synth: ['A4', 'C5', 'E4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'open', velocity: 0.9 } }, delaySend: 0.6 },
@@ -2188,7 +2199,7 @@
 
                     if (currentSectionType === 'verse' && verseIterationCount % 2 === 0) {
                         // This block handles Raga sections
-                        const selectedRagaName = selectTimeAppropriateRaga();
+                        const selectedRagaName = selectTimeAppropriateRaga(); // Use the function to select a time-appropriate raga
                         currentSectionName = `raga${selectedRagaName.charAt(0).toUpperCase() + selectedRagaName.slice(1)}Phrase`; // Format for display
                         
                         const selectedRagaScale = ragaScales[selectedRagaName]; // Get the actual scale array
