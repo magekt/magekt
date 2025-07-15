@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simple Relax Looper</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         /* Apply Inter font and basic styling to the body */
         body {
@@ -34,20 +35,20 @@
 
         /* Left panel for knobs */
         .left-panel {
-            flex: 0 0 250px; /* Fixed width for the left panel, no shrinking */
+            flex: 0 0 280px; /* Slightly wider fixed width for the left panel */
             background-color: #2a2a2a;
-            padding: 20px;
+            padding: 25px; /* Increased padding */
             border-radius: 15px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 25px; /* Increased gap between sections */
         }
 
         /* Central content container (formerly 'container') */
         .central-content {
             flex: 1; /* Take remaining space */
-            min-width: 300px; /* Minimum width for central content */
+            min-width: 320px; /* Minimum width for central content */
             background-color: #2a2a2a;
             padding: 30px;
             border-radius: 15px;
@@ -55,16 +56,28 @@
             text-align: center;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 25px; /* Increased gap between sections */
         }
 
         /* Styling for the main heading */
         h1 {
             color: #90ee90; /* Light green for "Weed" theme */
             margin-bottom: 10px; /* Reduced margin */
-            font-size: 2.5em;
-            text-shadow: 0 0 10px rgba(144, 238, 144, 0.6); /* Glow effect */
+            font-size: 2.8em; /* Slightly larger */
+            text-shadow: 0 0 12px rgba(144, 238, 144, 0.7); /* Stronger glow effect */
+            font-weight: 700; /* Bolder */
         }
+        /* Styling for subheadings in knob sections */
+        h3 {
+            color: #a0ffa0; /* Slightly brighter green for subheadings */
+            margin-top: 0;
+            margin-bottom: 15px; /* More space below subheading */
+            font-size: 1.4em;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(144, 238, 144, 0.3); /* Subtle separator */
+            padding-bottom: 10px;
+        }
+
         /* Styling for buttons */
         button {
             background-color: #4CAF50; /* Green */
@@ -75,14 +88,15 @@
             cursor: pointer;
             font-size: 1.2em;
             transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease; /* Smooth transitions */
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Button shadow */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* More prominent button shadow */
             outline: none; /* Remove outline on focus */
+            font-weight: 600;
         }
         /* Hover effects for buttons */
         button:hover {
             background-color: #45a049;
-            transform: translateY(-2px); /* Slight lift effect */
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            transform: translateY(-3px); /* Slight lift effect */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
         }
         /* Active (click) effects for buttons */
         button:active {
@@ -108,6 +122,8 @@
             display: none; /* Hidden by default */
             opacity: 0;
             transition: opacity 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border: 1px solid #4CAF50; /* Green border for message box */
         }
         /* Class to show the message box */
         .message-box.show {
@@ -119,11 +135,12 @@
             font-size: 1.1em;
             line-height: 1.6;
             margin-bottom: 15px;
+            color: #ccc;
         }
         /* Styling for current section display */
         #currentSectionDisplay {
-            margin-top: 10px;
-            font-size: 1.3em;
+            margin-top: 15px; /* Increased margin */
+            font-size: 1.4em; /* Slightly larger */
             color: #a0ffa0;
             font-weight: bold;
             transition: color 0.3s ease; /* Smooth color transition for highlight */
@@ -144,35 +161,36 @@
         /* Styling for knob sections */
         .knob-section {
             background-color: #3a3a3a;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 15px;
+            padding: 20px; /* Increased padding */
+            border-radius: 12px; /* Slightly more rounded */
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2); /* Inner shadow for depth */
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Responsive grid for knobs */
-            gap: 15px;
-        }
-        .knob-section h3 {
-            color: #90ee90;
-            margin-top: 0;
-            margin-bottom: 10px;
-            grid-column: 1 / -1; /* Span across all columns */
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Responsive grid for knobs, slightly wider min */
+            gap: 20px; /* Increased gap */
         }
         .knob-group {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 5px;
+            gap: 8px; /* Increased gap */
             position: relative; /* For value indicator */
+            padding: 10px;
+            border-radius: 8px;
+            background-color: #444; /* Slightly lighter background for individual knob groups */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
         .knob-group label {
-            font-size: 0.9em;
+            font-size: 1em; /* Slightly larger */
             color: #ccc;
+            font-weight: 500;
+            text-align: center;
         }
         .knob-group input[type="range"] {
-            width: 100px; /* Fixed width for sliders */
+            width: 100%; /* Make sliders fill their group width */
+            max-width: 150px; /* Max width for consistency */
             -webkit-appearance: none;
             appearance: none;
-            height: 8px;
+            height: 10px; /* Slightly thicker slider track */
             background: #555;
             outline: none;
             border-radius: 5px;
@@ -181,35 +199,55 @@
         .knob-group input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 20px;
-            height: 20px;
+            width: 22px; /* Slightly larger thumb */
+            height: 22px;
             border-radius: 50%;
             background: #90ee90;
             cursor: pointer;
-            box-shadow: 0 0 5px rgba(144, 238, 144, 0.5);
+            box-shadow: 0 0 8px rgba(144, 238, 144, 0.7); /* Stronger glow */
+            border: 2px solid #1a1a1a; /* Dark border for contrast */
         }
         .knob-group input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
             background: #90ee90;
             cursor: pointer;
-            box-shadow: 0 0 5px rgba(144, 238, 144, 0.5);
+            box-shadow: 0 0 8px rgba(144, 238, 144, 0.7);
+            border: 2px solid #1a1a1a;
         }
         .knob-value {
-            font-size: 0.8em;
+            font-size: 0.9em; /* Slightly larger */
             color: #a0ffa0;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+        .knob-group select {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #555;
+            background-color: #3a3a3a;
+            color: #e0e0e0;
+            width: 100%;
+            max-width: 150px;
+            text-align: center;
+            appearance: none; /* Remove default arrow */
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23e0e0e0%22%20d%3D%22M287%2C197.3L159.9%2C69.8c-4.4-4.3-11.4-4.3-15.8%2C0L5.1%2C197.3c-4.4%2C4.3-4.4%2C11.3%2C0%2C15.6l15.8%2C15.6c4.4%2C4.3%2C11.4%2C4.3%2C15.8%2C0L146%2C106.6c4.4-4.3%2C11.4-4.3%2C15.8%2C0l110.2%2C110.2c4.4%2C4.3%2C11.4%2C4.3%2C15.8%2C0l15.8-15.6C291.3%2C208.6%2C291.3%2C201.6%2C287%2C197.3z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right 8px top 50%;
+            background-size: 12px auto;
         }
 
         /* Audio Visualizer */
         #audioVisualizer {
             background-color: #000;
-            border: 1px solid #4CAF50;
-            border-radius: 8px;
-            margin-top: 20px;
+            border: 2px solid #4CAF50; /* Thicker border */
+            border-radius: 10px; /* More rounded */
+            margin-top: 25px; /* Increased margin */
             width: 100%; /* Make it responsive */
-            max-width: 400px; /* Max width for desktop */
-            height: 100px; /* Fixed height */
+            max-width: 450px; /* Max width for desktop */
+            height: 120px; /* Slightly taller */
+            box-shadow: 0 0 15px rgba(144, 238, 144, 0.5); /* Glowing effect */
         }
 
         /* Volume Meter */
@@ -217,32 +255,39 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-top: 15px;
-            gap: 10px;
+            margin-top: 20px;
+            gap: 12px; /* Increased gap */
+            background-color: #3a3a3a;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
         }
         .volume-meter-label {
-            font-size: 0.9em;
+            font-size: 1em;
             color: #ccc;
+            font-weight: 500;
         }
         #volumeMeter {
-            width: 150px;
-            height: 15px;
+            width: 180px; /* Wider meter */
+            height: 18px; /* Taller meter */
             background-color: #555;
             border-radius: 8px;
             overflow: hidden;
             border: 1px solid #4CAF50;
-            position: relative; /* Added for peak positioning */
+            position: relative;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
         }
         #volumeMeterFill {
             height: 100%;
             width: 0%; /* Starts empty */
             background-color: #90ee90;
             transition: width 0.05s ease-out; /* Smooth transition for volume changes */
+            box-shadow: 0 0 8px rgba(144, 238, 144, 0.5); /* Subtle glow on fill */
         }
         #volumePeak {
             position: absolute;
             height: 100%;
-            width: 2px; /* Thin line for peak */
+            width: 3px; /* Thicker line for peak */
             background-color: #ff0000; /* Red for peak */
             right: 0; /* Initially at the right, will move with peak */
             opacity: 0;
@@ -251,46 +296,74 @@
 
         /* Preset controls */
         .preset-controls {
-            margin-top: 20px;
+            margin-top: 25px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 15px; /* Increased gap */
             align-items: center;
+            background-color: #3a3a3a; /* Consistent background */
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2);
         }
         .preset-controls input[type="text"] {
-            padding: 8px;
-            border-radius: 5px;
+            padding: 10px; /* Increased padding */
+            border-radius: 8px; /* More rounded */
             border: 1px solid #555;
             background-color: #3a3a3a;
             color: #e0e0e0;
-            width: 80%;
-            max-width: 200px;
+            width: 90%; /* Wider input */
+            max-width: 250px; /* Increased max-width */
+            font-size: 1em;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
         }
         .preset-controls button {
-            padding: 10px 20px;
-            font-size: 1em;
-            width: 100%;
-            max-width: 200px;
+            padding: 12px 25px; /* Adjusted padding */
+            font-size: 1.1em; /* Slightly smaller than main buttons */
+            width: 90%;
+            max-width: 250px;
+            background-color: #555; /* Different color for preset buttons */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
+        .preset-controls button:hover {
+            background-color: #666;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        .preset-controls button:active {
+            background-color: #444;
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
         .checkbox-group {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px; /* Increased gap */
             margin-top: 10px;
             color: #ccc;
-            font-size: 0.9em;
+            font-size: 1em; /* Slightly larger */
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #90ee90; /* Green accent for checkbox */
+            cursor: pointer;
         }
 
         /* Recording Meter Style */
         .recording-meter {
             background-color: #ff4d4d; /* Red for recording */
             color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            margin-top: 10px;
-            font-size: 0.9em;
+            padding: 8px 15px; /* Increased padding */
+            border-radius: 8px; /* More rounded */
+            margin-top: 15px;
+            font-size: 1em; /* Slightly larger */
             display: none; /* Hidden by default */
             animation: pulse 1s infinite alternate; /* Pulsing animation */
+            font-weight: 600;
+            box-shadow: 0 0 10px rgba(255, 77, 77, 0.6); /* Red glow */
+            border: 1px solid #ff0000;
         }
 
         .recording-meter.active {
@@ -304,22 +377,24 @@
 
         /* Visualization Mode Controls */
         .visualization-controls {
-            margin-top: 15px;
+            margin-top: 20px;
             display: flex;
             justify-content: center;
             gap: 10px;
             flex-wrap: wrap;
         }
         .visualization-controls button {
-            padding: 8px 15px;
-            font-size: 0.9em;
+            padding: 10px 18px; /* Adjusted padding */
+            font-size: 0.95em; /* Slightly larger */
             background-color: #555;
             border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
         .visualization-controls button.active {
             background-color: #90ee90;
             color: #1a1a1a;
             font-weight: bold;
+            box-shadow: 0 0 10px rgba(144, 238, 144, 0.6);
         }
 
         /* Recording Format Dropdown */
@@ -327,12 +402,13 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 5px;
-            margin-top: 10px;
+            gap: 8px; /* Increased gap */
+            margin-top: 15px;
         }
         .recording-format-control label {
-            font-size: 0.9em;
+            font-size: 1em;
             color: #ccc;
+            font-weight: 500;
         }
         .recording-format-control select {
             padding: 8px;
@@ -340,8 +416,13 @@
             border: 1px solid #555;
             background-color: #3a3a3a;
             color: #e0e0e0;
-            width: 150px;
+            width: 160px; /* Slightly wider */
             text-align: center;
+            appearance: none; /* Remove default arrow */
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23e0e0e0%22%20d%3D%22M287%2C197.3L159.9%2C69.8c-4.4-4.3-11.4-4.3-15.8%2C0L5.1%2C197.3c-4.4%2C4.3-4.4%2C11.3%2C0%2C15.6l15.8%2C15.6c4.4%2C4.3%2C11.4%2C4.3%2C15.8%2C0L146%2C106.6c4.4-4.3%2C11.4-4.3%2C15.8%2C0l110.2%2C110.2c4.4%2C4.3%2C11.4%2C4.3%2C15.8%2C0l15.8-15.6C291.3%2C208.6%2C291.3%2C201.6%2C287%2C197.3z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right 8px top 50%;
+            background-size: 12px auto;
         }
 
         /* Responsive adjustments */
@@ -349,13 +430,31 @@
             .main-layout-container {
                 flex-direction: column; /* Stack panels vertically on small screens */
                 align-items: center;
+                padding: 10px; /* Reduced padding */
             }
             .left-panel, .central-content {
-                width: 95%; /* Make panels take more width */
+                width: 98%; /* Make panels take more width */
                 flex: none; /* Remove flex grow/shrink */
+                padding: 20px; /* Adjusted padding */
+            }
+            h1 {
+                font-size: 2.2em; /* Smaller on mobile */
+            }
+            button {
+                padding: 12px 20px; /* Smaller button padding */
+                font-size: 1.1em;
+            }
+            .knob-section {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Adjust grid for smaller screens */
+                gap: 15px;
             }
             #audioVisualizer {
-                width: 95%; /* Make visualizer wider on small screens */
+                width: 98%; /* Make visualizer wider on small screens */
+                max-width: none; /* No max-width on mobile */
+            }
+            .preset-controls input[type="text"],
+            .preset-controls button {
+                max-width: 90%; /* Wider on mobile */
             }
         }
     </style>
@@ -406,7 +505,7 @@
                 </div>
             </div>
 
-            <!-- New Instrument Timbres Section -->
+            <!-- Instrument Timbres Section -->
             <div class="knob-section">
                 <h3>Instrument Timbres</h3>
                 <div class="knob-group">
@@ -461,7 +560,7 @@
                 </div>
             </div>
 
-            <!-- New Compressor Controls -->
+            <!-- Compressor Controls -->
             <div class="knob-section">
                 <h3>Compressor</h3>
                 <div class="knob-group">
@@ -476,7 +575,7 @@
                 </div>
             </div>
 
-            <!-- New Reverb Controls -->
+            <!-- Reverb Controls -->
             <div class="knob-section">
                 <h3>Reverb</h3>
                 <div class="knob-group">
@@ -490,7 +589,7 @@
                 </div>
             </div>
 
-            <!-- New Distortion Controls -->
+            <!-- Distortion Controls -->
             <div class="knob-section">
                 <h3>Distortion</h3>
                 <div class="knob-group">
@@ -504,7 +603,7 @@
                 </div>
             </div>
 
-            <!-- New Phaser Controls -->
+            <!-- Phaser Controls -->
             <div class="knob-section">
                 <h3>Phaser</h3>
                 <div class="knob-group">
@@ -556,18 +655,18 @@
             </div>
 
             <!-- Preset Controls -->
-            <div class="preset-controls knob-section">
+            <div class="preset-controls">
                 <h3>Presets</h3>
                 <input type="text" id="presetNameInput" placeholder="Enter preset name" title="Enter a name for your preset">
                 <button id="savePresetButton" title="Save current settings as a preset">Save Preset</button>
                 <button id="loadPresetButton" title="Load a saved preset">Load Preset</button>
                 <button id="exportPresetsButton" title="Export all saved presets to a JSON file">Export All Presets</button>
                 <input type="file" id="importPresetsInput" accept=".json" style="display: none;" title="Select a JSON file to import presets">
-                <button id="importPresetsButton" title="Import Presets</button>
+                <button id="importPresetsButton" title="Import Presets">Import Presets</button> <!-- Added text here -->
                 <p>Quick Load: Press 1-9 to load "Preset 1" to "Preset 9"</p>
             </div>
 
-            <!-- New Recording Controls -->
+            <!-- Recording Controls -->
             <div class="controls recording-controls">
                 <button id="recordButton" title="Start/Stop recording audio (Hotkey: Ctrl+R)">Start Recording</button>
                 <div class="recording-format-control">
@@ -3167,7 +3266,6 @@
             document.getElementById('savePresetButton').addEventListener('click', savePreset);
             document.getElementById('loadPresetButton').addEventListener('click', loadPreset);
             document.getElementById('exportPresetsButton').addEventListener('click', () => presetManager.exportAllPresets());
-            document.getElementById('importPresetsButton').addEventListener('click', () => document.getElementById('importPresetsInput').click());
             document.getElementById('importPresetsInput').addEventListener('change', (event) => {
                 if (event.target.files.length > 0) {
                     presetManager.importPresets(event.target.files[0]);
