@@ -455,6 +455,7 @@
             <!-- New Recording Controls -->
             <div class="controls recording-controls">
                 <button id="recordButton">Start Recording</button>
+                <div class="recording-meter"></div> <!-- Added for the recording meter -->
             </div>
         </div>
     </div>
@@ -968,6 +969,7 @@
                     chorusLFO.frequency.value = 1.5; // LFO frequency for chorus modulation
                     chorusLfoGain.gain.value = chorusDepth; // Modulation depth
                     
+                    chorusLFO.connect(chorusLFO.frequency); // Connect LFO to its own frequency to create vibrato effect
                     chorusLFO.connect(chorusLfoGain);
                     chorusLfoGain.connect(chorusNode.delayTime);
                     chorusLFO.start(audioContext.currentTime); // Start LFO immediately
@@ -1662,73 +1664,87 @@
         }
 
         /**
-         * Initializes the audio visualization.
-         * This function sets up the continuous drawing loop for the visualizer.
+         * The main drawing loop for audio visualization.
+         * Draws waveform, frequency bars, and updates the volume meter.
          */
         function initializeVisualization() {
             if (!analyserNode || !audioVisualizerCtx) return;
             
-            // Create data arrays for both time and frequency domain
-            // These are already declared globally but ensure they are correctly sized here
-            dataArray = new Uint8Array(analyserNode.frequencyBinCount);
-            frequencyDataArray = new Uint8Array(analyserNode.frequencyBinCount);
+            // Start the drawing loop
+            drawVisualizationLoop();
+        }
+
+        /**
+         * The main drawing loop for audio visualization.
+         * Draws waveform, frequency bars, and updates the volume meter.
+         */
+        function drawVisualizationLoop() {
+            if (!isPlaying || !analyserNode || !audioVisualizerCtx) {
+                // Clear canvas and reset meters when not playing
+                if (audioVisualizerCtx) {
+                    audioVisualizerCtx.clearRect(0, 0, audioVisualizerCanvas.width, audioVisualizerCanvas.height);
+                }
+                if (volumeMeterFillElement) {
+                    volumeMeterFillElement.style.width = '0%';
+                }
+                if (volumePeakElement) {
+                    volumePeakElement.style.opacity = 0;
+                }
+                return;
+            }
+
+            requestAnimationFrame(drawVisualizationLoop);
+
+            const width = audioVisualizerCanvas.width;
+            const height = audioVisualizerCanvas.height;
+
+            // Get both waveform and frequency data
+            analyserNode.getByteTimeDomainData(dataArray);
+            analyserNode.getByteFrequencyData(frequencyDataArray);
             
-            function draw() {
-                requestAnimationFrame(draw);
-                
-                const width = audioVisualizerCanvas.width;
-                const height = audioVisualizerCanvas.height;
-                
-                // Clear canvas
-                audioVisualizerCtx.fillStyle = '#000';
-                audioVisualizerCtx.fillRect(0, 0, width, height);
-                
-                // Get both time and frequency data
-                analyserNode.getByteTimeDomainData(dataArray);
-                analyserNode.getByteFrequencyData(frequencyDataArray);
-                
-                // Draw frequency bars
-                const barWidth = width / analyserNode.frequencyBinCount; // Adjusted for better distribution
-                audioVisualizerCtx.fillStyle = '#90ee90'; // Green color for bars
-                
-                for (let i = 0; i < analyserNode.frequencyBinCount; i++) {
-                    const barHeight = (frequencyDataArray[i] / 255) * height;
-                    audioVisualizerCtx.fillRect(
-                        i * barWidth,
-                        height - barHeight,
-                        barWidth - 1, // Small gap between bars
-                        barHeight
-                    );
-                }
-                
-                // Draw waveform overlay
-                audioVisualizerCtx.beginPath();
-                audioVisualizerCtx.lineWidth = 2;
-                audioVisualizerCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; // Semi-transparent white for waveform
-                
-                const sliceWidth = width * 1.0 / dataArray.length;
-                let x = 0;
-                
-                for (let i = 0; i < dataArray.length; i++) {
-                    const v = dataArray[i] / 128.0; // Normalize to 0-2
-                    const y = v * height / 2;
-                    
-                    if (i === 0) {
-                        audioVisualizerCtx.moveTo(x, y);
-                    } else {
-                        audioVisualizerCtx.lineTo(x, y);
-                    }
-                    x += sliceWidth;
-                }
-                
-                audioVisualizerCtx.lineTo(width, height / 2);
-                audioVisualizerCtx.stroke();
-                
-                // Update volume meter
-                updateVolumeMeter();
+            // Clear canvas
+            audioVisualizerCtx.fillStyle = '#000';
+            audioVisualizerCtx.fillRect(0, 0, width, height);
+            
+            // Draw frequency spectrum (bars)
+            const barWidth = width / analyserNode.frequencyBinCount; // Adjusted for better distribution
+            audioVisualizerCtx.fillStyle = 'rgba(144, 238, 144, 0.5)'; // Semi-transparent green for bars
+            
+            for(let i = 0; i < analyserNode.frequencyBinCount; i++) {
+                const barHeight = (frequencyDataArray[i] / 255) * height;
+                audioVisualizerCtx.fillRect(
+                    i * barWidth,
+                    height - barHeight,
+                    barWidth - 1, // Small gap between bars
+                    barHeight
+                );
             }
             
-            draw(); // Start the drawing loop
+            // Draw waveform overlay
+            audioVisualizerCtx.beginPath();
+            audioVisualizerCtx.strokeStyle = '#90ee90'; // Green for waveform
+            audioVisualizerCtx.lineWidth = 2;
+            
+            const sliceWidth = width * 1.0 / dataArray.length;
+            let x = 0;
+            
+            for(let i = 0; i < dataArray.length; i++) {
+                const v = dataArray[i] / 128.0; // Normalize to 0-2
+                const y = v * height/2;
+                
+                if(i === 0) {
+                    audioVisualizerCtx.moveTo(x, y);
+                } else {
+                    audioVisualizerCtx.lineTo(x, y);
+                }
+                x += sliceWidth;
+            }
+            
+            audioVisualizerCtx.lineTo(width, height/2);
+            audioVisualizerCtx.stroke();
+            
+            // Update volume meter
+            updateVolumeMeter();
         }
 
         /**
@@ -1736,39 +1752,37 @@
          */
         function updateVolumeMeter() {
             if (!analyserNode || !volumeMeterFillElement || !volumePeakElement) return;
-
-            // Get frequency data (already done in initializeVisualization's draw loop)
-            // analyserNode.getByteFrequencyData(frequencyDataArray); 
-
-            // Calculate RMS value from frequency data
-            let sumOfSquares = 0;
-            for (let i = 0; i < frequencyDataArray.length; i++) {
-                sumOfSquares += frequencyDataArray[i] * frequencyDataArray[i];
+            
+            // frequencyDataArray is already updated in drawVisualizationLoop
+            
+            // Calculate RMS volume
+            let sum = 0;
+            for(let i = 0; i < frequencyDataArray.length; i++) {
+                sum += frequencyDataArray[i] * frequencyDataArray[i];
             }
-            const rms = Math.sqrt(sumOfSquares / frequencyDataArray.length);
-            const volumeNormalized = rms / 255; // Normalize to 0-1
-
+            const rms = Math.sqrt(sum / frequencyDataArray.length);
+            const volume = rms / 255; // Normalize to 0-1
+            
             // Update meter fill
-            volumeMeterFillElement.style.width = `${volumeNormalized * 100}%`;
-
-            // Update peak
-            if (volumeNormalized > peakValue) {
-                peakValue = volumeNormalized;
-                volumePeakElement.style.left = `${peakValue * 100}%`; // Position from left
+            volumeMeterFillElement.style.width = `${volume * 100}%`;
+            
+            // Update peak indicator
+            if (volume > peakValue) {
+                peakValue = volume;
+                volumePeakElement.style.right = `${(1 - peakValue) * 100}%`; // Position from right
                 volumePeakElement.style.opacity = '1';
-
+                
                 // Clear previous fade-out timeout and set a new one
                 clearTimeout(volumePeakElement.fadeTimeout);
                 volumePeakElement.fadeTimeout = setTimeout(() => {
-                    volumePeakElement.style.opacity = 0;
-                }, 500); // Peak fades out after 500ms
-            } else if (volumeNormalized < peakValue * 0.9 && volumePeakElement.style.opacity === '1') {
-                // Slowly decay peak if current volume drops significantly below it
-                clearTimeout(volumePeakElement.decayTimeout);
-                volumePeakElement.decayTimeout = setTimeout(() => {
-                    peakValue *= 0.95; // Decay peak value
-                    if (peakValue < 0.01) peakValue = 0; // Reset if too low
-                }, 100);
+                    volumePeakElement.style.opacity = '0.5'; // Fade to 0.5 opacity
+                    // Start a slower decay of the peak value itself
+                    clearTimeout(volumePeakElement.decayTimeout);
+                    volumePeakElement.decayTimeout = setTimeout(() => {
+                        peakValue *= 0.95; // Decay peak value
+                        if (peakValue < 0.01) peakValue = 0; // Reset if too low
+                    }, 500); // Start decaying peak value after it fades slightly
+                }, 1000); // Peak indicator fades after 1 second
             }
         }
 
@@ -2085,18 +2099,20 @@
             // Update the display value for the knob
             const valueSpan = document.getElementById(`${id}Value`);
             if (valueSpan) {
+                let displayValue = value;
                 if (id === 'compThreshold') {
-                    valueSpan.textContent = `${value.toFixed(0)} dB`;
+                    displayValue = `${value.toFixed(0)} dB`;
                 } else if (id === 'compRatio') {
-                    valueSpan.textContent = `${value.toFixed(1)}:1`;
+                    displayValue = `${value.toFixed(1)}:1`;
                 } else if (id === 'reverbMix') {
-                    valueSpan.textContent = `${(value * 100).toFixed(0)}%`;
+                    displayValue = `${(value * 100).toFixed(0)}%`;
                 } else if (id === 'chorusDepth') {
-                    valueSpan.textContent = value.toFixed(4);
+                    displayValue = value.toFixed(4);
                 }
                 else {
-                    valueSpan.textContent = value.toFixed(2);
+                    displayValue = value.toFixed(2);
                 }
+                valueSpan.textContent = displayValue;
             }
         }
 
