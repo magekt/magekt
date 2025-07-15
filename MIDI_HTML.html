@@ -301,6 +301,48 @@
             to { opacity: 0.7; }
         }
 
+        /* Visualization Mode Controls */
+        .visualization-controls {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .visualization-controls button {
+            padding: 8px 15px;
+            font-size: 0.9em;
+            background-color: #555;
+            border-radius: 8px;
+        }
+        .visualization-controls button.active {
+            background-color: #90ee90;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+
+        /* Recording Format Dropdown */
+        .recording-format-control {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .recording-format-control label {
+            font-size: 0.9em;
+            color: #ccc;
+        }
+        .recording-format-control select {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #555;
+            background-color: #3a3a3a;
+            color: #e0e0e0;
+            width: 150px;
+            text-align: center;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .main-layout-container {
@@ -324,12 +366,12 @@
                 <h3>Master Controls</h3>
                 <div class="knob-group">
                     <label for="masterVolume">Master Volume</label>
-                    <input type="range" id="masterVolume" min="0" max="1" step="0.01" value="0.55">
+                    <input type="range" id="masterVolume" min="0" max="1" step="0.01" value="0.55" title="Adjust overall volume. (Shift + Up/Down for fine tune)">
                     <span class="knob-value" id="masterVolumeValue">0.55</span>
                 </div>
                 <div class="knob-group">
                     <label for="tempo">Tempo (ms)</label>
-                    <input type="range" id="tempo" min="300" max="900" step="10" value="420">
+                    <input type="range" id="tempo" min="300" max="900" step="10" value="420" title="Adjust loop speed. (Shift + Up/Down for fine tune)">
                     <span class="knob-value" id="tempoValue">420</span>
                 </div>
             </div>
@@ -338,27 +380,27 @@
                 <h3>Instrument Gains</h3>
                 <div class="knob-group">
                     <label for="bassVolume">Bass Volume</label>
-                    <input type="range" id="bassVolume" min="0" max="0.5" step="0.01" value="0.13">
+                    <input type="range" id="bassVolume" min="0" max="0.5" step="0.01" value="0.13" title="Adjust bass instrument volume. (Shift + Up/Down for fine tune)">
                     <span class="knob-value" id="bassVolumeValue">0.13</span>
                 </div>
                 <div class="knob-group">
                     <label for="synthVolume">Synth Volume</label>
-                    <input type="range" id="synthVolume" min="0" max="0.5" step="0.01" value="0.08">
+                    <input type="range" id="synthVolume" min="0" max="0.5" step="0.01" value="0.08" title="Adjust synth instrument volume. (Shift + Up/Down for fine tune)">
                     <span class="knob-value" id="synthVolumeValue">0.08</span>
                 </div>
                 <div class="knob-group">
                     <label for="kickVolume">Kick Volume</label>
-                    <input type="range" id="kickVolume" min="0" max="1" step="0.01" value="0.89">
+                    <input type="range" id="kickVolume" min="0" max="1" step="0.01" value="0.89" title="Adjust kick drum volume. (Shift + Up/Down for fine tune)">
                     <span class="knob-value" id="kickVolumeValue">0.89</span>
                 </div>
                 <div class="knob-group">
                     <label for="snareVolume">Snare Volume</label>
-                    <input type="range" id="snareVolume" min="0" max="0.3" step="0.01" value="0.21">
+                    <input type="range" id="snareVolume" min="0" max="0.3" step="0.01" value="0.21" title="Adjust snare drum volume. (Shift + Up/Down for fine tune)">
                     <span class="knob-value" id="snareVolumeValue">0.21</span>
                 </div>
                 <div class="knob-group">
                     <label for="hihatVolume">Hi-Hat Volume</label>
-                    <input type="range" id="hihatVolume" min="0" max="0.3" step="0.01" value="0.21">
+                    <input type="range" id="hihatVolume" min="0" max="0.3" step="0.01" value="0.21" title="Adjust hi-hat volume. (Shift + Up/Down for fine tune)">
                     <span class="knob-value" id="hihatVolumeValue">0.21</span>
                 </div>
             </div>
@@ -367,27 +409,27 @@
                 <h3>Effects</h3>
                 <div class="knob-group">
                     <label for="delayTime">Delay Time (s)</label>
-                    <input type="range" id="delayTime" min="0.01" max="2.0" step="0.01" value="0.3">
+                    <input type="range" id="delayTime" min="0.01" max="2.0" step="0.01" value="0.3" title="Set delay time. (Shift + Up/Down for fine tune)">
                     <span class="knob-value" id="delayTimeValue">0.30</span>
                 </div>
                 <div class="knob-group">
                     <label for="delayFeedback">Delay Feedback</label>
-                    <input type="range" id="delayFeedback" min="0" max="0.95" step="0.01" value="0.4">
+                    <input type="range" id="delayFeedback" min="0" max="0.95" step="0.01" value="0.4" title="Set delay feedback amount. (Shift + Up/Down for fine tune)">
                     <span class="knob-value" id="delayFeedbackValue">0.40</span>
                 </div>
                 <div class="knob-group">
                     <label for="delaySendLevel">Delay Send</label>
-                    <input type="range" id="delaySendLevel" min="0" max="1.0" step="0.01" value="0.5">
+                    <input type="range" id="delaySendLevel" min="0" max="1.0" step="0.01" value="0.5" title="Set amount of signal sent to delay. (Shift + Up/Down for fine tune)">
                     <span class="knob-value" id="delaySendLevelValue">0.50</span>
                 </div>
                 <div class="knob-group">
                     <label for="chorusDepth">Chorus Depth</label>
-                    <input type="range" id="chorusDepth" min="0" max="0.01" step="0.0001" value="0.002">
+                    <input type="range" id="chorusDepth" min="0" max="0.01" step="0.0001" value="0.002" title="Set chorus modulation depth. (Shift + Up/Down for fine tune)">
                     <span class="knob-value" id="chorusDepthValue">0.002</span>
                 </div>
                 <div class="checkbox-group">
-                    <input type="checkbox" id="chorusBypass" checked>
-                    <label for="chorusBypass">Bypass Chorus</label>
+                    <input type="checkbox" id="chorusBypass" checked title="Bypass the Chorus effect (Hotkey: C)">
+                    <label for="chorusBypass">Bypass Chorus (C)</label>
                 </div>
             </div>
 
@@ -396,12 +438,12 @@
                 <h3>Compressor</h3>
                 <div class="knob-group">
                     <label for="compThreshold">Threshold</label>
-                    <input type="range" id="compThreshold" min="-60" max="0" step="1" value="-24">
+                    <input type="range" id="compThreshold" min="-60" max="0" step="1" value="-24" title="Set compressor threshold in dB. (Shift + Up/Down for fine tune)">
                     <span class="knob-value" id="compThresholdValue">-24 dB</span>
                 </div>
                 <div class="knob-group">
                     <label for="compRatio">Ratio</label>
-                    <input type="range" id="compRatio" min="1" max="20" step="0.1" value="12">
+                    <input type="range" id="compRatio" min="1" max="20" step="0.1" value="12" title="Set compressor ratio. (Shift + Up/Down for fine tune)">
                     <span class="knob-value" id="compRatioValue">12:1</span>
                 </div>
             </div>
@@ -411,12 +453,12 @@
                 <h3>Reverb</h3>
                 <div class="knob-group">
                     <label for="reverbMix">Mix</label>
-                    <input type="range" id="reverbMix" min="0" max="1" step="0.01" value="0.5">
+                    <input type="range" id="reverbMix" min="0" max="1" step="0.01" value="0.5" title="Set wet/dry mix for reverb. (Shift + Up/Down for fine tune)">
                     <span class="knob-value" id="reverbMixValue">50%</span>
                 </div>
                 <div class="checkbox-group">
-                    <input type="checkbox" id="reverbBypass" checked>
-                    <label for="reverbBypass">Bypass Reverb</label>
+                    <input type="checkbox" id="reverbBypass" checked title="Bypass the Reverb effect (Hotkey: R)">
+                    <label for="reverbBypass">Bypass Reverb (R)</label>
                 </div>
             </div>
 
@@ -426,14 +468,22 @@
             <h1>Simple Relax Looper</h1>
             <p>Experience a subtly evolving ambient track designed for relaxation.</p>
             <div class="controls">
-                <button id="startButton">Start Looping</button>
-                <button id="stopButton" disabled>Stop Looping</button>
+                <button id="startButton" title="Start the music loop (Hotkey: Space/Enter)">Start Looping</button>
+                <button id="stopButton" disabled title="Stop the music loop (Hotkey: Space/Enter)">Stop Looping</button>
             </div>
             <div id="currentSectionDisplay">Current Section: --</div>
             <div id="messageBox" class="message-box"></div>
 
             <!-- Audio Visualization Canvas -->
             <canvas id="audioVisualizer" width="400" height="100"></canvas>
+
+            <!-- Visualization Mode Controls -->
+            <div class="visualization-controls">
+                <button id="visModeSpectrum" class="active" title="Show frequency spectrum visualization">Spectrum</button>
+                <button id="visModeWaveform" title="Show waveform visualization">Waveform</button>
+                <button id="visModeBoth" title="Show both spectrum and waveform visualization">Both</button>
+                <button id="visModeBands" title="Show bass, mid, and treble frequency bands">Bands</button>
+            </div>
 
             <!-- Master Volume Meter -->
             <div class="volume-meter-container">
@@ -447,14 +497,25 @@
             <!-- Preset Controls -->
             <div class="preset-controls knob-section">
                 <h3>Presets</h3>
-                <input type="text" id="presetNameInput" placeholder="Enter preset name">
-                <button id="savePresetButton">Save Preset</button>
-                <button id="loadPresetButton">Load Preset</button>
+                <input type="text" id="presetNameInput" placeholder="Enter preset name" title="Enter a name for your preset">
+                <button id="savePresetButton" title="Save current settings as a preset">Save Preset</button>
+                <button id="loadPresetButton" title="Load a saved preset">Load Preset</button>
+                <button id="exportPresetsButton" title="Export all saved presets to a JSON file">Export All Presets</button>
+                <input type="file" id="importPresetsInput" accept=".json" style="display: none;" title="Select a JSON file to import presets">
+                <button id="importPresetsButton" title="Import presets from a JSON file">Import Presets</button>
+                <p>Quick Load: Press 1-9 to load "Preset 1" to "Preset 9"</p>
             </div>
 
             <!-- New Recording Controls -->
             <div class="controls recording-controls">
-                <button id="recordButton">Start Recording</button>
+                <button id="recordButton" title="Start/Stop recording audio (Hotkey: Ctrl+R)">Start Recording</button>
+                <div class="recording-format-control">
+                    <label for="recordingFormat">Format:</label>
+                    <select id="recordingFormat" title="Select recording output format">
+                        <option value="wav">WAV (Supported)</option>
+                        <option value="mp3">MP3 (Not Supported Natively)</option>
+                    </select>
+                </div>
                 <div class="recording-meter"></div> <!-- Added for the recording meter -->
             </div>
         </div>
@@ -535,6 +596,7 @@
         let dataArray; // For analyser time domain data
         let frequencyDataArray; // For analyser frequency data
         let peakValue = 0; // Stores the highest volume peak (0-1 normalized)
+        let visualizationMode = 'spectrum'; // 'spectrum', 'waveform', 'both', or 'bands'
 
         // For cycling through verse patterns (normal and Raga)
         const normalVerseOptions = {
@@ -559,6 +621,48 @@
             'A4': 440.00, 'A#4': 466.16, 'B4': 493.88,
             'C5': 523.25
         };
+
+        // Chromatic scale for transposition calculations
+        const chromaticScale = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        const noteToSemitone = {};
+        chromaticScale.forEach((note, index) => {
+            noteToSemitone[note] = index;
+        });
+
+        // Circle of Fifths for key modulation
+        const majorKeysCircleOfFifths = [
+            'C', 'G', 'D', 'A', 'E', 'B', 'F#', 'Db', 'Ab', 'Eb', 'Bb', 'F'
+        ];
+        const keyToSemitoneOffsetFromC = {
+            'C': 0, 'G': 7, 'D': 2, 'A': 9, 'E': 4, 'B': 11, 'F#': 6,
+            'Db': 1, 'Ab': 8, 'Eb': 3, 'Bb': 10, 'F': 5
+        }; // Maps key name to semitone offset from C
+
+        let currentKey = 'C'; // Initial key for the loop
+
+        /**
+         * Transposes an array of note strings by a given number of semitones.
+         * @param {Array<string>} notesArray - An array of note strings (e.g., ['C4', 'G3']).
+         * @param {number} semitones - The number of semitones to transpose by.
+         * @returns {Array<string>} A new array with transposed note strings.
+         */
+        function transposeNotes(notesArray, semitones) {
+            return notesArray.map(noteString => {
+                const baseNote = noteString.slice(0, -1);
+                const octave = parseInt(noteString.slice(-1));
+                
+                if (!noteToSemitone.hasOwnProperty(baseNote)) {
+                    console.warn(`Unknown base note for transposition: ${baseNote}`);
+                    return noteString; // Return original if unknown
+                }
+
+                let semitoneValue = noteToSemitone[baseNote] + semitones;
+                let newOctave = octave + Math.floor(semitoneValue / 12);
+                let newSemitoneIndex = (semitoneValue % 12 + 12) % 12; // Ensure positive modulo
+
+                return chromaticScale[newSemitoneIndex] + newOctave;
+            });
+        }
 
         // New Raga scale definitions (using C as tonic for simplicity)
         const ragaScales = {
@@ -850,15 +954,15 @@
         };
 
         const songStructure = [
-            { type: 'intro', durationMultiplier: 2 },
-            { type: 'verse', baseName: 'verse1', durationMultiplier: 3 },
-            { type: 'chorus', durationMultiplier: 2 },
-            { type: 'verse', baseName: 'verse2', durationMultiplier: 3 },
-            { type: 'verse', baseName: 'verse3', durationMultiplier: 5 },
-            { type: 'bridge', durationMultiplier: 2 },
-            { type: 'chorus', durationMultiplier: 3 },
-            { type: 'verse', baseName: 'verse1', durationMultiplier: 2 },
-            { type: 'outro', durationMultiplier: 2 }
+            { type: 'intro', durationMultiplier: 2, initialKey: 'A' }, // Added initialKey for intro
+            { type: 'verse', baseName: 'verse1', durationMultiplier: 3, initialKey: 'C' }, // Initial key for verse1
+            { type: 'chorus', durationMultiplier: 2, initialKey: 'A' },
+            { type: 'verse', baseName: 'verse2', durationMultiplier: 3, initialKey: 'F' }, // Initial key for verse2
+            { type: 'verse', baseName: 'verse3', durationMultiplier: 5, initialKey: 'G' }, // Initial key for verse3
+            { type: 'bridge', durationMultiplier: 2, initialKey: 'D' },
+            { type: 'chorus', durationMultiplier: 3, initialKey: 'A' },
+            { type: 'verse', baseName: 'verse1', durationMultiplier: 2, initialKey: 'C' },
+            { type: 'outro', durationMultiplier: 2, initialKey: 'A' }
         ];
 
         let currentSongSectionIndex = 0;
@@ -916,10 +1020,11 @@
         function updateSectionDisplay() {
             const displayElement = document.getElementById('currentSectionDisplay');
             if (displayElement) {
-                if (displayElement.textContent !== `Current Section: ${currentSectionName.toUpperCase()}`) {
+                const newText = `Current Section: ${currentSectionName.toUpperCase()} in ${currentKey} Major`;
+                if (displayElement.textContent !== newText) {
                      displayElement.classList.remove('highlight');
                 }
-                displayElement.textContent = `Current Section: ${currentSectionName.toUpperCase()}`;
+                displayElement.textContent = newText;
                 requestAnimationFrame(() => {
                     displayElement.classList.add('highlight');
                 });
@@ -942,7 +1047,7 @@
 
         /**
          * Initializes the Web Audio API context and the master gain node.
-         * This function needs to be called after a user gesture (e.g., button click)
+         * This function needs to be called after a user gesture (e.e.g., button click)
          * to comply with browser autoplay policies.
          * @returns {boolean} True if audio context was successfully initialized or already exists, false otherwise.
          */
@@ -950,7 +1055,7 @@
             console.log("Attempting to initialize audio context...");
             if (!audioContext) {
                 try {
-                    showMessage("Initializing audio system...");
+                    showMessage("Loading Audio System...", 5000); // Show loading message
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     masterGainNode = audioContext.createGain();
                     masterGainNode.gain.value = masterVolume;
@@ -1298,7 +1403,7 @@
             osc.stop(actualStartTime + 0.05);
 
             osc.onended = () => {
-                osc.disconnect();
+                osc.disconnect(); 
                 gain.disconnect();
                 filter.disconnect();
             };
@@ -1336,7 +1441,7 @@
             osc.stop(actualStartTime + 0.2);
 
             osc.onended = () => {
-                osc.disconnect();
+                osc.disconnect(); 
                 gain.disconnect();
                 filter.disconnect();
             };
@@ -1489,13 +1594,28 @@
                     currentSectionType = nextSectionDef.type;
                     let phraseToUse = []; // Temporary variable to hold the phrase before assignment
                     
+                    // Determine the new key based on Circle of Fifths logic for verse sections
+                    let previousKey = currentKey; // Store the key of the just-finished section
+                    let newKey = previousKey; // Default to staying in the same key
+
                     if (currentSectionType === 'verse') {
                         verseIterationCount++;
-                        if (currentSongSectionIndex === 1) { // Special case for the very first verse in the song structure
-                            currentSectionName = nextSectionDef.baseName + '_C';
-                            phraseToUse = musicalPhrases[currentSectionName];
-                            console.log(`Forcing first verse to start with: ${currentSectionName}`);
-                        } else if (verseIterationCount % 2 === 0) { // This is where Ragas are introduced
+                        if (verseIterationCount % 2 === 0) { // Introduce Ragas and potential key changes
+                            const modulationChance = Math.random();
+                            const currentKeyIndex = majorKeysCircleOfFifths.indexOf(previousKey);
+
+                            if (modulationChance < 0.4 && currentKeyIndex !== -1) { // 40% chance to modulate to dominant
+                                const dominantIndex = (currentKeyIndex + 1) % majorKeysCircleOfFifths.length;
+                                newKey = majorKeysCircleOfFifths[dominantIndex];
+                                showMessage(`Modulating to ${newKey} Major (Dominant)!`, 2500);
+                            } else if (modulationChance < 0.8 && currentKeyIndex !== -1) { // 40% chance to modulate to subdominant
+                                const subdominantIndex = (currentKeyIndex - 1 + majorKeysCircleOfFifths.length) % majorKeysCircleOfFifths.length;
+                                newKey = majorKeysCircleOfFifths[subdominantIndex];
+                                showMessage(`Modulating to ${newKey} Major (Subdominant)!`, 2500);
+                            } else { // 20% chance to stay in the same key
+                                showMessage(`Staying in ${newKey} Major.`, 2500);
+                            }
+
                             // Use the new Raga selection system
                             const selectedRagaName = selectTimeAppropriateRaga();
                             currentSectionName = `raga${selectedRagaName.charAt(0).toUpperCase() + selectedRagaName.slice(1)}Phrase`; // Format for display
@@ -1504,20 +1624,43 @@
 
                             // Safeguard: Ensure selectedRagaScale is a valid, non-empty array
                             if (selectedRagaScale && Array.isArray(selectedRagaScale) && selectedRagaScale.length > 0) {
-                                phraseToUse = generateRagaMelody(selectedRagaScale, 8, humanizationFactor);
+                                // Transpose the Raga scale from its base (C) to the new key
+                                const semitonesToTranspose = keyToSemitoneOffsetFromC[newKey] - keyToSemitoneOffsetFromC['C'];
+                                const transposedRagaScale = transposeNotes(selectedRagaScale, semitonesToTranspose);
+                                phraseToUse = generateRagaMelody(transposedRagaScale, 8, humanizationFactor);
                             } else {
                                 console.error(`Invalid or empty Raga scale found for name: ${selectedRagaName}. Falling back to a default verse.`);
                                 currentSectionName = getRandomNormalVerseVariation('verse1'); // Fallback to a known good verse
-                                phraseToUse = musicalPhrases[currentSectionName];
+                                // Transpose the fallback phrase to the new key
+                                const semitonesToTranspose = keyToSemitoneOffsetFromC[newKey] - keyToSemitoneOffsetFromC['C']; // Assuming verse1_A is in C
+                                phraseToUse = musicalPhrases[currentSectionName].map(step => ({
+                                    ...step,
+                                    bass: transposeNotes(step.bass, semitonesToTranspose),
+                                    synth: transposeNotes(step.synth, semitonesToTranspose)
+                                }));
                             }
-                        } else {
+                        } else { // Normal verse variations, also transposed
                             currentSectionName = getRandomNormalVerseVariation(nextSectionDef.baseName);
-                            phraseToUse = musicalPhrases[currentSectionName];
+                            // Transpose the normal verse to the new key
+                            const semitonesToTranspose = keyToSemitoneOffsetFromC[newKey] - keyToSemitoneOffsetFromC['C']; // Assuming base phrases are in C
+                            phraseToUse = musicalPhrases[currentSectionName].map(step => ({
+                                ...step,
+                                bass: transposeNotes(step.bass, semitonesToTranspose),
+                                synth: transposeNotes(step.synth, semitonesToTranspose)
+                            }));
                         }
-                    } else {
+                    } else { // Non-verse sections use their initialKey from songStructure
+                        newKey = nextSectionDef.initialKey || 'C'; // Use initialKey or default to C
                         currentSectionName = nextSectionDef.name || nextSectionDef.type;
-                        phraseToUse = musicalPhrases[currentSectionName];
+                        const semitonesToTranspose = keyToSemitoneOffsetFromC[newKey] - keyToSemitoneOffsetFromC['C'];
+                        phraseToUse = musicalPhrases[currentSectionName].map(step => ({
+                            ...step,
+                            bass: transposeNotes(step.bass, semitonesToTranspose),
+                            synth: transposeNotes(step.synth, semitonesToTranspose)
+                        }));
                     }
+                    
+                    currentKey = newKey; // Update global currentKey
                     
                     // Assign the determined/generated phrase to currentSectionPhrase
                     currentSectionPhrase = phraseToUse;
@@ -1528,12 +1671,14 @@
                         console.warn(`Section '${currentSectionName}' resulted in an empty phrase. Falling back to intro.`);
                         currentSectionName = 'intro';
                         currentSectionPhrase = musicalPhrases.intro;
+                        currentKey = songStructure[0].initialKey || 'A'; // Reset key to intro's key
+                        currentSectionTotalSteps = currentSectionPhrase.length * nextSectionDef.durationMultiplier;
                     }
 
                     // Calculate total steps based on the *final* currentSectionPhrase length
                     currentSectionTotalSteps = currentSectionPhrase.length * nextSectionDef.durationMultiplier;
 
-                    console.log(`Transitioning to section: ${currentSectionName} (type: ${currentSectionType}) for ${currentSectionTotalSteps} steps. Humanization Factor: ${humanizationFactor.toFixed(2)}`);
+                    console.log(`Transitioning to section: ${currentSectionName} (type: ${currentSectionType}) in ${currentKey} Major for ${currentSectionTotalSteps} steps. Humanization Factor: ${humanizationFactor.toFixed(2)}`);
                     updateSectionDisplay();
                 }
             }
@@ -1582,17 +1727,30 @@
             currentSongSectionIndex = 0;
             const initialSectionDef = songStructure[currentSongSectionIndex];
             currentSectionType = initialSectionDef.type;
-            
+            currentKey = initialSectionDef.initialKey || 'C'; // Set initial key
+
             let initialPhraseToUse = [];
 
             if (currentSectionType === 'verse') {
                 verseIterationCount = 1;
-                currentSectionName = initialSectionDef.baseName + '_C';
-                initialPhraseToUse = musicalPhrases[currentSectionName];
-                console.log(`Forcing initial verse to start with: ${currentSectionName}`);
+                currentSectionName = initialSectionDef.baseName + '_C'; // Start with a specific verse variation
+                // Transpose the initial verse phrase to the initial key
+                const semitonesToTranspose = keyToSemitoneOffsetFromC[currentKey] - keyToSemitoneOffsetFromC['C'];
+                initialPhraseToUse = musicalPhrases[currentSectionName].map(step => ({
+                    ...step,
+                    bass: transposeNotes(step.bass, semitonesToTranspose),
+                    synth: transposeNotes(step.synth, semitonesToTranspose)
+                }));
+                console.log(`Forcing initial verse to start with: ${currentSectionName} in ${currentKey} Major`);
             } else {
                 currentSectionName = initialSectionDef.name || initialSectionDef.type;
-                initialPhraseToUse = musicalPhrases[currentSectionName];
+                // Transpose the initial non-verse phrase to its initial key
+                const semitonesToTranspose = keyToSemitoneOffsetFromC[currentKey] - keyToSemitoneOffsetFromC['C'];
+                initialPhraseToUse = musicalPhrases[currentSectionName].map(step => ({
+                    ...step,
+                    bass: transposeNotes(step.bass, semitonesToTranspose),
+                    synth: transposeNotes(step.synth, semitonesToTranspose)
+                }));
             }
 
             currentSectionPhrase = initialPhraseToUse; // Assign the determined phrase
@@ -1610,11 +1768,12 @@
                 console.warn(`Initial section phrase for '${currentSectionName}' is empty. Falling back to intro.`);
                 currentSectionName = 'intro';
                 currentSectionPhrase = musicalPhrases.intro;
+                currentKey = songStructure[0].initialKey || 'A'; // Reset key to intro's key
                 currentSectionTotalSteps = currentSectionPhrase.length * initialSectionDef.durationMultiplier;
             }
 
             updateSectionDisplay();
-            console.log(`Starting with section: ${currentSectionName} (type: ${currentSectionType}) for ${currentSectionTotalSteps} steps. Humanization Factor: ${humanizationFactor.toFixed(2)}`);
+            console.log(`Starting with section: ${currentSectionName} (type: ${currentSectionType}) in ${currentKey} Major for ${currentSectionTotalSteps} steps. Humanization Factor: ${humanizationFactor.toFixed(2)}`);
 
             masterGainNode.gain.setValueAtTime(0, audioContext.currentTime);
             masterGainNode.gain.linearRampToValueAtTime(masterVolume, audioContext.currentTime + 4);
@@ -1706,42 +1865,154 @@
             audioVisualizerCtx.fillStyle = '#000';
             audioVisualizerCtx.fillRect(0, 0, width, height);
             
-            // Draw frequency spectrum (bars)
-            const barWidth = width / analyserNode.frequencyBinCount; // Adjusted for better distribution
-            audioVisualizerCtx.fillStyle = 'rgba(144, 238, 144, 0.5)'; // Semi-transparent green for bars
-            
-            for(let i = 0; i < analyserNode.frequencyBinCount; i++) {
-                const barHeight = (frequencyDataArray[i] / 255) * height;
-                audioVisualizerCtx.fillRect(
-                    i * barWidth,
-                    height - barHeight,
-                    barWidth - 1, // Small gap between bars
-                    barHeight
-                );
-            }
-            
-            // Draw waveform overlay
-            audioVisualizerCtx.beginPath();
-            audioVisualizerCtx.strokeStyle = '#90ee90'; // Green for waveform
-            audioVisualizerCtx.lineWidth = 2;
-            
-            const sliceWidth = width * 1.0 / dataArray.length;
-            let x = 0;
-            
-            for(let i = 0; i < dataArray.length; i++) {
-                const v = dataArray[i] / 128.0; // Normalize to 0-2
-                const y = v * height/2;
+            // Draw based on visualizationMode
+            if (visualizationMode === 'spectrum') {
+                // Draw frequency spectrum (bars) with gradient
+                const gradient = audioVisualizerCtx.createLinearGradient(0, 0, 0, height);
+                gradient.addColorStop(0, '#ff0000'); // Red at the top (highest intensity)
+                gradient.addColorStop(0.5, '#ffff00'); // Yellow in the middle
+                gradient.addColorStop(1, '#00ff00'); // Green at the bottom (lowest intensity)
+                audioVisualizerCtx.fillStyle = gradient;
                 
-                if(i === 0) {
-                    audioVisualizerCtx.moveTo(x, y);
-                } else {
-                    audioVisualizerCtx.lineTo(x, y);
+                const barWidth = width / analyserNode.frequencyBinCount; // Adjusted for better distribution
+                
+                for(let i = 0; i < analyserNode.frequencyBinCount; i++) {
+                    const barHeight = (frequencyDataArray[i] / 255) * height;
+                    audioVisualizerCtx.fillRect(
+                        i * barWidth,
+                        height - barHeight,
+                        barWidth - 1, // Small gap between bars
+                        barHeight
+                    );
                 }
-                x += sliceWidth;
+            } else if (visualizationMode === 'waveform') {
+                // Draw waveform overlay
+                audioVisualizerCtx.beginPath();
+                audioVisualizerCtx.strokeStyle = 'rgba(255, 255, 255, 0.7)'; // Semi-transparent white for waveform
+                audioVisualizerCtx.lineWidth = 2;
+                
+                const sliceWidth = width * 1.0 / dataArray.length;
+                let x = 0;
+                
+                for(let i = 0; i < dataArray.length; i++) {
+                    const v = dataArray[i] / 128.0; // Normalize to 0-2
+                    const y = v * height/2;
+                    
+                    if(i === 0) {
+                        audioVisualizerCtx.moveTo(x, y);
+                    } else {
+                        audioVisualizerCtx.lineTo(x, y);
+                    }
+                    x += sliceWidth;
+                }
+                
+                audioVisualizerCtx.lineTo(width, height/2);
+                audioVisualizerCtx.stroke();
+            } else if (visualizationMode === 'both') {
+                // Draw frequency spectrum (bars) with gradient
+                const gradient = audioVisualizerCtx.createLinearGradient(0, 0, 0, height);
+                gradient.addColorStop(0, '#ff0000'); // Red at the top (highest intensity)
+                gradient.addColorStop(0.5, '#ffff00'); // Yellow in the middle
+                gradient.addColorStop(1, '#00ff00'); // Green at the bottom (lowest intensity)
+                audioVisualizerCtx.fillStyle = gradient;
+                
+                const barWidth = width / analyserNode.frequencyBinCount;
+                
+                for(let i = 0; i < analyserNode.frequencyBinCount; i++) {
+                    const barHeight = (frequencyDataArray[i] / 255) * height;
+                    audioVisualizerCtx.fillRect(
+                        i * barWidth,
+                        height - barHeight,
+                        barWidth - 1,
+                        barHeight
+                    );
+                }
+
+                // Draw waveform overlay
+                audioVisualizerCtx.beginPath();
+                audioVisualizerCtx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+                audioVisualizerCtx.lineWidth = 2;
+                
+                const sliceWidth = width * 1.0 / dataArray.length;
+                let x = 0;
+                
+                for(let i = 0; i < dataArray.length; i++) {
+                    const v = dataArray[i] / 128.0;
+                    const y = v * height/2;
+                    
+                    if(i === 0) {
+                        audioVisualizerCtx.moveTo(x, y);
+                    } else {
+                        audioVisualizerCtx.lineTo(x, y);
+                    }
+                    x += sliceWidth;
+                }
+                
+                audioVisualizerCtx.lineTo(width, height/2);
+                audioVisualizerCtx.stroke();
+            } else if (visualizationMode === 'bands') {
+                // Draw separate bands for bass, mid, treble
+                const nyquist = audioContext.sampleRate / 2;
+                const binWidth = nyquist / analyserNode.frequencyBinCount;
+
+                // Define frequency ranges for bands (approximate)
+                const bassMaxFreq = 250; // Hz
+                const midMaxFreq = 2000; // Hz
+                // Treble is everything above midMaxFreq
+
+                // Calculate bin indices for each band
+                const bassEndBin = Math.floor(bassMaxFreq / binWidth);
+                const midEndBin = Math.floor(midMaxFreq / binWidth);
+
+                let bassEnergy = 0;
+                let midEnergy = 0;
+                let trebleEnergy = 0;
+
+                // Sum energy for each band
+                for (let i = 0; i < analyserNode.frequencyBinCount; i++) {
+                    const value = frequencyDataArray[i];
+                    if (i <= bassEndBin) {
+                        bassEnergy += value;
+                    } else if (i <= midEndBin) {
+                        midEnergy += value;
+                    } else {
+                        trebleEnergy += value;
+                    }
+                }
+
+                // Normalize energy (average value per bin in that band)
+                const bassAvg = bassEndBin > 0 ? bassEnergy / bassEndBin : 0;
+                const midAvg = (midEndBin - bassEndBin) > 0 ? midEnergy / (midEndBin - bassEndBin) : 0;
+                const trebleAvg = (analyserNode.frequencyBinCount - midEndBin) > 0 ? trebleEnergy / (analyserNode.frequencyBinCount - midEndBin) : 0;
+
+                const maxEnergy = 255; // Max value for byte data
+
+                const barWidth = (width / 3) - 5; // 3 bars with some spacing
+                const spacing = 5;
+
+                // Draw Bass Bar (Reddish)
+                audioVisualizerCtx.fillStyle = `hsl(0, 100%, ${50 + (bassAvg / maxEnergy) * 40}%)`; // Adjust lightness based on intensity
+                const bassHeight = (bassAvg / maxEnergy) * height;
+                audioVisualizerCtx.fillRect(spacing, height - bassHeight, barWidth, bassHeight);
+                audioVisualizerCtx.fillText('Bass', spacing + barWidth / 2 - 15, height - bassHeight - 5);
+
+
+                // Draw Mid Bar (Greenish)
+                audioVisualizerCtx.fillStyle = `hsl(120, 100%, ${50 + (midAvg / maxEnergy) * 40}%)`;
+                const midHeight = (midAvg / maxEnergy) * height;
+                audioVisualizerCtx.fillRect(spacing * 2 + barWidth, height - midHeight, barWidth, midHeight);
+                audioVisualizerCtx.fillText('Mid', spacing * 2 + barWidth / 2 + barWidth - 10, height - midHeight - 5);
+
+                // Draw Treble Bar (Blueish)
+                audioVisualizerCtx.fillStyle = `hsl(240, 100%, ${50 + (trebleAvg / maxEnergy) * 40}%)`;
+                const trebleHeight = (trebleAvg / maxEnergy) * height;
+                audioVisualizerCtx.fillRect(spacing * 3 + barWidth * 2, height - trebleHeight, barWidth, trebleHeight);
+                audioVisualizerCtx.fillText('Treble', spacing * 3 + barWidth * 2 + barWidth / 2 - 20, height - trebleHeight - 5);
+                
+                audioVisualizerCtx.fillStyle = '#e0e0e0'; // Reset text color
+                audioVisualizerCtx.font = '10px Arial';
+                audioVisualizerCtx.textAlign = 'center';
             }
-            
-            audioVisualizerCtx.lineTo(width, height/2);
-            audioVisualizerCtx.stroke();
             
             // Update volume meter
             updateVolumeMeter();
@@ -1792,7 +2063,8 @@
          */
         class PresetManager {
             constructor() {
-                this.storageKeyPrefix = 'looper_preset_';
+                this.storageKeyPrefix = 'simple_relax_preset_'; // Renamed prefix
+                this.autoSaveKey = 'simple_relax_autosave_settings'; // Renamed key
             }
 
             /**
@@ -1837,6 +2109,100 @@
                     console.error('Preset load failed:', e);
                     return null;
                 }
+            }
+
+            /**
+             * Auto-saves the current settings.
+             */
+            autoSaveSettings() {
+                try {
+                    const settings = getCurrentSettings();
+                    localStorage.setItem(this.autoSaveKey, JSON.stringify(settings));
+                    console.log("Settings auto-saved.");
+                } catch (e) {
+                    console.warn("Auto-save failed:", e);
+                }
+            }
+
+            /**
+             * Loads auto-saved settings.
+             * @returns {Object|null} The auto-saved settings, or null if none exist.
+             */
+            loadAutoSavedSettings() {
+                try {
+                    const settingsString = localStorage.getItem(this.autoSaveKey);
+                    if (settingsString) {
+                        return JSON.parse(settingsString);
+                    }
+                    return null;
+                } catch (e) {
+                    console.warn("Failed to load auto-saved settings:", e);
+                    return null;
+                }
+            }
+
+            /**
+             * Exports all saved presets to a JSON file.
+             */
+            exportAllPresets() {
+                try {
+                    const allPresets = {};
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key.startsWith(this.storageKeyPrefix)) {
+                            allPresets[key.replace(this.storageKeyPrefix, '')] = JSON.parse(localStorage.getItem(key));
+                        }
+                    }
+                    const dataStr = JSON.stringify(allPresets, null, 2);
+                    const blob = new Blob([dataStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `simple_relax_presets_${new Date().toISOString().replace(/:/g, '-')}.json`; // Renamed filename
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showMessage("All presets exported successfully!");
+                } catch (e) {
+                    console.error("Failed to export presets:", e);
+                    showMessage("Failed to export presets. See console for details.", 3000);
+                }
+            }
+
+            /**
+             * Imports presets from a JSON file.
+             * @param {File} file - The JSON file containing presets.
+             */
+            importPresets(file) {
+                if (!file) {
+                    showMessage("No file selected for import.", 2000);
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const importedPresets = JSON.parse(event.target.result);
+                        let importedCount = 0;
+                        for (const name in importedPresets) {
+                            if (importedPresets.hasOwnProperty(name) && importedPresets[name].settings) {
+                                // Ensure the imported preset has a 'settings' property
+                                if (this.savePreset(name, importedPresets[name].settings)) {
+                                    importedCount++;
+                                }
+                            }
+                        }
+                        showMessage(`Successfully imported ${importedCount} presets!`);
+                    } catch (e) {
+                        console.error("Failed to parse imported presets file:", e);
+                        showMessage("Failed to import presets. Invalid file format.", 3000);
+                    }
+                };
+                reader.onerror = (e) => {
+                    console.error("Error reading file:", e);
+                    showMessage("Error reading file. Please try again.", 3000);
+                };
+                reader.readAsText(file);
             }
         }
 
@@ -2127,6 +2493,8 @@
                 this.recordingStartTime = 0;
                 // Ensure this selector matches the HTML element
                 this.recordingMeter = document.querySelector('.recording-meter');
+                this.recordingFormatSelect = document.getElementById('recordingFormat');
+                this.selectedFormat = this.recordingFormatSelect ? this.recordingFormatSelect.value : 'wav';
                 
                 // Initialize if we have access to MediaRecorder
                 if (typeof MediaRecorder !== 'undefined') {
@@ -2134,6 +2502,15 @@
                 } else {
                     showMessage('MediaRecorder is not supported in this browser. Recording feature unavailable.', 5000);
                     console.warn('MediaRecorder is not supported.');
+                }
+
+                if (this.recordingFormatSelect) {
+                    this.recordingFormatSelect.addEventListener('change', (e) => {
+                        this.selectedFormat = e.target.value;
+                        if (this.selectedFormat === 'mp3') {
+                            showMessage('MP3 recording is not natively supported in browsers and requires external libraries or server-side processing.', 5000);
+                        }
+                    });
                 }
             }
             
@@ -2170,19 +2547,34 @@
                     showMessage("Already recording!", 2000);
                     return;
                 }
+                if (this.selectedFormat === 'mp3') {
+                    showMessage('MP3 recording is not natively supported. Recording in WAV format.', 4000);
+                    // Fallback to WAV if MP3 is selected
+                    this.selectedFormat = 'wav'; 
+                }
 
                 this.chunks = [];
                 this.recordingStartTime = Date.now();
-                this.mediaRecorder.start();
                 this.isRecording = true;
                 
                 if (this.recordingMeter) {
                     this.recordingMeter.classList.add('active');
-                    this.updateRecordingTime();
                 }
-                
-                showMessage('Recording started!');
-                console.log("Recording started.");
+
+                let countdown = 3;
+                const countdownInterval = setInterval(() => {
+                    if (this.recordingMeter) {
+                        this.recordingMeter.textContent = `Recording starts in: ${countdown}s`;
+                    }
+                    countdown--;
+                    if (countdown < 0) {
+                        clearInterval(countdownInterval);
+                        this.mediaRecorder.start();
+                        this.updateRecordingTime();
+                        showMessage('Recording started!');
+                        console.log("Recording started.");
+                    }
+                }, 1000);
             }
             
             stopRecording() {
@@ -2211,13 +2603,14 @@
             }
             
             async processRecording() {
-                const blob = new Blob(this.chunks, { type: 'audio/wav' }); // Changed to WAV for better compatibility
+                const mimeType = this.selectedFormat === 'wav' ? 'audio/wav' : 'audio/webm'; // Default to webm if not wav, though we only support wav for now
+                const blob = new Blob(this.chunks, { type: mimeType }); 
                 const url = URL.createObjectURL(blob);
                 
                 // Create download link
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `relax_loop_${new Date().toISOString().replace(/:/g, '-')}.wav`; // Sanitize filename
+                a.download = `simple_relax_loop_${new Date().toISOString().replace(/:/g, '-')}.${this.selectedFormat}`; // Renamed filename
                 document.body.appendChild(a); // Append to body to make it clickable
                 a.click();
                 document.body.removeChild(a); // Clean up
@@ -2273,10 +2666,14 @@
                 const startButton = document.getElementById('startButton');
                 const stopButton = document.getElementById('stopButton');
                 const recordButton = document.getElementById('recordButton'); // Get record button
+                const chorusBypassCheckbox = document.getElementById('chorusBypass');
+                const reverbBypassCheckbox = document.getElementById('reverbBypass');
+
 
                 switch(e.code) {
                     case 'Space':
-                        e.preventDefault(); // Prevent default spacebar action (e.g., scrolling)
+                    case 'Enter': // Add Enter as transport control
+                        e.preventDefault(); // Prevent default spacebar/enter action (e.g., scrolling, submitting forms)
                         if (isPlaying) {
                             stopButton.click();
                         } else {
@@ -2287,7 +2684,16 @@
                         if (e.ctrlKey) { // Ctrl+R for recording
                             e.preventDefault();
                             recordButton.click();
+                        } else { // R key alone for Reverb bypass
+                             e.preventDefault();
+                             reverbBypassCheckbox.checked = !reverbBypassCheckbox.checked;
+                             reverbBypassCheckbox.dispatchEvent(new Event('change'));
                         }
+                        break;
+                    case 'KeyC': // C key for Chorus bypass
+                        e.preventDefault();
+                        chorusBypassCheckbox.checked = !chorusBypassCheckbox.checked;
+                        chorusBypassCheckbox.dispatchEvent(new Event('change'));
                         break;
                     case 'KeyM':
                         // Master volume mute/unmute
@@ -2305,17 +2711,48 @@
                         break;
                     case 'ArrowUp':
                     case 'ArrowDown':
-                        // Tempo control
-                        const tempoKnob = document.getElementById('tempo');
-                        if (tempoKnob) {
+                        // Parameter fine-tuning for all range inputs
+                        if (e.target.tagName === 'INPUT' && e.target.type === 'range') {
                             e.preventDefault(); // Prevent default scrolling
-                            const step = e.code === 'ArrowUp' ? 10 : -10;
-                            tempoKnob.value = Math.min(parseFloat(tempoKnob.max), Math.max(parseFloat(tempoKnob.min), parseInt(tempoKnob.value) + step));
-                            tempoKnob.dispatchEvent(new Event('input')); // Trigger input event to update UI and audio
-                            showMessage(`Tempo: ${tempoKnob.value} ms`, 1000);
+                            const knob = e.target;
+                            const step = e.shiftKey ? parseFloat(knob.step) : (knob.id === 'tempo' ? 10 : 0.01); // Smaller step for fine-tuning
+                            const direction = e.code === 'ArrowUp' ? 1 : -1;
+                            let newValue = parseFloat(knob.value) + (direction * step);
+
+                            // Clamp value to min/max
+                            newValue = Math.min(parseFloat(knob.max), Math.max(parseFloat(knob.min), newValue));
+                            knob.value = newValue;
+                            knob.dispatchEvent(new Event('input')); // Trigger input event to update UI and audio
+                            showMessage(`${knob.labels[0].textContent}: ${knob.nextElementSibling.textContent}`, 1000);
+                        } else {
+                            // Default behavior for tempo if no specific knob is focused
+                            const tempoKnob = document.getElementById('tempo');
+                            if (tempoKnob) {
+                                e.preventDefault(); // Prevent default scrolling
+                                const step = e.shiftKey ? 1 : 10;
+                                const direction = e.code === 'ArrowUp' ? 1 : -1;
+                                tempoKnob.value = Math.min(parseFloat(tempoKnob.max), Math.max(parseFloat(tempoKnob.min), parseInt(tempoKnob.value) + (direction * step)));
+                                tempoKnob.dispatchEvent(new Event('input')); // Trigger input event to update UI and audio
+                                showMessage(`Tempo: ${tempoKnob.value} ms`, 1000);
+                            }
                         }
                         break;
-                    // Add more shortcuts here as needed
+                    // Quick preset loading (1-9)
+                    case 'Digit1':
+                    case 'Digit2':
+                    case 'Digit3':
+                    case 'Digit4':
+                    case 'Digit5':
+                    case 'Digit6':
+                    case 'Digit7':
+                    case 'Digit8':
+                    case 'Digit9':
+                        e.preventDefault();
+                        const presetNumber = parseInt(e.key);
+                        const presetName = `Preset ${presetNumber}`;
+                        document.getElementById('presetNameInput').value = presetName;
+                        loadPreset(); // Call the existing loadPreset function
+                        break;
                 }
             });
         }
@@ -2327,6 +2764,13 @@
             document.getElementById('stopButton').addEventListener('click', stopLoop);
             document.getElementById('savePresetButton').addEventListener('click', savePreset);
             document.getElementById('loadPresetButton').addEventListener('click', loadPreset);
+            document.getElementById('exportPresetsButton').addEventListener('click', () => presetManager.exportAllPresets());
+            document.getElementById('importPresetsButton').addEventListener('click', () => document.getElementById('importPresetsInput').click());
+            document.getElementById('importPresetsInput').addEventListener('change', (event) => {
+                if (event.target.files.length > 0) {
+                    presetManager.importPresets(event.target.files[0]);
+                }
+            });
             
             // Add event listeners for all range input knobs
             document.querySelectorAll('input[type="range"]').forEach(knob => {
@@ -2348,6 +2792,41 @@
                 showMessage(`Reverb is now ${isReverbBypassed ? 'bypassed' : 'active'}.`);
             });
 
+            // Visualization mode buttons
+            document.getElementById('visModeSpectrum').addEventListener('click', () => {
+                visualizationMode = 'spectrum';
+                document.getElementById('visModeSpectrum').classList.add('active');
+                document.getElementById('visModeWaveform').classList.remove('active');
+                document.getElementById('visModeBoth').classList.remove('active');
+                document.getElementById('visModeBands').classList.remove('active');
+                showMessage('Visualization: Spectrum');
+            });
+            document.getElementById('visModeWaveform').addEventListener('click', () => {
+                visualizationMode = 'waveform';
+                document.getElementById('visModeSpectrum').classList.remove('active');
+                document.getElementById('visModeWaveform').classList.add('active');
+                document.getElementById('visModeBoth').classList.remove('active');
+                document.getElementById('visModeBands').classList.remove('active');
+                showMessage('Visualization: Waveform');
+            });
+            document.getElementById('visModeBoth').addEventListener('click', () => {
+                visualizationMode = 'both';
+                document.getElementById('visModeSpectrum').classList.remove('active');
+                document.getElementById('visModeWaveform').classList.remove('active');
+                document.getElementById('visModeBoth').classList.add('active');
+                document.getElementById('visModeBands').classList.remove('active');
+                showMessage('Visualization: Both');
+            });
+            document.getElementById('visModeBands').addEventListener('click', () => {
+                visualizationMode = 'bands';
+                document.getElementById('visModeSpectrum').classList.remove('active');
+                document.getElementById('visModeWaveform').classList.remove('active');
+                document.getElementById('visModeBoth').classList.remove('active');
+                document.getElementById('visModeBands').classList.add('active');
+                showMessage('Visualization: Frequency Bands');
+            });
+
+
             // Initial display update for all knobs
             document.querySelectorAll('input[type="range"]').forEach(knob => {
                 // Manually trigger the update to set initial display values
@@ -2362,6 +2841,18 @@
             
             // Add recording controls (looperRecorder is initialized in initAudio)
             addRecordingControls();
+
+            // Auto-load settings on page load
+            const autoSavedSettings = presetManager.loadAutoSavedSettings();
+            if (autoSavedSettings) {
+                applySettings(autoSavedSettings);
+                showMessage("Auto-saved settings loaded.", 2000);
+            }
+
+            // Auto-save settings before page unload
+            window.addEventListener('beforeunload', () => {
+                presetManager.autoSaveSettings();
+            });
         });
     </script>
 </body>
