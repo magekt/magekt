@@ -825,7 +825,6 @@
         }; // Maps key name to semitone offset from C
 
         let currentKey = 'C'; // Initial key for the loop
-        let keyProgressionDirection = 1; // 1 for moving up (dominant), -1 for moving down (subdominant)
         let sectionsSinceLastKeyChange = 0;
         const sectionsPerKeyChange = 2; // Change key every 2 sections
 
@@ -2169,7 +2168,7 @@
                     
                     // Determine the new key based on Circle of Fifths logic
                     let previousKey = currentKey; // Store the key of the just-finished section
-                    let newKey = previousKey; // Default to staying in the same key
+                    let newKeyCandidate = previousKey; // Default to staying in the same key
 
                     sectionsSinceLastKeyChange++;
 
@@ -2177,24 +2176,33 @@
                         sectionsSinceLastKeyChange = 0; // Reset counter
 
                         const currentKeyIndex = majorKeysCircleOfFifths.indexOf(previousKey);
-                        if (currentKeyIndex !== -1) {
-                            const nextKeyIndex = (currentKeyIndex + keyProgressionDirection + majorKeysCircleOfFifths.length) % majorKeysCircleOfFifths.length;
-                            newKey = majorKeysCircleOfFifths[nextKeyIndex];
-                            showMessage(`Modulating to ${newKey} Major!`, 2500);
-                            
-                            // Randomly reverse direction for next key change
-                            if (Math.random() < 0.5) {
-                                keyProgressionDirection *= -1;
+                        
+                        const rand = Math.random();
+                        if (rand < 0.5) { // 50% chance for dominant or subdominant
+                            if (Math.random() < 0.5) { // 25% for dominant
+                                newKeyCandidate = majorKeysCircleOfFifths[(currentKeyIndex + 1) % majorKeysCircleOfFifths.length];
+                                showMessage(`Modulating to Dominant: ${newKeyCandidate} Major!`, 2500);
+                            } else { // 25% for subdominant
+                                newKeyCandidate = majorKeysCircleOfFifths[(currentKeyIndex - 1 + majorKeysCircleOfFifths.length) % majorKeysCircleOfFifths.length];
+                                showMessage(`Modulating to Subdominant: ${newKeyCandidate} Major!`, 2500);
                             }
-                        } else {
-                            console.warn(`Current key '${previousKey}' not found in Circle of Fifths. Sticking to 'C'.`);
-                            newKey = 'C';
+                        } else if (rand < 0.8) { // 30% chance to stay on tonic
+                            newKeyCandidate = previousKey;
+                            showMessage(`Staying in ${newKeyCandidate} Major.`, 2500);
+                        } else { // 20% chance for a random key
+                            let randomKeyIndex;
+                            do {
+                                randomKeyIndex = Math.floor(Math.random() * majorKeysCircleOfFifths.length);
+                            } while (randomKeyIndex === currentKeyIndex); // Ensure it's not the current key
+                            newKeyCandidate = majorKeysCircleOfFifths[randomKeyIndex];
+                            showMessage(`Modulating to a new key: ${newKeyCandidate} Major!`, 2500);
                         }
                     } else {
-                        showMessage(`Staying in ${newKey} Major.`, 2500);
+                        // If not time for a key change, just keep the current key
+                        showMessage(`Staying in ${newKeyCandidate} Major.`, 2500);
                     }
+                    currentKey = newKeyCandidate; // Update global currentKey
 
-                    currentKey = newKey; // Update global currentKey
                     const semitonesToTranspose = keyToSemitoneOffsetFromC[currentKey] - keyToSemitoneOffsetFromC['C'];
 
                     if (currentSectionType === 'verse' && verseIterationCount % 2 === 0) {
