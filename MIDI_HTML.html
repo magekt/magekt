@@ -162,6 +162,7 @@
             flex-direction: column;
             align-items: center;
             gap: 5px;
+            position: relative; /* For value indicator */
         }
         .knob-group label {
             font-size: 0.9em;
@@ -405,6 +406,33 @@
                 </div>
             </div>
 
+            <!-- New Instrument Timbres Section -->
+            <div class="knob-section">
+                <h3>Instrument Timbres</h3>
+                <div class="knob-group">
+                    <label for="bassOscillatorType">Bass Wave</label>
+                    <select id="bassOscillatorType" title="Select waveform for bass instrument">
+                        <option value="triangle">Triangle</option>
+                        <option value="sine">Sine</option>
+                        <option value="sawtooth">Sawtooth</option>
+                        <option value="square">Square</option>
+                    </select>
+                </div>
+                <div class="knob-group">
+                    <label for="synthOscillatorType">Synth Wave</label>
+                    <select id="synthOscillatorType" title="Select waveform for synth instrument">
+                        <option value="sine">Sine</option>
+                        <option value="triangle">Triangle</option>
+                        <option value="sawtooth">Sawtooth</option>
+                        <option value="square">Square</option>
+                    </select>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="synthArpeggiator" title="Enable arpeggiator for synth (Hotkey: A)">
+                    <label for="synthArpeggiator">Synth Arpeggiator (A)</label>
+                </div>
+            </div>
+
             <div class="knob-section">
                 <h3>Effects</h3>
                 <div class="knob-group">
@@ -462,6 +490,39 @@
                 </div>
             </div>
 
+            <!-- New Distortion Controls -->
+            <div class="knob-section">
+                <h3>Distortion</h3>
+                <div class="knob-group">
+                    <label for="distortionAmount">Amount</label>
+                    <input type="range" id="distortionAmount" min="0" max="1000" step="1" value="0" title="Adjust distortion amount. (Shift + Up/Down for fine tune)">
+                    <span class="knob-value" id="distortionAmountValue">0</span>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="distortionBypass" checked title="Bypass the Distortion effect (Hotkey: D)">
+                    <label for="distortionBypass">Bypass Distortion (D)</label>
+                </div>
+            </div>
+
+            <!-- New Phaser Controls -->
+            <div class="knob-section">
+                <h3>Phaser</h3>
+                <div class="knob-group">
+                    <label for="phaserRate">Rate (Hz)</label>
+                    <input type="range" id="phaserRate" min="0.1" max="10" step="0.1" value="1" title="Adjust phaser modulation rate. (Shift + Up/Down for fine tune)">
+                    <span class="knob-value" id="phaserRateValue">1.0</span>
+                </div>
+                <div class="knob-group">
+                    <label for="phaserDepth">Depth</label>
+                    <input type="range" id="phaserDepth" min="0" max="1" step="0.01" value="0.5" title="Adjust phaser modulation depth. (Shift + Up/Down for fine tune)">
+                    <span class="knob-value" id="phaserDepthValue">0.50</span>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="phaserBypass" checked title="Bypass the Phaser effect (Hotkey: P)">
+                    <label for="phaserBypass">Bypass Phaser (P)</label>
+                </div>
+            </div>
+
         </div>
 
         <div class="central-content">
@@ -502,7 +563,7 @@
                 <button id="loadPresetButton" title="Load a saved preset">Load Preset</button>
                 <button id="exportPresetsButton" title="Export all saved presets to a JSON file">Export All Presets</button>
                 <input type="file" id="importPresetsInput" accept=".json" style="display: none;" title="Select a JSON file to import presets">
-                <button id="importPresetsButton" title="Import presets from a JSON file">Import Presets</button>
+                <button id="importPresetsButton" title="Import Presets</button>
                 <p>Quick Load: Press 1-9 to load "Preset 1" to "Preset 9"</p>
             </div>
 
@@ -538,6 +599,9 @@
         let hihatVolume = 0.21;
 
         let currentTempo = 420;
+        let targetTempo = 420; // New: For dynamic tempo changes
+        let tempoDriftDirection = 1; // New: For tempo drift
+
         let currentDetune = 0;
         let currentFilterFrequency = 1000;
         let currentFilterQ = 1;
@@ -556,6 +620,11 @@
         // Humanization intensity factor, also influenced by Fibonacci drift
         let humanizationFactor = 0.5;
 
+        // Instrument timbre settings
+        let bassOscillatorType = 'triangle';
+        let synthOscillatorType = 'sine';
+        let isSynthArpeggiatorActive = false; // New: Arpeggiator control
+
         // Delay effect nodes and parameters
         let delayNode;
         let delayFeedbackGain;
@@ -571,19 +640,37 @@
         let chorusDepth = 0.002; // Default chorus depth (delay time modulation amount)
         let isChorusBypassed = true; // Default to bypassed
 
-        // New: Compressor nodes and parameters
+        // Compressor nodes and parameters
         let compressorNode;
         let compThreshold = -24;
         let compRatio = 12;
 
-        // New: Reverb nodes and parameters
+        // Reverb nodes and parameters
         let convolverNode;
         let reverbGainNode;
-        let dryGainNode;
+        let dryGainNode; // For the dry signal path in reverb mix
+        let preCompressorGain; // New node for signal before compressor
         let reverbMix = 0.5;
         let isReverbBypassed = true;
 
-        // New: Recording
+        // New: Distortion effect nodes and parameters
+        let distortionNode;
+        let distortionAmount = 0; // Amount of distortion (0-1000 for curve intensity)
+        let isDistortionBypassed = true;
+        let postDistortionGain; // Intermediate gain node for distortion bypass
+
+        // New: Phaser effect nodes and parameters
+        let phaserLFO;
+        let phaserLfoGain;
+        let phaserFilterNodes = []; // Array of BiquadFilterNodes for the phaser stages
+        const PHASER_STAGES = 6; // Number of all-pass filter stages for the phaser
+        let phaserRate = 1; // LFO rate in Hz
+        let phaserDepth = 0.5; // Modulation depth (0-1)
+        let isPhaserBypassed = true;
+        let phaserInputGain; // Input gain for phaser
+        let postPhaserGain; // Output gain for phaser
+
+        // Recording
         let looperRecorder;
 
         // Visualizer and Volume Meter elements
@@ -606,7 +693,7 @@
         };
         // Updated: Added more Raga scales
         const ragaVerseOptions = ['ragaYamanPhrase', 'ragaBhairaviPhrase', 'ragaBhoopaliPhrase', 'ragaKhamajPhrase'];
-        let availableRagas = [...ragaVerseOptions];
+        let availableRagas = [...ragaVerseOptions]; // Copy for shuffling
         let normalVerseIndex = 0;
         let verseIterationCount = 0;
 
@@ -639,6 +726,9 @@
         }; // Maps key name to semitone offset from C
 
         let currentKey = 'C'; // Initial key for the loop
+        let keyProgressionDirection = 1; // 1 for moving up (dominant), -1 for moving down (subdominant)
+        let sectionsSinceLastKeyChange = 0;
+        const sectionsPerKeyChange = 2; // Change key every 2 sections
 
         /**
          * Transposes an array of note strings by a given number of semitones.
@@ -648,11 +738,16 @@
          */
         function transposeNotes(notesArray, semitones) {
             return notesArray.map(noteString => {
+                // Handle empty or invalid note strings gracefully
+                if (!noteString || typeof noteString !== 'string' || noteString.length < 2) {
+                    console.warn(`Invalid note string for transposition: ${noteString}. Skipping.`);
+                    return noteString;
+                }
                 const baseNote = noteString.slice(0, -1);
                 const octave = parseInt(noteString.slice(-1));
                 
                 if (!noteToSemitone.hasOwnProperty(baseNote)) {
-                    console.warn(`Unknown base note for transposition: ${baseNote}`);
+                    console.warn(`Unknown base note for transposition: ${baseNote}. Returning original.`);
                     return noteString; // Return original if unknown
                 }
 
@@ -826,7 +921,8 @@
         }
 
 
-        // Define musical phrases for each section of the song
+        // Define musical phrases for each section of the song.
+        // All phrases are defined in the key of C Major. They will be transposed dynamically.
         // Percussion now includes 'active', 'probability', and 'velocity' for dynamic sequencing
         const musicalPhrases = {
             intro: [
@@ -916,10 +1012,52 @@
                 { bass: ['A2'], synth: ['A3', 'E4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['C2'], synth: ['C4', 'E4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
+            // FIX: Added missing musical phrases
+            verse2_D: [
+                { bass: ['F2'], synth: ['F3', 'A3', 'C4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
+                { bass: ['F2'], synth: ['C4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
+                { bass: ['C2'], synth: ['G3', 'E4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
+                { bass: ['C2'], synth: ['G4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
+                { bass: ['G2'], synth: ['G3', 'B3'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.3 },
+                { bass: ['G2'], synth: ['D4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
+                { bass: ['A2'], synth: ['A3', 'C4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
+                { bass: ['C2'], synth: ['E4', 'G4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
+            ],
+            verse3_A: [ // Copied from verse2_A, but with notes relative to C
+                { bass: ['G2'], synth: ['G3', 'B3', 'D4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
+                { bass: ['G2'], synth: ['B3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
+                { bass: ['D2'], synth: ['D3', 'F#3', 'A3'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
+                { bass: ['D2'], synth: ['F#3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
+                { bass: ['A2'], synth: ['A3', 'C#4', 'E4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.3 },
+                { bass: ['A2'], synth: ['C#4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
+                { bass: ['E2'], synth: ['E3', 'G#3', 'B3'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
+                { bass: ['E2'], synth: ['G#3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
+            ],
+            verse3_B: [ // Copied from verse2_B, but with notes relative to C
+                { bass: ['G2'], synth: ['D4', 'G4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
+                { bass: ['G2'], synth: ['B3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
+                { bass: ['D2'], synth: ['A3', 'D4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
+                { bass: ['D2'], synth: ['F#3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
+                { bass: ['A2'], synth: ['E4', 'A4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.3 },
+                { bass: ['A2'], synth: ['C#4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
+                { bass: ['E2'], synth: ['B3', 'E4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
+                { bass: ['E2'], synth: ['G#3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
+            ],
+            verse3_C: [ // Copied from verse2_C, but with notes relative to C
+                { bass: ['G2'], synth: ['G3', 'D4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
+                { bass: ['G2'], synth: ['B3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
+                { bass: ['D2'], synth: ['D3', 'A3'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
+                { bass: ['D2'], synth: ['F#3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
+                { bass: ['A2'], synth: ['A3', 'E4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.3 },
+                { bass: ['A2'], synth: ['C#4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
+                { bass: ['E2'], synth: ['E3', 'B3'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
+                { bass: ['G2'], synth: ['G3', 'B3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
+            ],
+            // Raga phrases - these will be dynamically generated and thus are empty here
             ragaYamanPhrase: [],
             ragaBhairaviPhrase: [],
-            ragaBhoopaliPhrase: [], // New Raga phrase placeholder
-            ragaKhamajPhrase: [],   // New Raga phrase placeholder
+            ragaBhoopaliPhrase: [],
+            ragaKhamajPhrase: [],
             
             chorus: [
                 { bass: ['A2'], synth: ['A4', 'C5', 'E4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'open', velocity: 0.9 } }, delaySend: 0.6 },
@@ -954,21 +1092,21 @@
         };
 
         const songStructure = [
-            { type: 'intro', durationMultiplier: 2, initialKey: 'A' }, // Added initialKey for intro
-            { type: 'verse', baseName: 'verse1', durationMultiplier: 3, initialKey: 'C' }, // Initial key for verse1
-            { type: 'chorus', durationMultiplier: 2, initialKey: 'A' },
-            { type: 'verse', baseName: 'verse2', durationMultiplier: 3, initialKey: 'F' }, // Initial key for verse2
-            { type: 'verse', baseName: 'verse3', durationMultiplier: 5, initialKey: 'G' }, // Initial key for verse3
-            { type: 'bridge', durationMultiplier: 2, initialKey: 'D' },
-            { type: 'chorus', durationMultiplier: 3, initialKey: 'A' },
+            { type: 'intro', durationMultiplier: 2, initialKey: 'C' }, // Base key for intro
+            { type: 'verse', baseName: 'verse1', durationMultiplier: 3, initialKey: 'C' }, // Base key for verse1
+            { type: 'chorus', durationMultiplier: 2, initialKey: 'C' },
+            { type: 'verse', baseName: 'verse2', durationMultiplier: 3, initialKey: 'C' }, // Base key for verse2
+            { type: 'verse', baseName: 'verse3', durationMultiplier: 5, initialKey: 'C' }, // Base key for verse3
+            { type: 'bridge', durationMultiplier: 2, initialKey: 'C' },
+            { type: 'chorus', durationMultiplier: 3, initialKey: 'C' },
             { type: 'verse', baseName: 'verse1', durationMultiplier: 2, initialKey: 'C' },
-            { type: 'outro', durationMultiplier: 2, initialKey: 'A' }
+            { type: 'outro', durationMultiplier: 2, initialKey: 'C' }
         ];
 
         let currentSongSectionIndex = 0;
         let currentSectionType = '';
         let currentSectionName = '';
-        let currentSectionPhrase = [];
+        let currentSectionPhrase = []; // This will hold the *transposed* phrase for the current section
         let currentPhraseIndex = 0;
         let stepsPlayedInCurrentSection = 0;
         let currentSectionTotalSteps = 0;
@@ -1046,8 +1184,235 @@
         }
 
         /**
-         * Initializes the Web Audio API context and the master gain node.
-         * This function needs to be called after a user gesture (e.e.g., button click)
+         * Generates a distortion curve for the WaveShaperNode.
+         * @param {number} amount - The amount of distortion. Higher values mean more distortion.
+         * @returns {Float32Array} A Float32Array representing the distortion curve.
+         */
+        function makeDistortionCurve(amount) {
+            const k = typeof amount === 'number' ? amount : 0;
+            const n_samples = 44100;
+            const curve = new Float32Array(n_samples);
+            const deg = Math.PI / 180;
+            for (let i = 0; i < n_samples; ++i) {
+                const x = i * 2 / n_samples - 1;
+                curve[i] = (3 + k) * x * 20 * deg / (Math.PI + k * Math.abs(x));
+            }
+            return curve;
+        }
+
+        /**
+         * Updates the audio graph connection for distortion bypass.
+         */
+        function updateDistortionBypassConnection() {
+            if (!audioContext || !masterGainNode || !distortionNode || !postDistortionGain || !phaserInputGain) return;
+
+            // Disconnect masterGainNode from wherever it was connected
+            try {
+                masterGainNode.disconnect();
+            } catch (e) { /* ignore */ }
+
+            if (isDistortionBypassed) {
+                // Bypass: masterGainNode -> postDistortionGain
+                masterGainNode.connect(postDistortionGain);
+            } else {
+                // Engage: masterGainNode -> distortionNode -> postDistortionGain
+                masterGainNode.connect(distortionNode);
+                distortionNode.connect(postDistortionGain);
+            }
+            // Reconnect the next stage (phaser input)
+            updatePhaserBypassConnection();
+        }
+
+        /**
+         * Updates the audio graph connection for phaser bypass.
+         */
+        function updatePhaserBypassConnection() {
+            if (!audioContext || !postDistortionGain || !phaserInputGain || phaserFilterNodes.length === 0 || !postPhaserGain || !chorusNode || !preCompressorGain) return;
+
+            // Disconnect postDistortionGain from wherever it was connected
+            try {
+                postDistortionGain.disconnect();
+            } catch (e) { /* ignore */ }
+            
+            // Disconnect phaser chain from wherever it was connected
+            try {
+                phaserFilterNodes[PHASER_STAGES - 1].disconnect();
+            } catch (e) { /* ignore */ }
+
+            if (isPhaserBypassed) {
+                // Bypass: postDistortionGain -> postPhaserGain
+                postDistortionGain.connect(postPhaserGain);
+            } else {
+                // Engage: postDistortionGain -> phaserInputGain -> phaserFilterNodes[0] -> ... -> phaserFilterNodes[last] -> postPhaserGain
+                postDistortionGain.connect(phaserInputGain);
+                phaserInputGain.connect(phaserFilterNodes[0]);
+                phaserFilterNodes[PHASER_STAGES - 1].connect(postPhaserGain);
+            }
+            // Reconnect the next stage (chorus/preCompressorGain)
+            updateChorusBypassConnection();
+        }
+
+        /**
+         * Updates the audio graph connection for chorus bypass.
+         */
+        function updateChorusBypassConnection() {
+            if (!audioContext || !postPhaserGain || !preCompressorGain || !chorusNode) return;
+
+            // Disconnect postPhaserGain from wherever it was connected
+            try {
+                postPhaserGain.disconnect();
+            } catch (e) { /* ignore */ }
+            
+            if (isChorusBypassed) {
+                // Bypass: postPhaserGain -> preCompressorGain
+                postPhaserGain.connect(preCompressorGain);
+            } else {
+                // Engage: postPhaserGain -> chorusNode -> preCompressorGain
+                postPhaserGain.connect(chorusNode);
+                chorusNode.connect(preCompressorGain);
+            }
+        }
+
+        /**
+         * Updates the audio graph connection for reverb bypass and wet/dry mix.
+         */
+        function updateReverbBypassConnection() {
+            if (!audioContext || !preCompressorGain || !convolverNode || !reverbGainNode || !dryGainNode) return;
+
+            // Disconnect existing connections from preCompressorGain to reverb/dry
+            try {
+                preCompressorGain.disconnect(dryGainNode);
+                preCompressorGain.disconnect(reverbGainNode);
+            } catch (e) { /* ignore */ }
+
+            // Disconnect reverb output from preCompressorGain
+            try {
+                convolverNode.disconnect(preCompressorGain);
+            } catch (e) { /* ignore */ }
+
+            if (isReverbBypassed) {
+                // Bypass: All signal directly to preCompressorGain (already connected through main chain)
+                // No need to connect dryGainNode or reverbGainNode if bypassed, as preCompressorGain is already the main path.
+                // The main chain is already connected like: masterGainNode -> ... -> preCompressorGain -> compressor -> analyser -> destination
+                // So, if bypassed, the signal simply continues through the main path.
+            } else {
+                // Engage: Split signal to dry and wet paths, then sum them back to preCompressorGain
+                dryGainNode.gain.setValueAtTime(1 - reverbMix, audioContext.currentTime);
+                reverbGainNode.gain.setValueAtTime(reverbMix, audioContext.currentTime);
+
+                preCompressorGain.connect(dryGainNode); // Send dry signal
+                dryGainNode.connect(compressorNode); // Dry signal rejoins before compressor
+
+                preCompressorGain.connect(reverbGainNode); // Send wet signal
+                reverbGainNode.connect(convolverNode);
+                convolverNode.connect(compressorNode); // Wet signal rejoins before compressor
+            }
+        }
+
+        /**
+         * Updates a specific audio parameter based on the UI element ID and its new value.
+         * This function is crucial for linking UI knobs/sliders to audio graph parameters.
+         * @param {string} id - The ID of the HTML input element (e.g., 'masterVolume', 'tempo').
+         * @param {number|string} value - The new value from the input element.
+         */
+        function updateAudioParameter(id, value) {
+            const valueDisplay = document.getElementById(id + 'Value');
+            if (valueDisplay) {
+                // Format display values for specific parameters
+                if (id === 'compThreshold') {
+                    valueDisplay.textContent = `${value} dB`;
+                } else if (id === 'compRatio') {
+                    valueDisplay.textContent = `${value}:1`;
+                } else if (id === 'reverbMix') {
+                    valueDisplay.textContent = `${(value * 100).toFixed(0)}%`;
+                } else if (id === 'delayTime' || id === 'delayFeedback' || id === 'delaySendLevel' || id === 'chorusDepth' || id === 'phaserRate' || id === 'phaserDepth') {
+                    valueDisplay.textContent = parseFloat(value).toFixed(2);
+                } else {
+                    valueDisplay.textContent = parseFloat(value).toFixed(2);
+                }
+            }
+
+            // Update global variables and audio nodes
+            if (audioContext) {
+                const currentTime = audioContext.currentTime;
+                switch (id) {
+                    case 'masterVolume':
+                        masterVolume = value;
+                        if (masterGainNode) masterGainNode.gain.setValueAtTime(masterVolume, currentTime);
+                        break;
+                    case 'tempo':
+                        targetTempo = value; // Update targetTempo
+                        break;
+                    case 'bassVolume':
+                        bassVolume = value;
+                        break;
+                    case 'synthVolume':
+                        synthVolume = value;
+                        break;
+                    case 'kickVolume':
+                        kickVolume = value;
+                        break;
+                    case 'snareVolume':
+                        snareVolume = value;
+                        break;
+                    case 'hihatVolume':
+                        hihatVolume = value;
+                        break;
+                    case 'bassOscillatorType': // New
+                        bassOscillatorType = value;
+                        break;
+                    case 'synthOscillatorType': // New
+                        synthOscillatorType = value;
+                        break;
+                    case 'delayTime':
+                        delayTimeValue = value;
+                        if (delayNode) delayNode.delayTime.setValueAtTime(delayTimeValue, currentTime);
+                        break;
+                    case 'delayFeedback':
+                        delayFeedbackValue = value;
+                        if (delayFeedbackGain) delayFeedbackGain.gain.setValueAtTime(delayFeedbackValue, currentTime);
+                        break;
+                    case 'delaySendLevel':
+                        delaySendLevel = value;
+                        // This will be applied per step in the scheduler, but update the global variable
+                        break;
+                    case 'chorusDepth':
+                        chorusDepth = value;
+                        if (chorusLfoGain) chorusLfoGain.gain.setValueAtTime(chorusDepth, currentTime);
+                        break;
+                    case 'compThreshold':
+                        compThreshold = value;
+                        if (compressorNode) compressorNode.threshold.setValueAtTime(compThreshold, currentTime);
+                        break;
+                    case 'compRatio':
+                        compRatio = value;
+                        if (compressorNode) compressorNode.ratio.setValueAtTime(compRatio, currentTime);
+                        break;
+                    case 'reverbMix':
+                        reverbMix = value;
+                        if (reverbGainNode) reverbGainNode.gain.setValueAtTime(reverbMix, currentTime);
+                        if (dryGainNode) dryGainNode.gain.setValueAtTime(1 - reverbMix, currentTime);
+                        break;
+                    case 'distortionAmount': // New
+                        distortionAmount = value;
+                        if (distortionNode) distortionNode.curve = makeDistortionCurve(distortionAmount);
+                        break;
+                    case 'phaserRate': // New
+                        phaserRate = value;
+                        if (phaserLFO) phaserLFO.frequency.setValueAtTime(phaserRate, currentTime);
+                        break;
+                    case 'phaserDepth': // New
+                        phaserDepth = value;
+                        if (phaserLfoGain) phaserLfoGain.gain.setValueAtTime(phaserDepth * 1000, currentTime); // Scale for frequency modulation
+                        break;
+                }
+            }
+        }
+
+
+        /**
+         * Initializes the Web Audio API context and the main audio graph nodes.
+         * This function needs to be called after a user gesture (e.g., button click)
          * to comply with browser autoplay policies.
          * @returns {boolean} True if audio context was successfully initialized or already exists, false otherwise.
          */
@@ -1057,29 +1422,83 @@
                 try {
                     showMessage("Loading Audio System...", 5000); // Show loading message
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+                    // Main Gain Node - first in the chain
                     masterGainNode = audioContext.createGain();
                     masterGainNode.gain.value = masterVolume;
-                    
-                    // Delay setup
-                    delayNode = audioContext.createDelay(2.0);
-                    delayFeedbackGain = audioContext.createGain();
-                    delaySendGain = audioContext.createGain();
 
-                    // Chorus setup
+                    // Distortion Effect
+                    distortionNode = audioContext.createWaveShaper();
+                    distortionNode.curve = makeDistortionCurve(distortionAmount);
+                    distortionNode.oversample = '4x'; // High quality oversampling
+                    postDistortionGain = audioContext.createGain(); // For bypass
+
+                    // Phaser Effect
+                    phaserInputGain = audioContext.createGain(); // Input gain for phaser bypass
+                    postPhaserGain = audioContext.createGain(); // Output gain for phaser bypass
+
+                    // Create phaser filter stages (all-pass filters)
+                    for (let i = 0; i < PHASER_STAGES; i++) {
+                        const filter = audioContext.createBiquadFilter();
+                        filter.type = 'allpass';
+                        filter.frequency.value = 1000; // Base frequency, will be modulated
+                        filter.Q.value = 1; // Resonance
+                        phaserFilterNodes.push(filter);
+                    }
+
+                    // Connect phaser stages in series
+                    for (let i = 0; i < PHASER_STAGES - 1; i++) {
+                        phaserFilterNodes[i].connect(phaserFilterNodes[i + 1]);
+                    }
+
+                    // Create Phaser LFO for modulation
+                    phaserLFO = audioContext.createOscillator();
+                    phaserLFO.type = 'sine';
+                    phaserLFO.frequency.value = phaserRate;
+                    phaserLFO.start(0);
+
+                    phaserLfoGain = audioContext.createGain();
+                    phaserLfoGain.gain.value = phaserDepth * 1000; // Modulate frequency range
+                    phaserLFO.connect(phaserLfoGain);
+
+                    // Connect LFO to each filter's frequency parameter
+                    phaserFilterNodes.forEach(filter => {
+                        phaserLfoGain.connect(filter.frequency);
+                    });
+
+                    // Chorus Effect
                     chorusNode = audioContext.createDelay(0.01); // Max delay for chorus, typically very small
                     chorusLFO = audioContext.createOscillator();
                     chorusLfoGain = audioContext.createGain();
 
                     chorusLFO.type = 'sine';
-                    chorusLFO.frequency.value = 1.5; // LFO frequency for chorus modulation
-                    chorusLfoGain.gain.value = chorusDepth; // Modulation depth
+                    chorusLFO.frequency.value = 1.5; // LFO frequency (rate of modulation)
+                    chorusLfoGain.gain.value = chorusDepth; // Depth of modulation
                     
-                    chorusLFO.connect(chorusLFO.frequency); // Connect LFO to its own frequency to create vibrato effect
                     chorusLFO.connect(chorusLfoGain);
                     chorusLfoGain.connect(chorusNode.delayTime);
                     chorusLFO.start(audioContext.currentTime); // Start LFO immediately
 
-                    // Compressor setup
+                    // Node where all instrument outputs connect before effects
+                    // This is the source for the main audio path
+                    preCompressorGain = audioContext.createGain(); // Renamed for clarity: this is where dry and wet signals meet before compressor
+
+                    // Delay Effect (Feedback Delay)
+                    delayNode = audioContext.createDelay(2.0); // Max delay time of 2 seconds
+                    delayFeedbackGain = audioContext.createGain();
+                    delaySendGain = audioContext.createGain(); // Controls how much signal goes TO the delay
+
+                    delayNode.delayTime.value = delayTimeValue;
+                    delayFeedbackGain.gain.value = delayFeedbackValue;
+                    delaySendGain.gain.value = delaySendLevel;
+
+                    // Connect delay: preCompressorGain -> delaySendGain -> delay -> feedback -> delay -> preCompressorGain (wet return)
+                    delaySendGain.connect(delayNode);
+                    delayNode.connect(delayFeedbackGain);
+                    delayFeedbackGain.connect(delayNode); // Feedback loop
+                    delayNode.connect(preCompressorGain); // Wet delay signal returns to preCompressorGain
+
+                    // Compressor Node
                     compressorNode = audioContext.createDynamicsCompressor();
                     compressorNode.threshold.value = compThreshold;
                     compressorNode.knee.value = 30; // Default value, not exposed to UI
@@ -1087,10 +1506,10 @@
                     compressorNode.attack.value = 0.003; // Default value
                     compressorNode.release.value = 0.25; // Default value
 
-                    // Reverb setup
+                    // Reverb Effect (Convolver)
                     convolverNode = audioContext.createConvolver();
-                    reverbGainNode = audioContext.createGain();
-                    dryGainNode = audioContext.createGain();
+                    reverbGainNode = audioContext.createGain(); // Wet signal gain for reverb
+                    dryGainNode = audioContext.createGain(); // Dry signal gain for reverb mix
 
                     // Create a simple synthetic impulse response for reverb
                     const impulseLength = 2; // seconds
@@ -1119,34 +1538,32 @@
                     dataArray = new Uint8Array(analyserNode.frequencyBinCount); // For time domain visualization
                     frequencyDataArray = new Uint8Array(analyserNode.frequencyBinCount); // For frequency visualization and volume meter
 
-                    // Connect nodes:
-                    // Master -> Delay Send -> Delay -> Destination
-                    // Master -> Compressor -> (Dry Signal / Reverb Wet Signal) -> Analyser -> Destination
-                    
-                    // Main audio path: Master -> Compressor
-                    masterGainNode.connect(compressorNode);
+                    // Connect the main audio graph:
+                    // masterGainNode -> Distortion -> Phaser -> Chorus -> preCompressorGain -> Compressor -> Analyser -> Destination
+                    // Send effects (Delay, Reverb) from preCompressorGain
 
-                    // Delay path: Master -> Delay Send -> Delay -> Destination
-                    masterGainNode.connect(delaySendGain);
-                    delaySendGain.connect(delayNode);
-                    delayNode.connect(audioContext.destination);
+                    // 1. Master Gain -> Distortion (if active) OR postDistortionGain
+                    updateDistortionBypassConnection(); // Handles masterGainNode -> distortion/postDistortionGain
 
-                    // Reverb path: Compressor -> (Dry Gain / Convolver + Reverb Gain) -> Analyser
-                    // Disconnect analyser from masterGainNode if it was connected directly
-                    try {
-                        masterGainNode.disconnect(analyserNode);
-                    } catch (e) { /* ignore */ }
+                    // 2. postDistortionGain -> Phaser (if active) OR postPhaserGain
+                    updatePhaserBypassConnection(); // Handles postDistortionGain -> phaser/postPhaserGain
 
-                    // Connect compressor to dry and wet reverb paths
-                    compressorNode.connect(dryGainNode);
-                    dryGainNode.connect(analyserNode); // Dry signal to analyser
+                    // 3. postPhaserGain -> Chorus (if active) OR preCompressorGain
+                    updateChorusBypassConnection(); // Handles postPhaserGain -> chorus/preCompressorGain
 
-                    compressorNode.connect(convolverNode);
-                    convolverNode.connect(reverbGainNode);
-                    reverbGainNode.connect(analyserNode); // Wet signal to analyser
+                    // 4. preCompressorGain -> Compressor
+                    preCompressorGain.connect(compressorNode);
 
-                    // Analyser always connects to destination
+                    // 5. Compressor -> Analyser
+                    compressorNode.connect(analyserNode);
+
+                    // 6. Analyser always connects to destination
                     analyserNode.connect(audioContext.destination);
+
+                    // Connect send effects (Delay, Reverb) from preCompressorGain
+                    preCompressorGain.connect(delaySendGain); // Send signal to delay
+                    // Reverb is now connected from preCompressorGain to dry/wet paths
+                    updateReverbBypassConnection(); // Ensure reverb is connected correctly on init
 
                     // Initialize UI elements for visualization and volume meter
                     audioVisualizerCanvas = document.getElementById('audioVisualizer');
@@ -1162,8 +1579,6 @@
 
                     // Initialize recorder
                     looperRecorder = new EnhancedLooperRecorder(audioContext);
-                    // The EnhancedLooperRecorder constructor now handles its own initialization
-                    // looperRecorder.initializeRecorder(); 
 
                     showMessage(`Audio context initialized. Master Gain: ${masterVolume.toFixed(2)}`);
                     console.log("AudioContext initialized successfully. State:", audioContext.state);
@@ -1188,10 +1603,11 @@
          * @param {number} filterFreq - The cutoff frequency for the low-pass filter.
          * @param {number} filterQ - The Q factor for the low-pass filter.
          * @param {string} instrumentType - 'bass' or 'synth' to determine timbre.
+         * @param {number} velocity - The velocity (0-1) of the note.
          */
-        function playNote(frequency, startTime, duration, detuneValue = currentDetune, filterFreq = currentFilterFrequency, filterQ = currentFilterQ, instrumentType = 'synth') {
-            if (!audioContext || !masterGainNode) {
-                console.warn("Cannot play note: AudioContext or masterGainNode not available.");
+        function playNote(frequency, startTime, duration, detuneValue = currentDetune, filterFreq = currentFilterFrequency, filterQ = currentFilterQ, instrumentType = 'synth', velocity = 1.0) {
+            if (!audioContext || !masterGainNode || !preCompressorGain) { // Ensure preCompressorGain is available
+                console.warn("Cannot play note: AudioContext or main gain nodes not available.");
                 return;
             }
 
@@ -1210,29 +1626,29 @@
             let decayTime = 0.2;
             let sustainLevel = 0.5;
             let releaseTime = 0.2;
-            let initialGain = synthVolume;
-            let oscType = 'sine';
+            let initialGain;
+            let oscType; // Determined by UI selection
 
             switch (instrumentType) {
                 case 'bass':
-                    oscType = 'triangle';
+                    oscType = bassOscillatorType; // Use selected type
                     attackTime = 0.02;
                     decayTime = 0.3;
                     sustainLevel = 0.5;
                     releaseTime = 0.2;
-                    initialGain = bassVolume;
+                    initialGain = bassVolume * velocity; // Apply velocity
                     filterNode.type = 'lowpass';
                     filterNode.frequency.setValueAtTime(400, actualStartTime);
                     filterNode.Q.setValueAtTime(0.8, actualStartTime);
                     break;
                 case 'synth':
                 default:
-                    oscType = 'sine';
+                    oscType = synthOscillatorType; // Use selected type
                     attackTime = 0.1;
                     decayTime = 0.5;
                     sustainLevel = 0.6;
                     releaseTime = 0.8;
-                    initialGain = synthVolume;
+                    initialGain = synthVolume * velocity; // Apply velocity
                     filterNode.type = 'lowpass';
                     
                     const initialFilterFreq = filterFreq * (1 + (Math.random() - 0.5) * 0.2 * humanizationFactor);
@@ -1250,8 +1666,8 @@
 
             oscillator.connect(filterNode);
             filterNode.connect(gainNode);
-            gainNode.connect(masterGainNode);
-
+            gainNode.connect(masterGainNode); // Connect to masterGainNode
+            
             gainNode.gain.setValueAtTime(0, actualStartTime);
             gainNode.gain.linearRampToValueAtTime(initialGain * dynamicFactor, actualStartTime + attackTime);
             gainNode.gain.linearRampToValueAtTime(initialGain * dynamicFactor * sustainLevel, actualStartTime + attackTime + decayTime);
@@ -1290,20 +1706,20 @@
             const actualStartTime = Math.max(0, startTime);
 
             drumOscillator.type = 'sine';
-            drumOscillator.frequency.setValueAtTime(80, actualStartTime);
-            drumOscillator.frequency.exponentialRampToValueAtTime(30, actualStartTime + 0.1);
+            drumOscillator.frequency.setValueAtTime(120, actualStartTime); // Start frequency
+            drumOscillator.frequency.exponentialRampToValueAtTime(30, actualStartTime + 0.1); // Decay to 30Hz
 
             drumFilter.type = 'lowpass';
-            drumFilter.frequency.setValueAtTime(500, actualStartTime);
-            drumFilter.frequency.exponentialRampToValueAtTime(100, actualStartTime + 0.15);
-            drumFilter.Q.setValueAtTime(1, actualStartTime);
+            drumFilter.frequency.setValueAtTime(500, actualStartTime); // Initial filter frequency
+            drumFilter.frequency.exponentialRampToValueAtTime(100, actualStartTime + 0.15); // Decay filter
+            drumFilter.Q.setValueAtTime(0.8, actualStartTime);
 
             drumOscillator.connect(drumFilter);
             drumFilter.connect(drumGain);
-            drumGain.connect(masterGainNode);
+            drumGain.connect(masterGainNode); // Connect to masterGainNode
 
             drumGain.gain.setValueAtTime(kickVolume * velocity, actualStartTime); // Apply velocity
-            drumGain.gain.exponentialRampToValueAtTime(0.001, actualStartTime + 0.2);
+            drumGain.gain.exponentialRampToValueAtTime(0.001, actualStartTime + 0.2); // Quick decay
 
             drumOscillator.start(actualStartTime);
             drumOscillator.stop(actualStartTime + 0.2);
@@ -1328,6 +1744,7 @@
 
             const actualStartTime = Math.max(0, startTime);
 
+            // Noise component
             const noise = audioContext.createBufferSource();
             const bufferSize = audioContext.sampleRate * 0.2;
             const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
@@ -1342,6 +1759,7 @@
             noiseGain.gain.exponentialRampToValueAtTime(0.001, actualStartTime + 0.15);
             noise.connect(noiseGain);
 
+            // Tone component
             const osc = audioContext.createOscillator();
             osc.type = 'triangle';
             osc.frequency.setValueAtTime(200, actualStartTime);
@@ -1352,10 +1770,11 @@
             oscGain.gain.exponentialRampToValueAtTime(0.001, actualStartTime + 0.1);
             osc.connect(oscGain);
 
+            // Mixer for noise and tone
             const mixer = audioContext.createGain();
             noiseGain.connect(mixer);
             oscGain.connect(mixer);
-            mixer.connect(masterGainNode);
+            mixer.connect(masterGainNode); // Connect to masterGainNode
 
             noise.start(actualStartTime);
             osc.start(actualStartTime);
@@ -1386,18 +1805,18 @@
             const filter = audioContext.createBiquadFilter();
 
             osc.type = 'square';
-            osc.frequency.setValueAtTime(10000, actualStartTime);
+            osc.frequency.setValueAtTime(10000, actualStartTime); // High frequency for hi-hat
             
             filter.type = 'highpass';
-            filter.frequency.setValueAtTime(7000, actualStartTime);
+            filter.frequency.setValueAtTime(7000, actualStartTime); // Filter out lower frequencies
             filter.Q.setValueAtTime(0.5, actualStartTime);
 
             osc.connect(filter);
             filter.connect(gain);
-            gain.connect(masterGainNode);
+            gain.connect(masterGainNode); // Connect to masterGainNode
 
             gain.gain.setValueAtTime(hihatVolume * 0.7 * velocity, actualStartTime); // Apply velocity
-            gain.gain.exponentialRampToValueAtTime(0.001, actualStartTime + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, actualStartTime + 0.05); // Quick decay for closed hi-hat
 
             osc.start(actualStartTime);
             osc.stop(actualStartTime + 0.05);
@@ -1424,7 +1843,7 @@
             const filter = audioContext.createBiquadFilter();
 
             osc.type = 'square';
-            osc.frequency.setValueAtTime(8000, actualStartTime);
+            osc.frequency.setValueAtTime(8000, actualStartTime); // Slightly lower frequency for open hi-hat
             
             filter.type = 'highpass';
             filter.frequency.setValueAtTime(5000, actualStartTime);
@@ -1432,10 +1851,10 @@
 
             osc.connect(filter);
             filter.connect(gain);
-            gain.connect(masterGainNode);
+            gain.connect(masterGainNode); // Connect to masterGainNode
 
             gain.gain.setValueAtTime(hihatVolume * 1.0 * velocity, actualStartTime); // Apply velocity
-            gain.gain.exponentialRampToValueAtTime(0.001, actualStartTime + 0.2);
+            gain.gain.exponentialRampToValueAtTime(0.001, actualStartTime + 0.2); // Longer decay for open hi-hat
 
             osc.start(actualStartTime);
             osc.stop(actualStartTime + 0.2);
@@ -1448,11 +1867,50 @@
         }
 
         /**
+         * Plays an arpeggiated sequence of notes for the synth.
+         * @param {Array<string>} notesArray - Array of note names (e.g., ['C4', 'E4', 'G4']).
+         * @param {number} startTime - The AudioContext.currentTime when the arpeggio should start.
+         * @param {number} totalDuration - The total duration the arpeggio should occupy.
+         * @param {number} detuneValue - The detune value in cents.
+         * @param {number} filterFreq - The cutoff frequency for the low-pass filter.
+         * @param {number} filterQ - The Q factor for the low-pass filter.
+         * @param {number} velocity - The base velocity for the arpeggio notes.
+         */
+        function playArpeggio(notesArray, startTime, totalDuration, detuneValue, filterFreq, filterQ, velocity) {
+            if (!audioContext || notesArray.length === 0) return;
+
+            const noteDuration = totalDuration / notesArray.length; // Duration for each note in the arpeggio
+            let currentArpTime = startTime;
+
+            notesArray.forEach(noteName => {
+                const frequency = notes[noteName];
+                if (frequency) {
+                    // Apply slight velocity variation for humanization within arpeggio
+                    const arpVelocity = velocity * (1 + (Math.random() - 0.5) * 0.2);
+                    playNote(frequency, currentArpTime, noteDuration * 0.8, detuneValue, filterFreq, filterQ, 'synth', arpVelocity); // Shorten note slightly for separation
+                }
+                currentArpTime += noteDuration;
+            });
+        }
+
+        /**
          * Applies subtle, random changes to various musical parameters for the next musical step.
          * These changes are applied on top of the user-controlled knob values.
          */
         function applySubtleChanges() {
             const driftScale = fibonacciDriftScales[currentFibonacciDriftScaleIndex];
+
+            // Tempo drift
+            targetTempo += tempoDriftDirection * (Math.random() * driftScale * 5 + 1); // Smaller, more subtle tempo drift
+            if (targetTempo > 600) { // Limit tempo range for drift
+                tempoDriftDirection = -1;
+            } else if (targetTempo < 350) {
+                tempoDriftDirection = 1;
+            }
+            targetTempo = Math.max(300, Math.min(900, targetTempo)); // Keep within overall knob limits
+
+            // Smoothly interpolate currentTempo towards targetTempo
+            currentTempo += (targetTempo - currentTempo) * 0.05; // Adjust 0.05 for speed of interpolation
 
             currentDetune += detuneDriftDirection * (Math.random() * driftScale * 1.5 + (driftScale / 2));
             if (currentDetune > 12) {
@@ -1522,6 +1980,7 @@
                 }
 
                 const duration = baseNoteDuration;
+                const baseVelocity = 0.7 + (Math.random() * 0.3); // Base velocity for notes
 
                 const effectiveDelaySend = (currentStep.delaySend !== undefined ? currentStep.delaySend : 0.5) * delaySendLevel;
                 if (audioContext && delaySendGain) {
@@ -1529,21 +1988,25 @@
                 }
 
                 if (currentStep.synth && currentStep.synth.length > 0) {
-                    currentStep.synth.forEach(noteName => {
-                        const frequency = notes[noteName];
-                        if (frequency) {
-                            playNote(frequency, nextNoteTime, duration, currentDetune, currentFilterFrequency, currentFilterQ, 'synth');
-                        } else {
-                            console.warn(`Synth note frequency not found for note: ${noteName}`);
-                        }
-                    });
+                    if (isSynthArpeggiatorActive) {
+                        playArpeggio(currentStep.synth, nextNoteTime, duration, currentDetune, currentFilterFrequency, currentFilterQ, baseVelocity);
+                    } else {
+                        currentStep.synth.forEach(noteName => {
+                            const frequency = notes[noteName];
+                            if (frequency) {
+                                playNote(frequency, nextNoteTime, duration, currentDetune, currentFilterFrequency, currentFilterQ, 'synth', baseVelocity);
+                            } else {
+                                console.warn(`Synth note frequency not found for note: ${noteName}`);
+                            }
+                        });
+                    }
                 }
 
                 if (currentStep.bass && currentStep.bass.length > 0) {
                     currentStep.bass.forEach(noteName => {
                         const frequency = notes[noteName];
                         if (frequency) {
-                            playNote(frequency, nextNoteTime, duration, currentDetune, currentFilterFrequency, currentFilterQ, 'bass');
+                            playNote(frequency, nextNoteTime, duration, currentDetune, currentFilterFrequency, currentFilterQ, 'bass', baseVelocity);
                         } else {
                             console.warn(`Bass note frequency not found for note: ${noteName}`);
                         }
@@ -1567,7 +2030,7 @@
                     }
                 }
 
-                nextNoteTime += (currentTempo / 1000);
+                nextNoteTime += (currentTempo / 1000); // Use the dynamically adjusted currentTempo
                 
                 stepsPlayedInCurrentSection++;
                 currentPhraseIndex++;
@@ -1594,73 +2057,82 @@
                     currentSectionType = nextSectionDef.type;
                     let phraseToUse = []; // Temporary variable to hold the phrase before assignment
                     
-                    // Determine the new key based on Circle of Fifths logic for verse sections
+                    // Determine the new key based on Circle of Fifths logic
                     let previousKey = currentKey; // Store the key of the just-finished section
                     let newKey = previousKey; // Default to staying in the same key
 
-                    if (currentSectionType === 'verse') {
-                        verseIterationCount++;
-                        if (verseIterationCount % 2 === 0) { // Introduce Ragas and potential key changes
-                            const modulationChance = Math.random();
-                            const currentKeyIndex = majorKeysCircleOfFifths.indexOf(previousKey);
+                    sectionsSinceLastKeyChange++;
 
-                            if (modulationChance < 0.4 && currentKeyIndex !== -1) { // 40% chance to modulate to dominant
-                                const dominantIndex = (currentKeyIndex + 1) % majorKeysCircleOfFifths.length;
-                                newKey = majorKeysCircleOfFifths[dominantIndex];
-                                showMessage(`Modulating to ${newKey} Major (Dominant)!`, 2500);
-                            } else if (modulationChance < 0.8 && currentKeyIndex !== -1) { // 40% chance to modulate to subdominant
-                                const subdominantIndex = (currentKeyIndex - 1 + majorKeysCircleOfFifths.length) % majorKeysCircleOfFifths.length;
-                                newKey = majorKeysCircleOfFifths[subdominantIndex];
-                                showMessage(`Modulating to ${newKey} Major (Subdominant)!`, 2500);
-                            } else { // 20% chance to stay in the same key
-                                showMessage(`Staying in ${newKey} Major.`, 2500);
-                            }
+                    if (sectionsSinceLastKeyChange >= sectionsPerKeyChange) {
+                        sectionsSinceLastKeyChange = 0; // Reset counter
 
-                            // Use the new Raga selection system
-                            const selectedRagaName = selectTimeAppropriateRaga();
-                            currentSectionName = `raga${selectedRagaName.charAt(0).toUpperCase() + selectedRagaName.slice(1)}Phrase`; // Format for display
+                        const currentKeyIndex = majorKeysCircleOfFifths.indexOf(previousKey);
+                        if (currentKeyIndex !== -1) {
+                            const nextKeyIndex = (currentKeyIndex + keyProgressionDirection + majorKeysCircleOfFifths.length) % majorKeysCircleOfFifths.length;
+                            newKey = majorKeysCircleOfFifths[nextKeyIndex];
+                            showMessage(`Modulating to ${newKey} Major!`, 2500);
                             
-                            const selectedRagaScale = ragaScales[selectedRagaName]; // Get the actual scale array
-
-                            // Safeguard: Ensure selectedRagaScale is a valid, non-empty array
-                            if (selectedRagaScale && Array.isArray(selectedRagaScale) && selectedRagaScale.length > 0) {
-                                // Transpose the Raga scale from its base (C) to the new key
-                                const semitonesToTranspose = keyToSemitoneOffsetFromC[newKey] - keyToSemitoneOffsetFromC['C'];
-                                const transposedRagaScale = transposeNotes(selectedRagaScale, semitonesToTranspose);
-                                phraseToUse = generateRagaMelody(transposedRagaScale, 8, humanizationFactor);
-                            } else {
-                                console.error(`Invalid or empty Raga scale found for name: ${selectedRagaName}. Falling back to a default verse.`);
-                                currentSectionName = getRandomNormalVerseVariation('verse1'); // Fallback to a known good verse
-                                // Transpose the fallback phrase to the new key
-                                const semitonesToTranspose = keyToSemitoneOffsetFromC[newKey] - keyToSemitoneOffsetFromC['C']; // Assuming verse1_A is in C
-                                phraseToUse = musicalPhrases[currentSectionName].map(step => ({
-                                    ...step,
-                                    bass: transposeNotes(step.bass, semitonesToTranspose),
-                                    synth: transposeNotes(step.synth, semitonesToTranspose)
-                                }));
+                            // Randomly reverse direction for next key change
+                            if (Math.random() < 0.5) {
+                                keyProgressionDirection *= -1;
                             }
-                        } else { // Normal verse variations, also transposed
-                            currentSectionName = getRandomNormalVerseVariation(nextSectionDef.baseName);
-                            // Transpose the normal verse to the new key
-                            const semitonesToTranspose = keyToSemitoneOffsetFromC[newKey] - keyToSemitoneOffsetFromC['C']; // Assuming base phrases are in C
+                        } else {
+                            console.warn(`Current key '${previousKey}' not found in Circle of Fifths. Sticking to 'C'.`);
+                            newKey = 'C';
+                        }
+                    } else {
+                        showMessage(`Staying in ${newKey} Major.`, 2500);
+                    }
+
+                    currentKey = newKey; // Update global currentKey
+                    const semitonesToTranspose = keyToSemitoneOffsetFromC[currentKey] - keyToSemitoneOffsetFromC['C'];
+
+                    if (currentSectionType === 'verse' && verseIterationCount % 2 === 0) {
+                        // This block handles Raga sections
+                        const selectedRagaName = selectTimeAppropriateRaga();
+                        currentSectionName = `raga${selectedRagaName.charAt(0).toUpperCase() + selectedRagaName.slice(1)}Phrase`; // Format for display
+                        
+                        const selectedRagaScale = ragaScales[selectedRagaName]; // Get the actual scale array
+
+                        // Safeguard: Ensure selectedRagaScale is a valid, non-empty array
+                        if (selectedRagaScale && Array.isArray(selectedRagaScale) && selectedRagaScale.length > 0) {
+                            // Transpose the Raga scale from its base (C) to the new key
+                            const transposedRagaScale = transposeNotes(selectedRagaScale, semitonesToTranspose);
+                            phraseToUse = generateRagaMelody(transposedRagaScale, 8, humanizationFactor);
+                        } else {
+                            console.error(`Invalid or empty Raga scale found for name: ${selectedRagaName}. Falling back to a default verse.`);
+                            currentSectionName = getRandomNormalVerseVariation('verse1'); // Fallback to a known good verse
+                            // Transpose the fallback phrase to the new key
                             phraseToUse = musicalPhrases[currentSectionName].map(step => ({
                                 ...step,
                                 bass: transposeNotes(step.bass, semitonesToTranspose),
                                 synth: transposeNotes(step.synth, semitonesToTranspose)
                             }));
                         }
-                    } else { // Non-verse sections use their initialKey from songStructure
-                        newKey = nextSectionDef.initialKey || 'C'; // Use initialKey or default to C
-                        currentSectionName = nextSectionDef.name || nextSectionDef.type;
-                        const semitonesToTranspose = keyToSemitoneOffsetFromC[newKey] - keyToSemitoneOffsetFromC['C'];
-                        phraseToUse = musicalPhrases[currentSectionName].map(step => ({
-                            ...step,
-                            bass: transposeNotes(step.bass, semitonesToTranspose),
-                            synth: transposeNotes(step.synth, semitonesToTranspose)
-                        }));
+                    } else { // Normal verse variations or other sections
+                        if (currentSectionType === 'verse') {
+                            currentSectionName = getRandomNormalVerseVariation(nextSectionDef.baseName);
+                        } else {
+                            currentSectionName = nextSectionDef.type; // For intro, chorus, bridge, outro
+                        }
+                        // Transpose the base phrase (which is in C) to the new key
+                        const basePhrase = musicalPhrases[currentSectionName];
+                        if (basePhrase && Array.isArray(basePhrase)) {
+                             phraseToUse = basePhrase.map(step => ({
+                                ...step,
+                                bass: transposeNotes(step.bass, semitonesToTranspose),
+                                synth: transposeNotes(step.synth, semitonesToTranspose)
+                            }));
+                        } else {
+                            console.error(`Base phrase for section '${currentSectionName}' is undefined or not an array. Falling back to intro.`);
+                            currentSectionName = 'intro';
+                            phraseToUse = musicalPhrases.intro.map(step => ({
+                                ...step,
+                                bass: transposeNotes(step.bass, semitonesToTranspose),
+                                synth: transposeNotes(step.synth, semitonesToTranspose)
+                            }));
+                        }
                     }
-                    
-                    currentKey = newKey; // Update global currentKey
                     
                     // Assign the determined/generated phrase to currentSectionPhrase
                     currentSectionPhrase = phraseToUse;
@@ -1670,8 +2142,12 @@
                     if (!currentSectionPhrase || currentSectionPhrase.length === 0) {
                         console.warn(`Section '${currentSectionName}' resulted in an empty phrase. Falling back to intro.`);
                         currentSectionName = 'intro';
-                        currentSectionPhrase = musicalPhrases.intro;
-                        currentKey = songStructure[0].initialKey || 'A'; // Reset key to intro's key
+                        currentSectionPhrase = musicalPhrases.intro.map(step => ({
+                                ...step,
+                                bass: transposeNotes(step.bass, semitonesToTranspose),
+                                synth: transposeNotes(step.synth, semitonesToTranspose)
+                            }));
+                        currentKey = songStructure[0].initialKey || 'C'; // Reset key to intro's key
                         currentSectionTotalSteps = currentSectionPhrase.length * nextSectionDef.durationMultiplier;
                     }
 
@@ -1730,23 +2206,24 @@
             currentKey = initialSectionDef.initialKey || 'C'; // Set initial key
 
             let initialPhraseToUse = [];
+            const semitonesToTranspose = keyToSemitoneOffsetFromC[currentKey] - keyToSemitoneOffsetFromC['C'];
 
             if (currentSectionType === 'verse') {
                 verseIterationCount = 1;
-                currentSectionName = initialSectionDef.baseName + '_C'; // Start with a specific verse variation
+                currentSectionName = initialSectionDef.baseName + '_A'; // Start with verse1_A
                 // Transpose the initial verse phrase to the initial key
-                const semitonesToTranspose = keyToSemitoneOffsetFromC[currentKey] - keyToSemitoneOffsetFromC['C'];
-                initialPhraseToUse = musicalPhrases[currentSectionName].map(step => ({
+                const basePhrase = musicalPhrases[currentSectionName];
+                initialPhraseToUse = basePhrase.map(step => ({
                     ...step,
                     bass: transposeNotes(step.bass, semitonesToTranspose),
                     synth: transposeNotes(step.synth, semitonesToTranspose)
                 }));
                 console.log(`Forcing initial verse to start with: ${currentSectionName} in ${currentKey} Major`);
             } else {
-                currentSectionName = initialSectionDef.name || initialSectionDef.type;
+                currentSectionName = initialSectionDef.type; // For intro, chorus, bridge, outro
                 // Transpose the initial non-verse phrase to its initial key
-                const semitonesToTranspose = keyToSemitoneOffsetFromC[currentKey] - keyToSemitoneOffsetFromC['C'];
-                initialPhraseToUse = musicalPhrases[currentSectionName].map(step => ({
+                const basePhrase = musicalPhrases[currentSectionName];
+                initialPhraseToUse = basePhrase.map(step => ({
                     ...step,
                     bass: transposeNotes(step.bass, semitonesToTranspose),
                     synth: transposeNotes(step.synth, semitonesToTranspose)
@@ -1759,6 +2236,7 @@
 
             currentPhraseIndex = 0;
             stepsPlayedInCurrentSection = 0;
+            sectionsSinceLastKeyChange = 0; // Reset key change counter at start
             
             // Calculate total steps based on the assigned currentSectionPhrase length
             currentSectionTotalSteps = currentSectionPhrase.length * initialSectionDef.durationMultiplier;
@@ -1767,8 +2245,12 @@
             if (!currentSectionPhrase || currentSectionPhrase.length === 0) {
                 console.warn(`Initial section phrase for '${currentSectionName}' is empty. Falling back to intro.`);
                 currentSectionName = 'intro';
-                currentSectionPhrase = musicalPhrases.intro;
-                currentKey = songStructure[0].initialKey || 'A'; // Reset key to intro's key
+                currentSectionPhrase = musicalPhrases.intro.map(step => ({
+                                ...step,
+                                bass: transposeNotes(step.bass, semitonesToTranspose),
+                                synth: transposeNotes(step.synth, semitonesToTranspose)
+                            }));
+                currentKey = songStructure[0].initialKey || 'C'; // Reset key to intro's key
                 currentSectionTotalSteps = currentSectionPhrase.length * initialSectionDef.durationMultiplier;
             }
 
@@ -2221,6 +2703,9 @@
                 kickVolume: parseFloat(document.getElementById('kickVolume').value),
                 snareVolume: parseFloat(document.getElementById('snareVolume').value),
                 hihatVolume: parseFloat(document.getElementById('hihatVolume').value),
+                bassOscillatorType: document.getElementById('bassOscillatorType').value, // New
+                synthOscillatorType: document.getElementById('synthOscillatorType').value, // New
+                isSynthArpeggiatorActive: document.getElementById('synthArpeggiator').checked, // New
                 delayTime: parseFloat(document.getElementById('delayTime').value),
                 delayFeedback: parseFloat(document.getElementById('delayFeedback').value),
                 delaySendLevel: parseFloat(document.getElementById('delaySendLevel').value),
@@ -2231,12 +2716,19 @@
                 currentFilterQ: currentFilterQ,
                 baseNoteDuration: baseNoteDuration,
                 humanizationFactor: humanizationFactor,
-                // New: Compressor settings
+                // Compressor settings
                 compThreshold: parseFloat(document.getElementById('compThreshold').value),
                 compRatio: parseFloat(document.getElementById('compRatio').value),
-                // New: Reverb settings
+                // Reverb settings
                 reverbMix: parseFloat(document.getElementById('reverbMix').value),
-                isReverbBypassed: document.getElementById('reverbBypass').checked
+                isReverbBypassed: document.getElementById('reverbBypass').checked,
+                // New: Distortion settings
+                distortionAmount: parseFloat(document.getElementById('distortionAmount').value),
+                isDistortionBypassed: document.getElementById('distortionBypass').checked,
+                // New: Phaser settings
+                phaserRate: parseFloat(document.getElementById('phaserRate').value),
+                phaserDepth: parseFloat(document.getElementById('phaserDepth').value),
+                isPhaserBypassed: document.getElementById('phaserBypass').checked
             };
         }
 
@@ -2267,6 +2759,15 @@
             document.getElementById('hihatVolume').value = settings.hihatVolume;
             document.getElementById('hihatVolume').dispatchEvent(new Event('input'));
 
+            // New: Instrument oscillator types
+            document.getElementById('bassOscillatorType').value = settings.bassOscillatorType;
+            bassOscillatorType = settings.bassOscillatorType; // Update global variable
+            document.getElementById('synthOscillatorType').value = settings.synthOscillatorType;
+            synthOscillatorType = settings.synthOscillatorType; // Update global variable
+            
+            document.getElementById('synthArpeggiator').checked = settings.isSynthArpeggiatorActive; // New
+            isSynthArpeggiatorActive = settings.isSynthArpeggiatorActive; // Update global variable
+
             document.getElementById('delayTime').value = settings.delayTime;
             document.getElementById('delayTime').dispatchEvent(new Event('input'));
 
@@ -2294,6 +2795,20 @@
             document.getElementById('reverbBypass').checked = settings.isReverbBypassed;
             document.getElementById('reverbBypass').dispatchEvent(new Event('change')); // Trigger change event
 
+            // New: Distortion settings
+            document.getElementById('distortionAmount').value = settings.distortionAmount;
+            document.getElementById('distortionAmount').dispatchEvent(new Event('input'));
+            document.getElementById('distortionBypass').checked = settings.isDistortionBypassed;
+            document.getElementById('distortionBypass').dispatchEvent(new Event('change'));
+
+            // New: Phaser settings
+            document.getElementById('phaserRate').value = settings.phaserRate;
+            document.getElementById('phaserRate').dispatchEvent(new Event('input'));
+            document.getElementById('phaserDepth').value = settings.phaserDepth;
+            document.getElementById('phaserDepth').dispatchEvent(new Event('input'));
+            document.getElementById('phaserBypass').checked = settings.isPhaserBypassed;
+            document.getElementById('phaserBypass').dispatchEvent(new Event('change'));
+
             // Update global variables that are not directly tied to a knob
             currentDetune = settings.currentDetune;
             currentFilterFrequency = settings.currentFilterFrequency;
@@ -2315,6 +2830,15 @@
                 showMessage("Please enter a name for your preset.", 2000);
                 return;
             }
+
+            // Check if preset already exists
+            if (localStorage.getItem(presetManager.storageKeyPrefix + presetName)) {
+                if (!confirm(`Preset "${presetName}" already exists. Do you want to overwrite it?`)) {
+                    showMessage("Preset save cancelled.", 2000);
+                    return;
+                }
+            }
+
             const settings = getCurrentSettings();
             if (presetManager.savePreset(presetName, settings)) {
                 showMessage(`Preset "${presetName}" saved!`);
@@ -2342,147 +2866,7 @@
                 console.warn(`Preset "${presetName}" not found.`);
             }
         }
-
-        /**
-         * Updates the audio graph connection for chorus bypass.
-         */
-        function updateChorusBypassConnection() {
-            if (!audioContext || !masterGainNode || !analyserNode || !chorusNode || !compressorNode) return;
-
-            // Disconnect masterGainNode from compressor (its direct connection)
-            try {
-                masterGainNode.disconnect(compressorNode);
-            } catch (e) { /* ignore */ }
-            // Disconnect chorusNode from compressor if it was connected
-            try {
-                chorusNode.disconnect(compressorNode);
-            } catch (e) { /* ignore */ }
-
-            // Reconnect masterGainNode to chorus or compressor based on bypass state
-            if (isChorusBypassed) {
-                masterGainNode.connect(compressorNode);
-            } else {
-                masterGainNode.connect(chorusNode);
-                chorusNode.connect(compressorNode); // Chorus output connects to compressor
-            }
-        }
-
-        /**
-         * Updates the audio graph connection for reverb bypass.
-         */
-        function updateReverbBypassConnection() {
-            if (!audioContext || !compressorNode || !analyserNode || !convolverNode || !reverbGainNode || !dryGainNode) return;
-
-            // Disconnect all previous connections from compressor to dry/wet paths
-            try {
-                compressorNode.disconnect(dryGainNode);
-                compressorNode.disconnect(convolverNode);
-            } catch (e) { /* ignore */ }
-            
-            // Disconnect dry/wet paths from analyser
-            try {
-                dryGainNode.disconnect(analyserNode);
-                reverbGainNode.disconnect(analyserNode);
-            } catch (e) { /* ignore */ }
-
-            if (isReverbBypassed) {
-                // If bypassed, connect compressor directly to analyser
-                compressorNode.connect(analyserNode);
-            } else {
-                // If active, connect compressor to dry and wet paths
-                compressorNode.connect(dryGainNode);
-                dryGainNode.connect(analyserNode);
-
-                compressorNode.connect(convolverNode);
-                convolverNode.connect(reverbGainNode);
-                reverbGainNode.connect(analyserNode);
-            }
-            // Analyser always connects to destination, ensure this path is maintained
-            analyserNode.connect(audioContext.destination);
-        }
-
-        /**
-         * Updates the audio parameter based on the knob ID.
-         * This centralizes the logic for knob interactions.
-         * @param {string} id - The ID of the knob.
-         * @param {number} value - The new value of the knob.
-         */
-        function updateAudioParameter(id, value) {
-            switch (id) {
-                case 'masterVolume':
-                    masterVolume = value;
-                    if (audioContext && masterGainNode) masterGainNode.gain.setValueAtTime(masterVolume, audioContext.currentTime);
-                    break;
-                case 'tempo':
-                    currentTempo = value;
-                    break;
-                case 'bassVolume':
-                    bassVolume = value;
-                    break;
-                case 'synthVolume':
-                    synthVolume = value;
-                    break;
-                case 'kickVolume':
-                    kickVolume = value;
-                    break;
-                case 'snareVolume':
-                    snareVolume = value;
-                    break;
-                case 'hihatVolume':
-                    hihatVolume = value;
-                    break;
-                case 'delayTime':
-                    delayTimeValue = value;
-                    if (audioContext && delayNode) delayNode.delayTime.setValueAtTime(delayTimeValue, audioContext.currentTime);
-                    break;
-                case 'delayFeedback':
-                    delayFeedbackValue = value;
-                    if (audioContext && delayFeedbackGain) delayFeedbackGain.gain.setValueAtTime(delayFeedbackValue, audioContext.currentTime);
-                    break;
-                case 'delaySendLevel':
-                    delaySendLevel = value;
-                    break;
-                case 'chorusDepth':
-                    chorusDepth = value;
-                    if (audioContext && chorusLfoGain) chorusLfoGain.gain.setValueAtTime(chorusDepth, audioContext.currentTime);
-                    break;
-                case 'compThreshold':
-                    compThreshold = value;
-                    if (audioContext && compressorNode) compressorNode.threshold.setValueAtTime(compThreshold, audioContext.currentTime);
-                    break;
-                case 'compRatio':
-                    compRatio = value;
-                    if (audioContext && compressorNode) compressorNode.ratio.setValueAtTime(compRatio, audioContext.currentTime);
-                    break;
-                case 'reverbMix':
-                    reverbMix = value;
-                    if (audioContext && reverbGainNode && dryGainNode) {
-                        reverbGainNode.gain.setValueAtTime(reverbMix, audioContext.currentTime);
-                        dryGainNode.gain.setValueAtTime(1 - reverbMix, audioContext.currentTime);
-                    }
-                    break;
-            }
-            // Update the display value for the knob
-            const valueSpan = document.getElementById(`${id}Value`);
-            if (valueSpan) {
-                let displayValue = value;
-                if (id === 'compThreshold') {
-                    displayValue = `${value.toFixed(0)} dB`;
-                } else if (id === 'compRatio') {
-                    displayValue = `${value.toFixed(1)}:1`;
-                } else if (id === 'reverbMix') {
-                    displayValue = `${(value * 100).toFixed(0)}%`;
-                } else if (id === 'chorusDepth') {
-                    displayValue = value.toFixed(4);
-                }
-                else {
-                    displayValue = value.toFixed(2);
-                }
-                valueSpan.textContent = displayValue;
-            }
-        }
-
-
+        
         // Enhanced LooperRecorder Class
         class EnhancedLooperRecorder {
             constructor(audioContext) {
@@ -2508,7 +2892,7 @@
                     this.recordingFormatSelect.addEventListener('change', (e) => {
                         this.selectedFormat = e.target.value;
                         if (this.selectedFormat === 'mp3') {
-                            showMessage('MP3 recording is not natively supported in browsers and requires external libraries or server-side processing.', 5000);
+                            showMessage('MP3 recording is not natively supported by browsers. Recording will be saved as WebM.', 5000);
                         }
                     });
                 }
@@ -2610,7 +2994,7 @@
                 // Create download link
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `simple_relax_loop_${new Date().toISOString().replace(/:/g, '-')}.${this.selectedFormat}`; // Renamed filename
+                a.download = `simple_relax_loop_${new Date().toISOString().replace(/:/g, '-')}.${this.selectedFormat === 'wav' ? 'wav' : 'webm'}`; // Use webm for mp3 attempts
                 document.body.appendChild(a); // Append to body to make it clickable
                 a.click();
                 document.body.removeChild(a); // Clean up
@@ -2661,13 +3045,16 @@
         function initializeKeyboardControls() {
             document.addEventListener('keydown', (e) => {
                 // Only handle shortcuts if not typing in an input
-                if (e.target.tagName === 'INPUT') return;
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
                 
                 const startButton = document.getElementById('startButton');
                 const stopButton = document.getElementById('stopButton');
                 const recordButton = document.getElementById('recordButton'); // Get record button
                 const chorusBypassCheckbox = document.getElementById('chorusBypass');
                 const reverbBypassCheckbox = document.getElementById('reverbBypass');
+                const distortionBypassCheckbox = document.getElementById('distortionBypass'); // New
+                const phaserBypassCheckbox = document.getElementById('phaserBypass'); // New
+                const synthArpeggiatorCheckbox = document.getElementById('synthArpeggiator'); // New
 
 
                 switch(e.code) {
@@ -2694,6 +3081,21 @@
                         e.preventDefault();
                         chorusBypassCheckbox.checked = !chorusBypassCheckbox.checked;
                         chorusBypassCheckbox.dispatchEvent(new Event('change'));
+                        break;
+                    case 'KeyD': // D key for Distortion bypass (New)
+                        e.preventDefault();
+                        distortionBypassCheckbox.checked = !distortionBypassCheckbox.checked;
+                        distortionBypassCheckbox.dispatchEvent(new Event('change'));
+                        break;
+                    case 'KeyP': // P key for Phaser bypass (New)
+                        e.preventDefault();
+                        phaserBypassCheckbox.checked = !phaserBypassCheckbox.checked;
+                        phaserBypassCheckbox.dispatchEvent(new Event('change'));
+                        break;
+                    case 'KeyA': // A key for Synth Arpeggiator (New)
+                        e.preventDefault();
+                        synthArpeggiatorCheckbox.checked = !synthArpeggiatorCheckbox.checked;
+                        synthArpeggiatorCheckbox.dispatchEvent(new Event('change'));
                         break;
                     case 'KeyM':
                         // Master volume mute/unmute
@@ -2779,6 +3181,16 @@
                 });
             });
 
+            // Add select box event listeners for oscillator types
+            document.getElementById('bassOscillatorType').addEventListener('change', (e) => {
+                updateAudioParameter(e.target.id, e.target.value);
+                showMessage(`Bass Wave: ${e.target.value}`);
+            });
+            document.getElementById('synthOscillatorType').addEventListener('change', (e) => {
+                updateAudioParameter(e.target.id, e.target.value);
+                showMessage(`Synth Wave: ${e.target.value}`);
+            });
+
             // Add checkbox event listeners
             document.getElementById('chorusBypass').addEventListener('change', (event) => {
                 isChorusBypassed = event.target.checked;
@@ -2792,47 +3204,66 @@
                 showMessage(`Reverb is now ${isReverbBypassed ? 'bypassed' : 'active'}.`);
             });
 
+            // New: Distortion bypass checkbox
+            document.getElementById('distortionBypass').addEventListener('change', (event) => {
+                isDistortionBypassed = event.target.checked;
+                updateDistortionBypassConnection();
+                showMessage(`Distortion is now ${isDistortionBypassed ? 'bypassed' : 'active'}.`);
+            });
+
+            // New: Phaser bypass checkbox
+            document.getElementById('phaserBypass').addEventListener('change', (event) => {
+                isPhaserBypassed = event.target.checked;
+                updatePhaserBypassConnection();
+                showMessage(`Phaser is now ${isPhaserBypassed ? 'bypassed' : 'active'}.`);
+            });
+
+            // New: Synth Arpeggiator checkbox
+            document.getElementById('synthArpeggiator').addEventListener('change', (event) => {
+                isSynthArpeggiatorActive = event.target.checked;
+                showMessage(`Synth Arpeggiator is now ${isSynthArpeggiatorActive ? 'active' : 'inactive'}.`);
+            });
+
             // Visualization mode buttons
             document.getElementById('visModeSpectrum').addEventListener('click', () => {
                 visualizationMode = 'spectrum';
+                document.querySelectorAll('.visualization-controls button').forEach(btn => btn.classList.remove('active'));
                 document.getElementById('visModeSpectrum').classList.add('active');
-                document.getElementById('visModeWaveform').classList.remove('active');
-                document.getElementById('visModeBoth').classList.remove('active');
-                document.getElementById('visModeBands').classList.remove('active');
                 showMessage('Visualization: Spectrum');
             });
             document.getElementById('visModeWaveform').addEventListener('click', () => {
                 visualizationMode = 'waveform';
-                document.getElementById('visModeSpectrum').classList.remove('active');
+                document.querySelectorAll('.visualization-controls button').forEach(btn => btn.classList.remove('active'));
                 document.getElementById('visModeWaveform').classList.add('active');
-                document.getElementById('visModeBoth').classList.remove('active');
-                document.getElementById('visModeBands').classList.remove('active');
                 showMessage('Visualization: Waveform');
             });
             document.getElementById('visModeBoth').addEventListener('click', () => {
                 visualizationMode = 'both';
-                document.getElementById('visModeSpectrum').classList.remove('active');
-                document.getElementById('visModeWaveform').classList.remove('active');
+                document.querySelectorAll('.visualization-controls button').forEach(btn => btn.classList.remove('active'));
                 document.getElementById('visModeBoth').classList.add('active');
-                document.getElementById('visModeBands').classList.remove('active');
                 showMessage('Visualization: Both');
             });
             document.getElementById('visModeBands').addEventListener('click', () => {
                 visualizationMode = 'bands';
-                document.getElementById('visModeSpectrum').classList.remove('active');
-                document.getElementById('visModeWaveform').classList.remove('active');
-                document.getElementById('visModeBoth').classList.remove('active');
+                document.querySelectorAll('.visualization-controls button').forEach(btn => btn.classList.remove('active'));
                 document.getElementById('visModeBands').classList.add('active');
                 showMessage('Visualization: Frequency Bands');
             });
 
 
-            // Initial display update for all knobs
+            // Initial display update for all knobs and selects
             document.querySelectorAll('input[type="range"]').forEach(knob => {
-                // Manually trigger the update to set initial display values
-                // and ensure global variables are in sync if not already
                 updateAudioParameter(knob.id, parseFloat(knob.value));
             });
+            document.querySelectorAll('select').forEach(select => {
+                updateAudioParameter(select.id, select.value);
+            });
+            // Trigger initial bypass connections to set up the graph correctly
+            updateDistortionBypassConnection();
+            updatePhaserBypassConnection();
+            updateChorusBypassConnection();
+            updateReverbBypassConnection();
+
 
             updateSectionDisplay();
 
