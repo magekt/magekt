@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HTML File Index - magekt</title>
+    <title>magekt's HTML Index</title>
     <style>
         :root {
             --primary-color: #0366d6;
+            --secondary-color: #6c757d;
             --background-color: #ffffff;
             --text-color: #24292e;
             --border-color: #e1e4e8;
+            --hover-color: #f6f8fa;
         }
 
         body {
@@ -18,91 +20,100 @@
             padding: 20px;
             background-color: var(--background-color);
             color: var(--text-color);
+            line-height: 1.6;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
+            padding: 20px;
         }
 
         header {
+            text-align: center;
             margin-bottom: 30px;
             padding-bottom: 20px;
             border-bottom: 1px solid var(--border-color);
         }
 
         h1 {
-            text-align: center;
             color: var(--primary-color);
+            margin-bottom: 10px;
         }
 
         .meta-info {
-            text-align: center;
-            color: #666;
+            color: var(--secondary-color);
             font-size: 0.9em;
-            margin-bottom: 20px;
-        }
-
-        .search-container {
             margin-bottom: 20px;
         }
 
         #searchInput {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: 1px solid var(--border-color);
             border-radius: 6px;
             font-size: 16px;
             margin-bottom: 20px;
+            box-sizing: border-box;
         }
 
-        .file-list {
-            list-style-type: none;
+        #fileList {
+            list-style: none;
             padding: 0;
             margin: 0;
         }
 
         .file-item {
-            display: flex;
-            align-items: center;
-            padding: 12px;
+            background: var(--background-color);
             border: 1px solid var(--border-color);
-            margin-bottom: 8px;
             border-radius: 6px;
-            transition: background-color 0.2s;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
         }
 
         .file-item:hover {
-            background-color: #f6f8fa;
+            background: var(--hover-color);
+            transform: translateX(5px);
         }
 
         .file-link {
-            text-decoration: none;
+            display: block;
+            padding: 15px 20px;
             color: var(--primary-color);
-            flex-grow: 1;
+            text-decoration: none;
+            font-weight: 500;
         }
 
-        .file-meta {
-            color: #666;
+        .file-link:hover {
+            text-decoration: underline;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: var(--secondary-color);
+            padding: 20px;
+            font-style: italic;
+        }
+
+        #lastUpdated {
+            text-align: center;
+            color: var(--secondary-color);
             font-size: 0.9em;
-            margin-left: 20px;
+            margin-top: 20px;
         }
 
-        .sort-controls {
-            margin-bottom: 20px;
-        }
-
-        .sort-btn {
-            padding: 8px 16px;
-            margin-right: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background: transparent;
-            cursor: pointer;
-        }
-
-        .sort-btn:hover {
-            background-color: #f6f8fa;
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+            
+            #searchInput {
+                padding: 10px;
+            }
+            
+            .file-link {
+                padding: 12px 15px;
+            }
         }
     </style>
 </head>
@@ -112,69 +123,74 @@
             <h1>HTML File Index</h1>
             <div class="meta-info">
                 <div>Repository: magekt/magekt</div>
-                <div>Last Updated: <span id="currentTime"></span></div>
+                <div>Static Service on Render</div>
             </div>
         </header>
 
-        <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Search files...">
-        </div>
-
-        <div class="sort-controls">
-            <button class="sort-btn" onclick="sortFiles('name')">Sort by Name</button>
-            <button class="sort-btn" onclick="sortFiles('date')">Sort by Date</button>
-        </div>
-
-        <ul id="fileList" class="file-list">
-            <!-- File list will be dynamically populated -->
-        </ul>
+        <input type="text" id="searchInput" placeholder="Search HTML files...">
+        <ul id="fileList"></ul>
+        <div id="lastUpdated"></div>
     </div>
 
     <script>
-        // Update current time
-        function updateTime() {
-            const timeElement = document.getElementById('currentTime');
-            const now = new Date();
-            timeElement.textContent = now.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
-        }
-        updateTime();
-        setInterval(updateTime, 1000);
-
-        // File handling
+        // Initialize files array
         let files = [];
+        
+        // Function to get all HTML files from current directory
+        async function getHtmlFiles() {
+            try {
+                // Get the current directory listing
+                const response = await fetch('.');
+                const text = await response.text();
+                
+                // Create a temporary element to parse the HTML
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+                
+                // Find all links that end with .html
+                const links = Array.from(doc.getElementsByTagName('a'));
+                files = links
+                    .filter(link => link.href.toLowerCase().endsWith('.html'))
+                    .map(link => {
+                        const fileName = link.href.split('/').pop();
+                        return {
+                            name: fileName,
+                            path: fileName,
+                            isIndex: fileName.toLowerCase() === 'index.html'
+                        };
+                    })
+                    .filter(file => !file.isIndex); // Remove index.html from the list
 
-        // Simulate file scanning (in real implementation, this would come from server)
-        async function scanFiles() {
-            // This is a simulation - in real implementation, 
-            // this would make an API call to get the actual files
-            files = [
-                {
-                    name: 'index.html',
-                    path: './index.html',
-                    modified: '2025-07-16 06:32:38',
-                    size: '2.4 KB'
-                },
-                // Add more files as they're discovered
-            ];
-            renderFiles(files);
+                renderFiles(files);
+                updateLastUpdated();
+            } catch (error) {
+                console.error('Error fetching files:', error);
+                document.getElementById('fileList').innerHTML = `
+                    <li class="empty-message">Error loading files. Please refresh the page.</li>
+                `;
+            }
         }
 
-        // Render file list
-        function renderFiles(filesToRender) {
+        // Render the file list
+        function renderFiles(filesToShow) {
             const fileList = document.getElementById('fileList');
-            fileList.innerHTML = '';
-
-            filesToRender.forEach(file => {
-                const li = document.createElement('li');
-                li.className = 'file-item';
-                li.innerHTML = `
-                    <a href="${file.path}" class="file-link">${file.name}</a>
-                    <span class="file-meta">
-                        ${file.modified} | ${file.size}
-                    </span>
+            
+            if (filesToShow.length === 0) {
+                fileList.innerHTML = `
+                    <li class="empty-message">No HTML files found</li>
                 `;
-                fileList.appendChild(li);
-            });
+                return;
+            }
+
+            fileList.innerHTML = filesToShow
+                .map(file => `
+                    <li class="file-item">
+                        <a href="${file.path}" class="file-link">
+                            ${file.name}
+                        </a>
+                    </li>
+                `)
+                .join('');
         }
 
         // Search functionality
@@ -186,20 +202,18 @@
             renderFiles(filteredFiles);
         });
 
-        // Sorting functionality
-        function sortFiles(criterion) {
-            const sortedFiles = [...files].sort((a, b) => {
-                if (criterion === 'name') {
-                    return a.name.localeCompare(b.name);
-                } else if (criterion === 'date') {
-                    return new Date(b.modified) - new Date(a.modified);
-                }
-            });
-            renderFiles(sortedFiles);
+        // Update last updated time
+        function updateLastUpdated() {
+            const now = new Date();
+            const formatted = now.toISOString().replace('T', ' ').split('.')[0];
+            document.getElementById('lastUpdated').textContent = `Last Updated: ${formatted} UTC`;
         }
 
-        // Initial scan
-        scanFiles();
+        // Initial load
+        document.addEventListener('DOMContentLoaded', getHtmlFiles);
+
+        // Refresh every 5 minutes
+        setInterval(getHtmlFiles, 300000);
     </script>
 </body>
 </html>
