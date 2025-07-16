@@ -520,8 +520,8 @@
                 <div class="knob-group">
                     <label for="bassOscillatorType">Bass Wave</label>
                     <select id="bassOscillatorType" title="Select waveform for bass instrument">
+                        <option value="sine" selected>Sine</option> <!-- Changed default to Sine -->
                         <option value="triangle">Triangle</option>
-                        <option value="sine">Sine</option>
                         <option value="sawtooth">Sawtooth</option>
                         <option value="square">Square</option>
                     </select>
@@ -529,10 +529,10 @@
                 <div class="knob-group">
                     <label for="synthOscillatorType">Synth Wave</label>
                     <select id="synthOscillatorType" title="Select waveform for synth instrument">
+                        <option value="square" selected>Square</option> <!-- Changed default to Square -->
                         <option value="sine">Sine</option>
                         <option value="triangle">Triangle</option>
                         <option value="sawtooth">Sawtooth</option>
-                        <option value="square">Square</option>
                     </select>
                 </div>
                 <div class="checkbox-group">
@@ -729,9 +729,9 @@
         // Humanization intensity factor, also influenced by Fibonacci drift
         let humanizationFactor = 0.5;
 
-        // Instrument timbre settings
-        let bassOscillatorType = 'triangle';
-        let synthOscillatorType = 'sine';
+        // Instrument timbre settings - Updated defaults
+        let bassOscillatorType = 'sine'; // Default to Sine
+        let synthOscillatorType = 'square'; // Default to Square
         let isSynthArpeggiatorActive = false; // New: Arpeggiator control
 
         // Delay effect nodes and parameters
@@ -939,10 +939,12 @@
             let currentSynthNoteIndex = Math.floor(Math.random() * scale.length); // Start randomly
             let lastSynthDirection = Math.random() < 0.5 ? 1 : -1;
 
+            // Safely get vadiNote and samvadiNote, ensuring they are valid and default to first note if issues
+            const getSafeNote = (arr, index) => arr[index] || arr[0];
+
             // Ensure scale has enough elements for Vadi/Samvadi
-            // Safely get vadiNote and samvadiNote, ensuring they are strings
-            const vadiNote = scale[0] || scale[0]; 
-            const samvadiNote = scale.length > 4 ? (scale[4] || scale[scale.length - 1]) : (scale[scale.length - 1] || scale[0]); 
+            const vadiNote = getSafeNote(scale, 0); // Tonic is often Vadi
+            const samvadiNote = getSafeNote(scale, scale.length > 4 ? 4 : scale.length - 1); // Fifth or last note as Samvadi
 
             for (let i = 0; i < phraseLength; i++) {
                 const step = {
@@ -953,19 +955,17 @@
                 };
 
                 // --- Bass Line Generation ---
-                // More varied bass patterns
                 if (i % 4 === 0) { // On beat 1 and 5 (for 8-step phrase)
-                    step.bass.push(scale[0].replace('4', '2')); // Root
+                    step.bass.push(vadiNote.replace('4', '2')); // Root
                 } else if (i % 2 === 0) { // On other even beats
                     if (Math.random() < 0.7) { // 70% chance to play a bass note
                         const bassOptions = [
-                            scale[0].replace('4', '2'), // Root
-                            (scale.length > 4 ? scale[4] : scale[scale.length - 1]).replace('4', '2') // Fifth
+                            vadiNote.replace('4', '2'), // Root
+                            samvadiNote.replace('4', '2') // Fifth
                         ];
                         if (scale.length > 2) { // Third
-                            bassOptions.push(scale[2].replace('4', '2'));
+                            bassOptions.push(getSafeNote(scale, 2).replace('4', '2'));
                         }
-                        // Ensure bass note is not undefined before pushing
                         const selectedBassNote = bassOptions[Math.floor(Math.random() * bassOptions.length)];
                         if (selectedBassNote) {
                             step.bass.push(selectedBassNote);
@@ -973,7 +973,7 @@
                     }
                 }
                 if (step.bass.length === 0) { // Ensure at least one bass note per main beat
-                    step.bass.push(scale[0].replace('4', '2'));
+                    step.bass.push(vadiNote.replace('4', '2'));
                 }
 
                 // --- Synth Melody Generation ---
@@ -997,23 +997,22 @@
 
                     // Emphasize Vadi/Samvadi
                     if (vadiNote && Math.random() < 0.3) { // 30% chance to gravitate towards Vadi
-                        const targetVadiNote = vadiNote.slice(0, -1) + '4'; // Ensure correct octave for lookup
-                        let vadiIndex = scale.indexOf(targetVadiNote);
+                        const targetVadiBaseNote = vadiNote.slice(0, -1);
+                        let vadiIndex = scale.findIndex(note => note.startsWith(targetVadiBaseNote)); // Find note by base name
                         if (vadiIndex !== -1) {
                             nextSynthNoteIndex = vadiIndex;
                         } else {
-                            // Fallback if Vadi note isn't directly in the scale (e.g., due to octave shifts in scale definition)
                             nextSynthNoteIndex = Math.floor(Math.random() * scale.length);
-                            console.warn(`Vadi note ${targetVadiNote} not found in current scale. Picking random note.`);
+                            console.warn(`Vadi note base ${targetVadiBaseNote} not found in current scale. Picking random note.`);
                         }
                     } else if (samvadiNote && Math.random() < 0.15) { // 15% chance for Samvadi
-                        const targetSamvadiNote = samvadiNote.slice(0, -1) + '4';
-                        let samvadiIndex = scale.indexOf(targetSamvadiNote);
+                        const targetSamvadiBaseNote = samvadiNote.slice(0, -1);
+                        let samvadiIndex = scale.findIndex(note => note.startsWith(targetSamvadiBaseNote));
                         if (samvadiIndex !== -1) {
                             nextSynthNoteIndex = samvadiIndex;
                         } else {
                             nextSynthNoteIndex = Math.floor(Math.random() * scale.length);
-                            console.warn(`Samvadi note ${targetSamvadiNote} not found in current scale. Picking random note.`);
+                            console.warn(`Samvadi note base ${targetSamvadiBaseNote} not found in current scale. Picking random note.`);
                         }
                     }
 
@@ -1042,14 +1041,15 @@
                 // Add an arpeggiated chord if humanizationFactor is high and random chance
                 if (humanizationFactor > 0.7 && Math.random() < 0.2) {
                     const rootIndex = currentSynthNoteIndex;
-                    const thirdIndex = (rootIndex + 2) % scale.length; // Assuming a diatonic third
-                    const fifthIndex = (rootIndex + 4) % scale.length; // Assuming a diatonic fifth
-                    if (scale[thirdIndex] && scale[fifthIndex]) {
-                        synthNotesForStep.push(scale[thirdIndex], scale[fifthIndex]);
-                    }
+                    // Ensure indices are valid before accessing scale elements
+                    const thirdNote = getSafeNote(scale, (rootIndex + 2) % scale.length);
+                    const fifthNote = getSafeNote(scale, (rootIndex + 4) % scale.length);
+                    
+                    if (thirdNote) synthNotesForStep.push(thirdNote);
+                    if (fifthNote) synthNotesForStep.push(fifthNote);
                 }
 
-                step.synth = synthNotesForStep.length > 0 ? synthNotesForStep : [scale[currentSynthNoteIndex]]; // Ensure at least one note
+                step.synth = synthNotesForStep.length > 0 ? synthNotesForStep : [getSafeNote(scale, currentSynthNoteIndex)]; // Ensure at least one note
 
                 // --- Percussion Generation (more varied) ---
                 if (i === 0) { // Kick on beat 1
@@ -1229,7 +1229,7 @@
                 { bass: ['C2'], synth: ['G4', 'C5'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.6 },
                 { bass: ['G2'], synth: ['G3', 'B3', 'D4', 'G4'], percussion: { kick: { active: true, probability: 0.95, velocity: 1.0 }, snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'open', velocity: 0.9 } }, delaySend: 0.6 },
                 { bass: ['G2'], synth: ['D4', 'G4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.6 },
-                { bass: ['A2'], synth: ['A3', 'C4', 'E4', 'A4'], percussion: { kick: { active: true, probability: 0.95, velocity: 1.0 }, snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'open', velocity: 0.9 } }, delaySend: 0.6 },
+                { bass: ['A2'], synth: ['A3', 'C4', 'E4', 'A4'], percussion: { kick: { active: true, probability: 0.95, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.6 },
                 { bass: ['A2'], synth: ['C4', 'E4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.6 },
                 { bass: ['F2'], synth: ['F3', 'A3', 'C4', 'F4'], percussion: { kick: { active: true, probability: 0.95, velocity: 1.0 }, snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'open', velocity: 0.9 } }, delaySend: 0.6 },
                 { bass: ['F2'], synth: ['A3', 'C4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.6 }
