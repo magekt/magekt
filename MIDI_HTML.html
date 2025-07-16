@@ -932,74 +932,73 @@
          */
         function generateRagaMelody(scale, phraseLength, humanizationFactor) {
             const generatedPhrase = [];
-            let currentNoteIndex = Math.floor(Math.random() * scale.length);
-            let lastDirection = Math.random() < 0.5 ? 1 : -1;
+            let currentSynthNoteIndex = Math.floor(Math.random() * scale.length); // Start randomly
+            let lastSynthDirection = Math.random() < 0.5 ? 1 : -1;
 
-            // Ensure scale has enough elements before accessing specific indices
-            const vadiNote = scale[0];
-            const samvadiNote = scale.length > 4 ? scale[4] : scale[scale.length - 1]; // Fallback for scales with less than 5 notes
+            // Ensure scale has enough elements for Vadi/Samvadi
+            const vadiNote = scale[0]; // Tonic is often Vadi
+            const samvadiNote = scale.length > 4 ? scale[4] : scale[scale.length - 1]; // Fifth or last note as Samvadi
 
             for (let i = 0; i < phraseLength; i++) {
                 const step = {
                     bass: [],
                     synth: [],
                     percussion: {},
-                    delaySend: 0.3 + (Math.random() * 0.3)
+                    delaySend: 0.3 + (Math.random() * 0.3) // Vary delay send per step
                 };
 
-                // Bass Line Generation
-                if (i % 4 === 0) {
-                    step.bass.push(scale[0].replace('4', '2'));
-                } else if (i % 2 === 0 && Math.random() < 0.6) {
-                    const bassOptions = [scale[0].replace('4', '2'), (scale.length > 4 ? scale[4] : scale[scale.length -1]).replace('4', '2')];
-                    if (scale.length > 5 && Math.random() < 0.3) {
-                        bassOptions.push(scale[2].replace('4', '2'));
+                // --- Bass Line Generation ---
+                // More varied bass patterns
+                if (i % 4 === 0) { // On beat 1 and 5 (for 8-step phrase)
+                    step.bass.push(scale[0].replace('4', '2')); // Root
+                } else if (i % 2 === 0) { // On other even beats
+                    if (Math.random() < 0.7) { // 70% chance to play a bass note
+                        const bassOptions = [
+                            scale[0].replace('4', '2'), // Root
+                            (scale.length > 4 ? scale[4] : scale[scale.length - 1]).replace('4', '2') // Fifth
+                        ];
+                        if (scale.length > 2) { // Third
+                            bassOptions.push(scale[2].replace('4', '2'));
+                        }
+                        step.bass.push(bassOptions[Math.floor(Math.random() * bassOptions.length)]);
                     }
-                    step.bass.push(bassOptions[Math.floor(Math.random() * bassOptions.length)]);
                 }
-                if (step.bass.length === 0) {
+                if (step.bass.length === 0) { // Ensure at least one bass note per main beat
                     step.bass.push(scale[0].replace('4', '2'));
                 }
 
-                // Synth Melody Generation
+                // --- Synth Melody Generation ---
                 const numSynthNotes = 1 + Math.floor(Math.random() * (humanizationFactor * 2));
-                
+                let synthNotesForStep = [];
+
                 for (let j = 0; j < numSynthNotes; j++) {
-                    let nextNoteIndex = currentNoteIndex;
+                    let nextSynthNoteIndex = currentSynthNoteIndex;
 
-                    if (Math.random() < 0.3 + (humanizationFactor * 0.2)) {
-                        lastDirection *= -1;
+                    // Tendency towards stepwise motion
+                    if (Math.random() < 0.7) { // 70% chance of stepwise motion
+                        nextSynthNoteIndex = (currentSynthNoteIndex + lastSynthDirection + scale.length * 2) % scale.length;
+                    } else if (Math.random() < 0.9) { // 20% chance of small leap (3rd or 4th)
+                        const leapAmount = Math.random() < 0.5 ? 2 : 3; // 2 or 3 steps in scale
+                        nextSynthNoteIndex = (currentSynthNoteIndex + lastSynthDirection * leapAmount + scale.length * 2) % scale.length;
+                    } else { // 10% chance of larger leap or change direction
+                        lastSynthDirection *= -1; // Change direction
+                        const leapAmount = Math.floor(Math.random() * (scale.length / 2)) + 1; // Random leap
+                        nextSynthNoteIndex = (currentSynthNoteIndex + lastSynthDirection * leapAmount + scale.length * 2) % scale.length;
                     }
 
-                    const moveType = Math.random();
-                    let moveAmount = 0;
-
-                    if (moveType < 0.7) {
-                        moveAmount = 1;
-                    } else if (moveType < 0.9) {
-                        moveAmount = Math.random() < 0.5 ? 2 : 3;
-                    } else {
-                        moveAmount = Math.random() < 0.5 ? 4 : 5;
+                    // Emphasize Vadi/Samvadi
+                    if (Math.random() < 0.3) { // 30% chance to gravitate towards Vadi
+                        nextSynthNoteIndex = scale.indexOf(vadiNote.slice(0, -1) + '4'); // Ensure correct octave for lookup
+                    } else if (samvadiNote && Math.random() < 0.15) { // 15% chance for Samvadi
+                        nextSynthNoteIndex = scale.indexOf(samvadiNote.slice(0, -1) + '4');
                     }
 
-                    nextNoteIndex = (currentNoteIndex + lastDirection * moveAmount + scale.length * 2) % scale.length;
-                    
-                    const currentNoteFreq = notes[scale[currentNoteIndex]];
-                    const vadiFreq = notes[vadiNote];
-                    const samvadiFreq = notes[samvadiNote];
+                    currentSynthNoteIndex = nextSynthNoteIndex;
 
-                    if (Math.abs(currentNoteFreq - vadiFreq) > 50 && Math.random() < 0.4) {
-                        lastDirection = (currentNoteFreq < vadiFreq) ? 1 : -1;
-                        nextNoteIndex = scale.indexOf(vadiNote);
-                    } else if (samvadiNote && Math.abs(currentNoteFreq - samvadiFreq) > 50 && Math.random() < 0.2) {
-                        lastDirection = (currentNoteFreq < samvadiNote) ? 1 : -1;
-                        nextNoteIndex = scale.indexOf(samvadiNote);
-                    }
-
-                    currentNoteIndex = nextNoteIndex;
-
-                    let synthNote = scale[currentNoteIndex];
+                    let synthNote = scale[currentSynthNoteIndex];
                     const currentOctave = parseInt(synthNote.slice(-1));
+                    
+                    // Octave variation for synth notes
                     if (Math.random() < 0.3 * humanizationFactor) {
                         if (Math.random() < 0.5 && currentOctave < 5) {
                             synthNote = synthNote.slice(0, -1) + (currentOctave + 1);
@@ -1007,29 +1006,44 @@
                             synthNote = synthNote.slice(0, -1) + (currentOctave - 1);
                         }
                     }
-                    step.synth.push(synthNote);
+                    synthNotesForStep.push(synthNote);
                 }
-                if (step.synth.length === 0) {
-                    step.synth.push(scale[currentNoteIndex]);
+                
+                // Add an arpeggiated chord if humanizationFactor is high and random chance
+                if (humanizationFactor > 0.7 && Math.random() < 0.2) {
+                    const rootIndex = currentSynthNoteIndex;
+                    const thirdIndex = (rootIndex + 2) % scale.length; // Assuming a diatonic third
+                    const fifthIndex = (rootIndex + 4) % scale.length; // Assuming a diatonic fifth
+                    if (scale[thirdIndex] && scale[fifthIndex]) {
+                        synthNotesForStep.push(scale[thirdIndex], scale[fifthIndex]);
+                    }
                 }
 
-                // Percussion: Use fixed probabilities for percussion in generated Raga melodies
-                if (i === 0 || i === 4) { // Kick on 1 and 5
-                    if (Math.random() < 0.9) { // 90% probability for kick
-                        step.percussion.kick = { active: true, velocity: 1.0 };
-                    }
-                }
-                if (i === 2 || i === 6) { // Snare on 3 and 7
-                    if (Math.random() < 0.8) { // 80% probability for snare
-                        step.percussion.snare = { active: true, velocity: 1.0 };
-                    }
-                }
-                if (i % 2 === 0) { // On every other beat, hi-hat
-                    if (Math.random() < 1.0) { // 100% probability for hi-hat
-                        step.percussion.hihat = { active: true, type: 'closed', velocity: 0.8 }; // Slightly lower velocity for closed hi-hat
-                    }
-                    }
+                step.synth = synthNotesForStep.length > 0 ? synthNotesForStep : [scale[currentSynthNoteIndex]]; // Ensure at least one note
 
+                // --- Percussion Generation (more varied) ---
+                if (i === 0) { // Kick on beat 1
+                    step.percussion.kick = { active: true, probability: 0.95, velocity: 1.0 };
+                    step.percussion.hihat = { active: true, probability: 1.0, type: 'closed', velocity: 0.8 };
+                } else if (i === 4) { // Kick on beat 5
+                    step.percussion.kick = { active: true, probability: 0.8, velocity: 0.9 };
+                    step.percussion.hihat = { active: true, probability: 1.0, type: 'closed', velocity: 0.8 };
+                } else if (i === 2 || i === 6) { // Snare on beats 3 and 7
+                    step.percussion.snare = { active: true, probability: 0.85, velocity: 1.0 };
+                    step.percussion.hihat = { active: true, probability: 1.0, type: 'closed', velocity: 0.8 };
+                } else if (i % 2 !== 0) { // Off-beats, mostly hi-hats
+                    if (Math.random() < 0.9) {
+                        step.percussion.hihat = { active: true, probability: 1.0, type: 'closed', velocity: 0.7 };
+                    }
+                    if (Math.random() < 0.2) { // Occasional ghost kick/snare
+                        if (Math.random() < 0.5) {
+                            step.percussion.kick = { active: true, probability: 0.5, velocity: 0.3 };
+                        } else {
+                            step.percussion.snare = { active: true, probability: 0.5, velocity: 0.3 };
+                        }
+                    }
+                }
+                
                 generatedPhrase.push(step);
             }
             return generatedPhrase;
@@ -1041,24 +1055,24 @@
         // Percussion now includes 'active', 'probability', and 'velocity' for dynamic sequencing
         const musicalPhrases = {
             intro: [
-                { bass: ['A2'], synth: ['A3'], percussion: {}, delaySend: 0.8 },
-                { bass: ['A2'], synth: ['A3'], percussion: {}, delaySend: 0.7 },
-                { bass: ['E2'], synth: ['E4'], percussion: {}, delaySend: 0.6 },
-                { bass: ['E2'], synth: ['E4'], percussion: {}, delaySend: 0.5 },
-                { bass: ['C3'], synth: ['C4'], percussion: {}, delaySend: 0.4 },
-                { bass: ['C3'], synth: ['C4'], percussion: {}, delaySend: 0.3 },
-                { bass: ['G2'], synth: ['G3'], percussion: {}, delaySend: 0.2 },
-                { bass: ['G2'], synth: ['G3'], percussion: {}, delaySend: 0.1 },
-                { bass: ['A2'], synth: ['A3', 'C4'], percussion: {}, delaySend: 0.0 },
-                { bass: ['A2'], synth: ['A3', 'C4'], percussion: {}, delaySend: 0.0 },
-                { bass: ['E2'], synth: ['E4', 'G4'], percussion: {}, delaySend: 0.0 },
-                { bass: ['E2'], synth: ['E4', 'G4'], percussion: {}, delaySend: 0.0 },
-                { bass: ['C3'], synth: ['C4', 'E4'], percussion: {}, delaySend: 0.0 },
-                { bass: ['C3'], synth: ['C4', 'E4'], percussion: {}, delaySend: 0.0 },
-                { bass: ['G2'], synth: ['G3', 'B3'], percussion: {}, delaySend: 0.0 },
-                { bass: ['G2'], synth: ['G3', 'B3'], percussion: {}, delaySend: 0.0 }
+                { bass: ['C2'], synth: ['C4'], percussion: {}, delaySend: 0.8 },
+                { bass: ['G2'], synth: ['G3'], percussion: {}, delaySend: 0.7 },
+                { bass: ['A2'], synth: ['A3'], percussion: {}, delaySend: 0.6 },
+                { bass: ['F2'], synth: ['F3'], percussion: {}, delaySend: 0.5 },
+                { bass: ['C2'], synth: ['C4', 'E4'], percussion: {}, delaySend: 0.4 },
+                { bass: ['G2'], synth: ['G3', 'B3'], percussion: {}, delaySend: 0.3 },
+                { bass: ['A2'], synth: ['A3', 'C4'], percussion: {}, delaySend: 0.2 },
+                { bass: ['F2'], synth: ['F3', 'A3'], percussion: {}, delaySend: 0.1 },
+                { bass: ['C2'], synth: ['C4', 'E4', 'G4'], percussion: {}, delaySend: 0.0 },
+                { bass: ['G2'], synth: ['G3', 'B3', 'D4'], percussion: {}, delaySend: 0.0 },
+                { bass: ['A2'], synth: ['A3', 'C4', 'E4'], percussion: {}, delaySend: 0.0 },
+                { bass: ['F2'], synth: ['F3', 'A3', 'C4'], percussion: {}, delaySend: 0.0 },
+                { bass: ['C2'], synth: ['C4', 'E4', 'G4'], percussion: {}, delaySend: 0.0 },
+                { bass: ['G2'], synth: ['G3', 'B3', 'D4'], percussion: {}, delaySend: 0.0 },
+                { bass: ['A2'], synth: ['A3', 'C4', 'E4'], percussion: {}, delaySend: 0.0 },
+                { bass: ['F2'], synth: ['F3', 'A3', 'C4'], percussion: {}, delaySend: 0.0 }
             ],
-            verse1_A: [
+            verse1_A: [ // C-G-Am-F progression
                 { bass: ['C2'], synth: ['C4', 'E4', 'G4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
                 { bass: ['C2'], synth: ['E4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['G2'], synth: ['G3', 'B3', 'D4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
@@ -1068,7 +1082,7 @@
                 { bass: ['F2'], synth: ['A3', 'C4', 'F4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
                 { bass: ['F2'], synth: ['A3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            verse1_B: [
+            verse1_B: [ // C-G-Am-F progression with slightly different synth
                 { bass: ['C2'], synth: ['E4', 'G4', 'C5'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
                 { bass: ['C2'], synth: ['G4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['G2'], synth: ['B3', 'D4', 'G4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
@@ -1078,7 +1092,7 @@
                 { bass: ['F2'], synth: ['A3', 'C4', 'F4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
                 { bass: ['F2'], synth: ['C4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            verse1_C: [
+            verse1_C: [ // C-G-Am-F progression, more sparse synth
                 { bass: ['C2'], synth: ['C4', 'G4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
                 { bass: ['C2'], synth: ['E4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['G2'], synth: ['G3', 'D4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
@@ -1088,16 +1102,17 @@
                 { bass: ['F2'], synth: ['F3', 'C4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
                 { bass: ['F2'], synth: ['A3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            verse1_D: [
+            verse1_D: [ // C-G-Am-F progression, more active synth
                 { bass: ['C2'], synth: ['C4', 'E4', 'G4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
                 { bass: ['C2'], synth: ['G4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['G2'], synth: ['B3', 'D4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } } },
                 { bass: ['G2'], synth: ['E4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['A2'], synth: ['A3', 'C4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
                 { bass: ['A2'], synth: ['E4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
-                { bass: ['F2'], synth: ['F3', 'A3', 'C4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 }
+                { bass: ['F2'], synth: ['F3', 'A3', 'C4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
+                { bass: ['F2'], synth: ['C4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            verse2_A: [
+            verse2_A: [ // F-C-G-Am progression
                 { bass: ['F2'], synth: ['F3', 'A3', 'C4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['F2'], synth: ['A3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['C2'], synth: ['C4', 'E4', 'G4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
@@ -1107,7 +1122,7 @@
                 { bass: ['A2'], synth: ['A3', 'C4', 'E4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['A2'], synth: ['C4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            verse2_B: [
+            verse2_B: [ // F-C-G-Am progression with slightly different synth
                 { bass: ['F2'], synth: ['C4', 'F4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['F2'], synth: ['A3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['C2'], synth: ['G3', 'C4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
@@ -1117,7 +1132,7 @@
                 { bass: ['A2'], synth: ['E4', 'A4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['A2'], synth: ['C4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            verse2_C: [
+            verse2_C: [ // F-C-G-Am progression, more sparse synth
                 { bass: ['F2'], synth: ['F3', 'C4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['F2'], synth: ['A3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['C2'], synth: ['C4', 'G4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
@@ -1127,8 +1142,7 @@
                 { bass: ['A2'], synth: ['A3', 'E4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['C2'], synth: ['C4', 'E4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            // FIX: Added missing musical phrases
-            verse2_D: [
+            verse2_D: [ // F-C-G-Am progression, more active synth
                 { bass: ['F2'], synth: ['F3', 'A3', 'C4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['F2'], synth: ['C4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['C2'], synth: ['G3', 'E4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
@@ -1138,34 +1152,34 @@
                 { bass: ['A2'], synth: ['A3', 'C4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['C2'], synth: ['E4', 'G4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            verse3_A: [ // Copied from verse2_A, but with notes relative to C
+            verse3_A: [ // G-D-Em-C progression
                 { bass: ['G2'], synth: ['G3', 'B3', 'D4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['G2'], synth: ['B3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['D2'], synth: ['D3', 'F#3', 'A3'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['D2'], synth: ['F#3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
-                { bass: ['A2'], synth: ['A3', 'C#4', 'E4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.3 },
-                { bass: ['A2'], synth: ['C#4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
-                { bass: ['E2'], synth: ['E3', 'G#3', 'B3'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
-                { bass: ['E2'], synth: ['G#3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
+                { bass: ['E2'], synth: ['E3', 'G3', 'B3'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.3 },
+                { bass: ['E2'], synth: ['G3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
+                { bass: ['C3'], synth: ['C4', 'E4', 'G4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
+                { bass: ['C3'], synth: ['E4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            verse3_B: [ // Copied from verse2_B, but with notes relative to C
+            verse3_B: [ // G-D-Em-C progression with slightly different synth
                 { bass: ['G2'], synth: ['D4', 'G4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['G2'], synth: ['B3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['D2'], synth: ['A3', 'D4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['D2'], synth: ['F#3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
-                { bass: ['A2'], synth: ['E4', 'A4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.3 },
-                { bass: ['A2'], synth: ['C#4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
-                { bass: ['E2'], synth: ['B3', 'E4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
-                { bass: ['E2'], synth: ['G#3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
+                { bass: ['E2'], synth: ['B3', 'E4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.3 },
+                { bass: ['E2'], synth: ['G3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
+                { bass: ['C3'], synth: ['G4', 'C5'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
+                { bass: ['C3'], synth: ['E4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            verse3_C: [ // Copied from verse2_C, but with notes relative to C
+            verse3_C: [ // G-D-Em-C progression, more sparse synth
                 { bass: ['G2'], synth: ['G3', 'D4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['G2'], synth: ['B3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['D2'], synth: ['D3', 'A3'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['D2'], synth: ['F#3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
-                { bass: ['A2'], synth: ['A3', 'E4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.3 },
-                { bass: ['A2'], synth: ['C#4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
-                { bass: ['E2'], synth: ['E3', 'B3'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
+                { bass: ['E2'], synth: ['E3', 'B3'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.3 },
+                { bass: ['E2'], synth: ['G3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
+                { bass: ['C3'], synth: ['C4', 'G4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['G2'], synth: ['G3', 'B3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
             // Raga phrases - these will be dynamically generated and thus are empty here
@@ -1180,35 +1194,35 @@
             ragaDarbariPhrase: [],    
             ragaBhairavPhrase: [],    
             
-            chorus: [
-                { bass: ['A2'], synth: ['A4', 'C5', 'E4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'open', velocity: 0.9 } }, delaySend: 0.6 },
-                { bass: ['A2'], synth: ['C5'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.6 },
-                { bass: ['G2'], synth: ['G4', 'B4', 'D4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'open', velocity: 0.9 } }, delaySend: 0.6 },
-                { bass: ['G2'], synth: ['B4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.6 },
-                { bass: ['C3'], synth: ['C4', 'E4', 'G4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'open', velocity: 0.9 } }, delaySend: 0.6 },
-                { bass: ['C3'], synth: ['E4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.6 },
-                { bass: ['F2'], synth: ['F4', 'A4', 'C5'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'open', velocity: 0.9 } }, delaySend: 0.6 },
-                { bass: ['F2'], synth: ['A4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.6 }
+            chorus: [ // More full and impactful chorus
+                { bass: ['C2'], synth: ['C4', 'E4', 'G4', 'C5'], percussion: { kick: { active: true, probability: 0.95, velocity: 1.0 }, snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'open', velocity: 0.9 } }, delaySend: 0.6 },
+                { bass: ['C2'], synth: ['G4', 'C5'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.6 },
+                { bass: ['G2'], synth: ['G3', 'B3', 'D4', 'G4'], percussion: { kick: { active: true, probability: 0.95, velocity: 1.0 }, snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'open', velocity: 0.9 } }, delaySend: 0.6 },
+                { bass: ['G2'], synth: ['D4', 'G4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.6 },
+                { bass: ['A2'], synth: ['A3', 'C4', 'E4', 'A4'], percussion: { kick: { active: true, probability: 0.95, velocity: 1.0 }, snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'open', velocity: 0.9 } }, delaySend: 0.6 },
+                { bass: ['A2'], synth: ['C4', 'E4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.6 },
+                { bass: ['F2'], synth: ['F3', 'A3', 'C4', 'F4'], percussion: { kick: { active: true, probability: 0.95, velocity: 1.0 }, snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'open', velocity: 0.9 } }, delaySend: 0.6 },
+                { bass: ['F2'], synth: ['A3', 'C4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.6 }
             ],
-            bridge: [
-                { bass: ['D2'], synth: ['D4', 'F4', 'A4'], percussion: {}, delaySend: 0.5 },
-                { bass: ['E2'], synth: ['E4', 'G4', 'B4'], percussion: {}, delaySend: 0.5 },
-                { bass: ['A2'], synth: ['A3', 'D4', 'G4'], percussion: {}, delaySend: 0.5 },
-                { bass: ['C3'], synth: ['C4', 'F4', 'A4'], percussion: {}, delaySend: 0.5 },
-                { bass: ['D2'], synth: ['D4', 'F4', 'A4'], percussion: {}, delaySend: 0.5 },
-                { bass: ['E2'], synth: ['E4', 'G4', 'B4'], percussion: {}, delaySend: 0.5 },
-                { bass: ['A2'], synth: ['A3', 'D4', 'G4'], percussion: {}, delaySend: 0.5 },
-                { bass: ['C3'], synth: ['C4', 'F4', 'A4'], percussion: {}, delaySend: 0.5 }
+            bridge: [ // More atmospheric and building
+                { bass: ['D2'], synth: ['D4', 'F4', 'A4'], percussion: { hihat: { active: true, probability: 0.5, type: 'closed', velocity: 0.6 } }, delaySend: 0.5 },
+                { bass: ['E2'], synth: ['E4', 'G4', 'B4'], percussion: { hihat: { active: true, probability: 0.5, type: 'closed', velocity: 0.6 } }, delaySend: 0.5 },
+                { bass: ['A2'], synth: ['A3', 'D4', 'G4'], percussion: { hihat: { active: true, probability: 0.5, type: 'closed', velocity: 0.6 } }, delaySend: 0.5 },
+                { bass: ['C3'], synth: ['C4', 'F4', 'A4'], percussion: { hihat: { active: true, probability: 0.5, type: 'closed', velocity: 0.6 } }, delaySend: 0.5 },
+                { bass: ['D2'], synth: ['D4', 'F4', 'A4', 'C5'], percussion: { kick: { active: true, probability: 0.6, velocity: 0.8 } }, delaySend: 0.6 },
+                { bass: ['E2'], synth: ['E4', 'G4', 'B4', 'D5'], percussion: { snare: { active: true, probability: 0.6, velocity: 0.8 } }, delaySend: 0.6 },
+                { bass: ['A2'], synth: ['A3', 'D4', 'G4', 'C5'], percussion: { kick: { active: true, probability: 0.6, velocity: 0.8 } }, delaySend: 0.6 },
+                { bass: ['C3'], synth: ['C4', 'F4', 'A4', 'D5'], percussion: { snare: { active: true, probability: 0.6, velocity: 0.8 } }, delaySend: 0.6 }
             ],
             outro: [
-                { bass: ['A2'], synth: ['A3', 'E4'], percussion: {}, delaySend: 0.8 },
-                { bass: ['A2'], synth: ['E4'], percussion: {}, delaySend: 0.7 },
-                { bass: ['C3'], synth: ['C4', 'G3'], percussion: {}, delaySend: 0.6 },
-                { bass: ['C3'], synth: ['G3'], percussion: {}, delaySend: 0.5 },
-                { bass: ['A2'], synth: ['A3'], percussion: {}, delaySend: 0.4 },
-                { bass: ['A2'], synth: ['A3'], percussion: {}, delaySend: 0.3 },
-                { bass: ['G2'], synth: ['G3'], percussion: {}, delaySend: 0.2 },
-                { bass: ['G2'], synth: ['G3'], percussion: {}, delaySend: 0.0 }
+                { bass: ['C2'], synth: ['C4', 'G4'], percussion: {}, delaySend: 0.8 },
+                { bass: ['G2'], synth: ['E4'], percussion: {}, delaySend: 0.7 },
+                { bass: ['A2'], synth: ['C4'], percussion: {}, delaySend: 0.6 },
+                { bass: ['F2'], synth: ['A3'], percussion: {}, delaySend: 0.5 },
+                { bass: ['C2'], synth: ['C4'], percussion: {}, delaySend: 0.4 },
+                { bass: ['G2'], synth: ['G3'], percussion: {}, delaySend: 0.3 },
+                { bass: ['A2'], synth: ['A3'], percussion: {}, delaySend: 0.2 },
+                { bass: ['F2'], synth: ['F3'], percussion: {}, delaySend: 0.0 }
             ]
         };
 
@@ -2088,56 +2102,56 @@
         function applySubtleChanges() {
             const driftScale = fibonacciDriftScales[currentFibonacciDriftScaleIndex];
 
-            // Tempo drift
-            targetTempo += tempoDriftDirection * (Math.random() * driftScale * 5 + 1); // Smaller, more subtle tempo drift
-            if (targetTempo > 600) { // Limit tempo range for drift
+            // Tempo drift (more noticeable, but still subtle)
+            targetTempo += tempoDriftDirection * (Math.random() * driftScale * 10 + 2); // Larger drift step
+            if (targetTempo > 650) { // Limit tempo range for drift
                 tempoDriftDirection = -1;
-            } else if (targetTempo < 350) {
+            } else if (targetTempo < 380) {
                 tempoDriftDirection = 1;
             }
             targetTempo = Math.max(300, Math.min(900, targetTempo)); // Keep within overall knob limits
 
             // Smoothly interpolate currentTempo towards targetTempo
-            currentTempo += (targetTempo - currentTempo) * 0.05; // Adjust 0.05 for speed of interpolation
+            currentTempo += (targetTempo - currentTempo) * 0.08; // Adjust 0.08 for faster interpolation
 
-            currentDetune += detuneDriftDirection * (Math.random() * driftScale * 1.5 + (driftScale / 2));
-            if (currentDetune > 12) {
+            currentDetune += detuneDriftDirection * (Math.random() * driftScale * 2 + 0.5);
+            if (currentDetune > 20) { // Slightly wider detune range
                 detuneDriftDirection = -1;
-            } else if (currentDetune < -12) {
+            } else if (currentDetune < -20) {
                 detuneDriftDirection = 1;
             }
-            currentDetune = Math.max(-12, Math.min(12, currentDetune));
+            currentDetune = Math.max(-20, Math.min(20, currentDetune));
 
-            currentFilterFrequency += filterDriftDirection * (Math.random() * driftScale * 50 + 10);
-            if (currentFilterFrequency > 3000) {
+            currentFilterFrequency += filterDriftDirection * (Math.random() * driftScale * 100 + 20); // Larger filter drift
+            if (currentFilterFrequency > 4000) { // Wider filter range
                 filterDriftDirection = -1;
-            } else if (currentFilterFrequency < 500) {
+            } else if (currentFilterFrequency < 400) {
                 filterDriftDirection = 1;
             }
-            currentFilterFrequency = Math.max(500, Math.min(3000, currentFilterFrequency));
+            currentFilterFrequency = Math.max(400, Math.min(4000, currentFilterFrequency));
 
-            currentFilterQ += (Math.random() - 0.5) * driftScale * 0.5;
-            currentFilterQ = Math.max(0.5, Math.min(3, currentFilterQ));
+            currentFilterQ += (Math.random() - 0.5) * driftScale * 0.8; // More Q drift
+            currentFilterQ = Math.max(0.3, Math.min(4, currentFilterQ)); // Wider Q range
 
-            baseNoteDuration += (Math.random() - 0.5) * driftScale * 0.05;
-            baseNoteDuration = Math.max(0.3, Math.min(0.7, baseNoteDuration));
+            baseNoteDuration += (Math.random() - 0.5) * driftScale * 0.08; // More duration drift
+            baseNoteDuration = Math.max(0.2, Math.min(0.8, baseNoteDuration)); // Wider duration range
 
-            humanizationFactor += (Math.random() - 0.5) * driftScale * 0.1;
+            humanizationFactor += (Math.random() - 0.5) * driftScale * 0.15; // More humanization drift
             humanizationFactor = Math.max(0.1, Math.min(1.0, humanizationFactor));
 
-            delayTimeValue += delayTimeDriftDirection * (Math.random() - 0.5) * driftScale * 0.02;
-            if (delayTimeValue > 1.0) {
+            delayTimeValue += delayTimeDriftDirection * (Math.random() - 0.5) * driftScale * 0.05; // More delay time drift
+            if (delayTimeValue > 1.5) {
                 delayTimeDriftDirection = -1;
-            } else if (delayTimeValue < 0.1) {
+            } else if (delayTimeValue < 0.05) {
                 delayTimeDriftDirection = 1;
             }
             delayTimeValue = Math.max(0.01, Math.min(2.0, delayTimeValue));
             if (audioContext && delayNode) delayNode.delayTime.setValueAtTime(delayTimeValue, audioContext.currentTime);
 
-            delayFeedbackValue += delayFeedbackDriftDirection * (Math.random() - 0.5) * driftScale * 0.01;
-            if (delayFeedbackValue > 0.8) {
+            delayFeedbackValue += delayFeedbackDriftDirection * (Math.random() - 0.5) * driftScale * 0.03; // More feedback drift
+            if (delayFeedbackValue > 0.9) {
                 delayFeedbackDriftDirection = -1;
-            } else if (delayFeedbackValue < 0.1) {
+            } else if (delayFeedbackValue < 0.05) {
                 delayFeedbackDriftDirection = 1;
             }
             delayFeedbackValue = Math.max(0, Math.min(0.95, delayFeedbackValue));
