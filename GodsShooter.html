@@ -60,8 +60,10 @@
             background-color: #0056b3;
             transform: translateY(-2px);
         }
-        #main-ui-overlay button:active {
-            transform: translateY(1px);
+        #main-ui-overlay button:active::before {
+            width: 200%;
+            height: 200%;
+            opacity: 1;
         }
         /* Bubble effect for buttons */
         #main-ui-overlay button::before {
@@ -175,6 +177,7 @@
 
     <div id="main-ui-overlay">
         <button id="startBtn">Start Game</button>
+        <button id="soundToggleBtn">Start Sound</button> <!-- New Sound Toggle Button -->
         <ul id="lbListEl"></ul>
     </div>
 
@@ -199,21 +202,21 @@
         // Configuration for game constants.
         const config = {
             canvas: { width: 340, height: 340 }, // Fixed size as requested
-            player: { size: 15, acceleration: 600, friction: 0.9, maxSpeed: 200, color: "#00ff00", name: "GANESH", level: 1 }, // Adjusted player size/speed for smaller canvas
-            bullet: { size: 3, speed: 350, lifetime: 1000, color: "#ffffff" }, // Adjusted bullet size/speed
+            player: { size: 7.5, acceleration: 300, friction: 0.9, maxSpeed: 100, color: "#00ff00", name: "GANESH", level: 1 }, // Adjusted player size/speed for smaller canvas
+            bullet: { size: 1.5, speed: 175, lifetime: 1000, color: "#ffffff" }, // Adjusted bullet size/speed
             divine: {
                 types: ["Loki", "Thor", "Buddha", "Sun", "Hermes", "Zeus", "Odin", "Ra", "Anubis"],
                 boss: "Boss",
-                baseSize: 20, // Adjusted base enemy size
+                baseSize: 10, // Adjusted base enemy size
                 vanishInterval: 2000,
                 vanishDuration: 500,
                 lightningDelay: 1200,
                 circleGrowth: 20, // Adjusted circle growth
                 sunHits: 3
             },
-            enemy: { spawnInterval: 2000, baseSpeed: 60, speedIncrease: 2, maxSpeed: 100 }, // Adjusted enemy speed
-            boss: { color: "#ff00ff", size: 35, health: 5, speed: 35 }, // Adjusted boss size/speed
-            particles: { count: 15, size: 2, lifetime: 500, colors: ["#ff4444", "#ffcc00", "#00aaff"] }, // Adjusted particle size/count
+            enemy: { spawnInterval: 2000, baseSpeed: 30, speedIncrease: 2, maxSpeed: 50 }, // Adjusted enemy speed
+            boss: { color: "#ff00ff", size: 17.5, health: 5, speed: 17.5 }, // Adjusted boss size/speed
+            particles: { count: 15, size: 1, lifetime: 500, colors: ["#ff4444", "#ffcc00", "#00aaff"] }, // Adjusted particle size/count
             levelUpScore: 750, // Adjusted level up score
             continueCost: 350, // Adjusted continue cost
             powerUpSpawnInterval: 7000 // Adjusted power-up spawn interval
@@ -231,61 +234,89 @@
         // No need to listen for window resize if fixed size
         // window.addEventListener("resize", resizeCanvas);
 
-        // Function to generate a simple audio buffer (sine wave)
-        function createAudioBuffer(frequency, duration, sampleRate = 44100) {
-            const context = new (window.AudioContext || window.webkitAudioContext)();
-            const numSamples = sampleRate * duration;
-            const buffer = context.createBuffer(1, numSamples, sampleRate);
-            const data = buffer.getChannelData(0);
+        // Web Audio API context
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-            for (let i = 0; i < numSamples; i++) {
-                data[i] = Math.sin(2 * Math.PI * frequency * (i / sampleRate));
+        // Custom Sound class using Web Audio API
+        class Sound {
+            constructor(frequency, duration, type = 'sine', initialVolume = 0) { // Default initialVolume to 0
+                this.frequency = frequency;
+                this.duration = duration;
+                this.type = type;
+                this.initialVolume = initialVolume; // Store the desired volume
+                this.currentVolume = initialVolume; // Current active volume
+                this.oscillator = null;
+                this.gainNode = null;
             }
 
-            // Encode to WAV data URI
-            const wavHeader = new ArrayBuffer(44);
-            const view = new DataView(wavHeader);
+            play() {
+                // If audio context is suspended, resume it (common for autoplay policies)
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                if (this.currentVolume === 0) return; // Don't play if muted
 
-            // RIFF chunk
-            writeString(view, 0, 'RIFF');
-            view.setUint32(4, 36 + numSamples * 2, true); // ChunkSize
-            writeString(view, 8, 'WAVE');
+                const tempOscillator = audioContext.createOscillator();
+                const tempGainNode = audioContext.createGain();
 
-            // fmt chunk
-            writeString(view, 12, 'fmt ');
-            view.setUint32(16, 16, true); // Subchunk1Size (16 for PCM)
-            view.setUint16(20, 1, true); // AudioFormat (1 for PCM)
-            view.setUint32(24, sampleRate, true); // NumChannels
-            view.setUint32(28, sampleRate * 2, true); // SampleRate
-            view.setUint16(32, 2, true); // ByteRate (SampleRate * NumChannels * BitsPerSample/8)
-            view.setUint16(34, 16, true); // BlockAlign (NumChannels * BitsPerSample/8)
+                tempOscillator.type = this.type;
+                tempOscillator.frequency.setValueAtTime(this.frequency, audioContext.currentTime);
+                tempGainNode.gain.setValueAtTime(this.currentVolume, audioContext.currentTime);
 
-            // data chunk
-            writeString(view, 36, 'data');
-            view.setUint32(40, numSamples * 2, true); // Subchunk2Size
+                tempOscillator.connect(tempGainNode);
+                tempGainNode.connect(audioContext.destination);
 
-            const pcmData = new Int16Array(numSamples);
-            for (let i = 0; i < numSamples; i++) {
-                pcmData[i] = Math.max(-1, Math.min(1, data[i])) * 0x7FFF; // Convert to 16-bit PCM
+                tempOscillator.start();
+                tempOscillator.stop(audioContext.currentTime + this.duration);
             }
 
-            const blob = new Blob([wavHeader, pcmData], { type: 'audio/wav' });
-            return URL.createObjectURL(blob);
+            // For continuous sounds like background music
+            startContinuous() {
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                if (this.oscillator) {
+                    this.oscillator.stop();
+                    this.oscillator.disconnect();
+                }
+
+                this.oscillator = audioContext.createOscillator();
+                this.gainNode = audioContext.createGain();
+
+                this.oscillator.type = this.type;
+                this.oscillator.frequency.setValueAtTime(this.frequency, audioContext.currentTime);
+                this.gainNode.gain.setValueAtTime(this.currentVolume, audioContext.currentTime); // Set initial volume
+
+                this.oscillator.connect(this.gainNode);
+                this.gainNode.connect(audioContext.destination);
+
+                this.oscillator.start();
+            }
+
+            stopContinuous() {
+                if (this.oscillator) {
+                    this.oscillator.stop();
+                    this.oscillator.disconnect();
+                    this.oscillator = null;
+                    this.gainNode = null;
+                }
+            }
+
+            setVolume(volume) {
+                this.currentVolume = volume; // Update current volume
+                if (this.gainNode) {
+                    this.gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+                }
+            }
         }
 
-        function writeString(view, offset, string) {
-            for (let i = 0; i < string.length; i++) {
-                view.setUint8(offset + i, string.charCodeAt(i));
-            }
-        }
-
-        // Audio assets using generated sounds
-        const shootSound = new Audio(createAudioBuffer(880, 0.05)); // High frequency, short duration
-        const enemyHitSound = new Audio(createAudioBuffer(440, 0.1)); // Mid frequency, short duration
-        const playerHitSound = new Audio(createAudioBuffer(220, 0.2)); // Low frequency, slightly longer duration
-        const backgroundMusic = new Audio(createAudioBuffer(110, 5)); // Very low frequency, longer duration for background
-        backgroundMusic.loop = true;
-        backgroundMusic.volume = 0; // Start at 0 volume to comply with autoplay policies
+        // Audio assets using generated sounds (Web Audio API)
+        // Initial volume is 0 (muted)
+        const shootSound = new Sound(880, 0.05, 'sine', 0);
+        const enemyHitSound = new Sound(440, 0.1, 'square', 0);
+        const playerHitSound = new Sound(220, 0.2, 'sawtooth', 0);
+        const backgroundMusic = new Sound(110, 1000, 'sine', 0); // Continuous, very low volume initially
+        backgroundMusic.loop = true; // Loop property for continuous sound (handled manually with start/stop)
 
         // Global joystick for mobile.
         let joystick = { active: false, touchId: null, startX: 0, startY: 0, currentX: 0, currentY: 0, dx: 0, dy: 0 };
@@ -293,6 +324,7 @@
 
         // UI elements.
         const startBtn = document.getElementById("startBtn");
+        const soundToggleBtn = document.getElementById("soundToggleBtn"); // Get the new sound toggle button
         const lbListEl = document.getElementById("lbListEl");
         const tutorialOverlay = document.getElementById("tutorialOverlay");
         const closeTutorialBtn = document.getElementById("closeTutorialBtn");
@@ -356,11 +388,11 @@
                 this.type = type;
                 this.x = x;
                 this.y = y;
-                this.size = 8; // Adjusted size
+                this.size = 4; // Adjusted size (50% of 8)
             }
             update(dt) { }
             draw(ctx) {
-                ctx.font = "8px Arial"; // Adjusted font size
+                ctx.font = "4px Arial"; // Adjusted font size (50% of 8)
                 ctx.textAlign = "center";
                 let label = "";
                 if (this.type === "extraLife") {
@@ -377,7 +409,7 @@
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.fillStyle = "#fff";
-                ctx.fillText(label, this.x, this.y + 3); // Adjusted text position
+                ctx.fillText(label, this.x, this.y + 1.5); // Adjusted text position (50% of 3)
             }
         }
 
@@ -388,6 +420,8 @@
                 this.y = y;
                 this.vx = 0;
                 this.vy = 0;
+                this.isHit = false; // New property for hit effect
+                this.hitEffectEndTime = 0; // New property for hit effect duration
             }
             update(dt, keys) {
                 let effectiveAccel = config.player.acceleration;
@@ -425,9 +459,23 @@
                 // Keep player within canvas bounds
                 this.x = Math.max(config.player.size, Math.min(config.canvas.width - config.player.size, this.x));
                 this.y = Math.max(config.player.size, Math.min(config.canvas.height - config.player.size, this.y));
+
+                // Update hit effect
+                if (this.isHit && performance.now() > this.hitEffectEndTime) {
+                    this.isHit = false;
+                }
             }
             draw(ctx) {
                 if (game.playerPerks.invisibility) { ctx.globalAlpha = 0.3; }
+                
+                // Player hit effect: flash red
+                if (this.isHit && !game.playerPerks.invisibility) { // Only show hit effect if not invisible
+                    ctx.fillStyle = "rgba(255, 0, 0, 0.7)"; // Red flash
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, config.player.size * 1.2, 0, Math.PI * 2); // Slightly larger red circle
+                    ctx.fill();
+                }
+
                 ctx.fillStyle = config.player.color;
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, config.player.size, 0, Math.PI * 2);
@@ -435,12 +483,12 @@
                 ctx.fillStyle = "#fff";
                 ctx.textAlign = "center";
                 ctx.font = "8px Arial"; // Adjusted font size
-                ctx.fillText(config.player.name, this.x, this.y - config.player.size - 3); // Adjusted text position
+                ctx.fillText(config.player.name, this.x, this.y - config.player.size - 1.5); // Adjusted text position (50% of 3)
 
                 // Draw shield if active
                 if (game.playerPerks.shield && game.playerPerks.shieldDurability > 0) {
                     ctx.beginPath();
-                    ctx.arc(this.x, this.y, config.player.size + 3, 0, Math.PI * 2); // Adjusted shield size
+                    ctx.arc(this.x, this.y, config.player.size + 1.5, 0, Math.PI * 2); // Adjusted shield size (50% of 3)
                     ctx.strokeStyle = `rgba(0, 200, 255, ${game.playerPerks.shieldDurability / game.playerPerks.initialShieldDurability})`;
                     ctx.lineWidth = 2; // Adjusted line width
                     ctx.stroke();
@@ -641,7 +689,7 @@
                 if (this.visible) { this.moveTowardsPlayer(dt); }
             }
             updateThor(dt) {
-                const desiredDistance = 100; // Adjusted desired distance
+                const desiredDistance = 50; // Adjusted desired distance (50% of 100)
                 const d = Utils.distance(this.x, this.y, game.player.x, game.player.y);
                 if (d > desiredDistance) { this.moveTowardsPlayer(dt); }
                 else if (!this.state.attacking) {
@@ -650,13 +698,14 @@
                     setTimeout(() => {
                         const angle = Utils.angleBetween(this.x, this.y, game.player.x, game.player.y);
                         // Lightning strikes in a line towards the player's last known position
-                        const lightningEndX = this.x + Math.cos(angle) * 150; // Adjusted lightning length
-                        const lightningEndY = this.y + Math.sin(angle) * 150;
+                        const lightningEndX = this.x + Math.cos(angle) * 75; // Adjusted lightning length (50% of 150)
+                        const lightningEndY = this.y + Math.sin(angle) * 75;
                         const lineDist = Utils.pointToLineDistance(game.player.x, game.player.y, this.x, this.y, lightningEndX, lightningEndY);
-                        if (lineDist < 15) { // Adjusted hit detection radius
-                            playerHitSound.currentTime = 0;
+                        if (lineDist < 7.5) { // Adjusted hit detection radius (50% of 15)
                             playerHitSound.play();
                             game.loseLife(this.baseHit);
+                            game.player.isHit = true; // Trigger player hit effect
+                            game.player.hitEffectEndTime = performance.now() + 200; // 200ms flash
                         }
                         this.state.attacking = false;
                     }, this.state.attackDelay);
@@ -670,10 +719,11 @@
                 }
                 // Check if player is on the circle's edge
                 const diff = Math.abs(Utils.distance(this.x, this.y, game.player.x, game.player.y) - this.state.circleRadius);
-                if (diff < 10) { // Player takes damage if close to the circle's edge, adjusted
-                    playerHitSound.currentTime = 0;
+                if (diff < 5) { // Player takes damage if close to the circle's edge, adjusted (50% of 10)
                     playerHitSound.play();
                     game.loseLife(this.baseHit);
+                    game.player.isHit = true; // Trigger player hit effect
+                    game.player.hitEffectEndTime = performance.now() + 200; // 200ms flash
                     this.state.circleRadius = 0; // Reset circle after hit
                 }
             }
@@ -682,7 +732,7 @@
                 this.glow = 1 - ((config.divine.sunHits - this.hp) / config.divine.sunHits);
             }
             updateZeus(dt) {
-                const desiredDistance = 100; // Adjusted desired distance
+                const desiredDistance = 50; // Adjusted desired distance (50% of 100)
                 let d = Utils.distance(this.x, this.y, game.player.x, game.player.y);
                 if (d > desiredDistance) { this.moveTowardsPlayer(dt); }
                 else if (!this.state.attacking && performance.now() - this.state.lastAttack >= this.state.attackInterval) {
@@ -691,10 +741,11 @@
                     this.state.attackX = game.player.x; // Target player's current X position
                     setTimeout(() => {
                         // Zeus strikes vertically at the targeted X position
-                        if (Math.abs(game.player.x - this.state.attackX) < 25) { // Adjusted hit radius
-                            playerHitSound.currentTime = 0;
+                        if (Math.abs(game.player.x - this.state.attackX) < 12.5) { // Adjusted hit radius (50% of 25)
                             playerHitSound.play();
                             game.loseLife(this.baseHit);
+                            game.player.isHit = true; // Trigger player hit effect
+                            game.player.hitEffectEndTime = performance.now() + 200; // 200ms flash
                         }
                         this.state.attacking = false;
                         this.state.lastAttack = performance.now();
@@ -714,7 +765,7 @@
                 }
                 // Odin moves in a small sine wave pattern
                 if (!this.baseX) { this.baseX = this.x; }
-                this.x = this.baseX + 10 * Math.sin(performance.now() / 1000 * (1 + game.level / 20)); // Adjusted oscillation amplitude
+                this.x = this.baseX + 5 * Math.sin(performance.now() / 1000 * (1 + game.level / 20)); // Adjusted oscillation amplitude (50% of 10)
                 this.moveTowardsPlayer(dt); // Still moves towards player
             }
             updateRa(dt) {
@@ -729,10 +780,11 @@
                 }
                 if (this.state.flareActive) {
                     if (performance.now() - this.state.flareStart < 250) { // Flare duration, adjusted
-                        if (Utils.distance(this.x, this.y, game.player.x, game.player.y) < this.size + 10) { // If player is close during flare, adjusted
-                            playerHitSound.currentTime = 0;
+                        if (Utils.distance(this.x, this.y, game.player.x, game.player.y) < this.size + 5) { // If player is close during flare, adjusted (50% of 10)
                             playerHitSound.play();
                             game.loseLife(this.baseHit);
+                            game.player.isHit = true; // Trigger player hit effect
+                            game.player.hitEffectEndTime = performance.now() + 200; // 200ms flash
                         }
                     } else {
                         this.state.flareActive = false;
@@ -760,13 +812,14 @@
                     this.state.attacking = true;
                     setTimeout(() => {
                         const angle = Utils.angleBetween(this.x, this.y, game.player.x, game.player.y);
-                        const lightningEndX = this.x + Math.cos(angle) * 100; // Adjusted lightning length
-                        const lightningEndY = this.y + Math.sin(angle) * 100;
+                        const lightningEndX = this.x + Math.cos(angle) * 50; // Adjusted lightning length (50% of 100)
+                        const lightningEndY = this.y + Math.sin(angle) * 50;
                         const lineDist = Utils.pointToLineDistance(game.player.x, game.player.y, this.x, this.y, lightningEndX, lightningEndY);
-                        if (lineDist < 15) { // Adjusted hit detection radius
-                            playerHitSound.currentTime = 0;
+                        if (lineDist < 7.5) { // Adjusted hit detection radius (50% of 15)
                             playerHitSound.play();
                             game.loseLife(this.baseHit);
+                            game.player.isHit = true; // Trigger player hit effect
+                            game.player.hitEffectEndTime = performance.now() + 200; // 200ms flash
                         }
                         this.state.attacking = false;
                     }, 400); // Adjusted boss attack delay
@@ -805,17 +858,17 @@
                 // Odin's shield
                 if (this.type === "Odin" && this.state.shieldActive) {
                     ctx.beginPath();
-                    ctx.arc(this.x, this.y, this.size + 5, 0, Math.PI * 2); // Adjusted shield size
+                    ctx.arc(this.x, this.y, this.size + 2.5, 0, Math.PI * 2); // Adjusted shield size (50% of 5)
                     ctx.strokeStyle = "rgba(0,0,255,0.5)";
-                    ctx.lineWidth = 2; // Adjusted line width
+                    ctx.lineWidth = 2; // Keep line width same for visibility
                     ctx.stroke();
                 }
                 // Ra's flare aura
                 if (this.type === "Ra" && this.state.flareActive) {
                     ctx.beginPath();
-                    ctx.arc(this.x, this.y, this.size + 10, 0, Math.PI * 2); // Adjusted flare size
-                    ctx.strokeStyle = "rgba(255,165,0,0.7)";
-                    ctx.lineWidth = 2; // Adjusted line width
+                    ctx.arc(this.x, this.y, this.size + 5, 0, Math.PI * 2); // Adjusted flare size (50% of 10)
+                    ctx.strokeStyle = "rgba(255,165,0,0.9)"; // Brighter color
+                    ctx.lineWidth = 3; // Thicker line
                     ctx.stroke();
                 }
                 // Zeus charging indicator
@@ -823,10 +876,10 @@
                     ctx.fillStyle = "#ffff00";
                     ctx.font = "bold 8px Arial"; // Adjusted font size
                     ctx.textAlign = "center";
-                    ctx.fillText("Charging...", this.x, this.y - this.size - 15); // Adjusted text position
+                    ctx.fillText("Charging...", this.x, this.y - this.size - 7.5); // Adjusted text position (50% of 15)
                     // Draw target line for Zeus's attack
-                    ctx.strokeStyle = "rgba(255,255,0,0.5)";
-                    ctx.lineWidth = 1; // Adjusted line width
+                    ctx.strokeStyle = "rgba(255,255,0,0.8)"; // Brighter color
+                    ctx.lineWidth = 2; // Thicker line
                     ctx.beginPath();
                     ctx.moveTo(this.state.attackX, 0);
                     ctx.lineTo(this.state.attackX, config.canvas.height);
@@ -854,12 +907,22 @@
                     const remaining = Math.max(0, ((this.state.attackDelay || config.divine.lightningDelay) - (performance.now() - this.state.chargeStart)) / 1000).toFixed(1);
                     ctx.fillStyle = "#ffff00";
                     ctx.font = "bold 8px Arial"; // Adjusted font size
-                    ctx.fillText("⚡ " + remaining + "s", this.x, this.y - this.size - 10); // Adjusted text position
+                    ctx.fillText("⚡ " + remaining + "s", this.x, this.y - this.size - 5); // Adjusted text position (50% of 10)
+                    // Draw lightning visual
+                    const angle = Utils.angleBetween(this.x, this.y, game.player.x, game.player.y);
+                    const lightningEndX = this.x + Math.cos(angle) * 75;
+                    const lightningEndY = this.y + Math.sin(angle) * 75;
+                    ctx.strokeStyle = "rgba(255,255,0,0.8)"; // Brighter color
+                    ctx.lineWidth = 3; // Thicker line
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y);
+                    ctx.lineTo(lightningEndX, lightningEndY);
+                    ctx.stroke();
                 }
                 // Buddha's expanding circle
                 if (this.type === "Buddha") {
                     ctx.strokeStyle = "#ffcc00";
-                    ctx.lineWidth = 1.5; // Adjusted line width
+                    ctx.lineWidth = 2.5; // Thicker line
                     ctx.beginPath();
                     ctx.arc(this.x, this.y, this.state.circleRadius || 0, 0, Math.PI * 2);
                     ctx.stroke();
@@ -868,14 +931,14 @@
                 ctx.fillStyle = "#fff";
                 ctx.font = "bold 8px Arial"; // Adjusted font size
                 ctx.textAlign = "center";
-                ctx.fillText(this.type, this.x, this.y - this.size - 12); // Adjusted text position
+                ctx.fillText(this.type, this.x, this.y - this.size - 6); // Adjusted text position (50% of 12)
 
                 // Health bar for enemies with more than 1 HP
                 if (this.maxHp > 1) {
-                    const barWidth = this.size * 1.5; // Adjusted bar width
-                    const barHeight = 2; // Adjusted bar height
+                    const barWidth = this.size * 1.5; // Adjusted bar width (proportional)
+                    const barHeight = 1; // Adjusted bar height (50% of 2)
                     const barX = this.x - barWidth / 2;
-                    const barY = this.y - this.size - 7; // Adjusted bar position
+                    const barY = this.y - this.size - 3.5; // Adjusted bar position (50% of 7)
                     ctx.fillStyle = "#555";
                     ctx.fillRect(barX, barY, barWidth, barHeight);
                     const healthWidth = (this.hp / this.maxHp) * barWidth;
@@ -923,6 +986,8 @@
                 this.slowTimeEnd = 0;
                 this.speedBoostActive = false;
                 this.speedBoostEnd = 0;
+                this.isSoundOn = false; // Track sound state
+
                 // For shield perk, store initial durability to calculate alpha
                 this.playerPerks.initialShieldDurability = 5;
 
@@ -933,10 +998,7 @@
                 this.running = true;
                 this.paused = false;
                 lastTime = performance.now();
-                // Try playing music and set volume after successful play
-                backgroundMusic.play().then(() => {
-                    backgroundMusic.volume = 0.3;
-                }).catch(e => console.log("Background music autoplay failed:", e));
+                // Background music control moved to soundToggleBtn
                 requestAnimationFrame(this.gameLoop.bind(this));
             }
             reset() {
@@ -959,6 +1021,7 @@
                 this.shopOpen = false;
                 this.slowTimeActive = false;
                 this.speedBoostActive = false;
+                // Do not reset isSoundOn here, it's controlled by the button
             }
             togglePause() { this.paused = !this.paused; }
             openShop() {
@@ -1144,16 +1207,16 @@
                     // Joystick drawn relative to bottom-left of canvas
                     const joystickBaseX = config.canvas.width * 0.2;
                     const joystickBaseY = config.canvas.height * 0.8;
-                    ctx.arc(joystickBaseX, joystickBaseY, 20, 0, Math.PI * 2); // Adjusted joystick size
+                    ctx.arc(joystickBaseX, joystickBaseY, 10, 0, Math.PI * 2); // Adjusted joystick size (50% of 20)
                     ctx.fillStyle = "rgba(255,255,255,0.2)";
                     ctx.fill();
                     let dx = joystick.currentX - joystick.startX;
                     let dy = joystick.currentY - joystick.startY;
                     let dist = Math.hypot(dx, dy);
-                    let maxDist = 20; // Adjusted maxDist
+                    let maxDist = 10; // Adjusted maxDist (50% of 20)
                     if (dist > maxDist) { dx = dx / dist * maxDist; dy = dy / dist * maxDist; }
                     ctx.beginPath();
-                    ctx.arc(joystickBaseX + dx, joystickBaseY + dy, 10, 0, Math.PI * 2); // Adjusted joystick knob size
+                    ctx.arc(joystickBaseX + dx, joystickBaseY + dy, 5, 0, Math.PI * 2); // Adjusted joystick knob size (50% of 10)
                     ctx.fillStyle = "rgba(255,255,255,0.5)";
                     ctx.fill();
                 }
@@ -1287,13 +1350,8 @@
                                 hitEnemy = true; // Bullet is consumed
                                 return true; // Enemy remains
                             }
-                            // Play sound on hit, with error handling
-                            try {
-                                shootSound.currentTime = 0;
-                                shootSound.play();
-                            } catch (e) {
-                                console.error("Error playing shoot sound:", e);
-                            }
+                            // Play sound on hit
+                            shootSound.play();
                             enemy.hp--;
                             for (let i = 0; i < config.particles.count; i++) {
                                 this.particles.push(new Particle(enemy.x, enemy.y));
@@ -1319,14 +1377,10 @@
                 this.enemies = this.enemies.filter(enemy => {
                     if (enemy.visible && Utils.distance(this.player.x, this.player.y, enemy.x, enemy.y) < config.player.size + enemy.size) {
                         if (!this.playerPerks.invisibility) { // Player cannot be hit if invisible
-                            // Play sound on hit, with error handling
-                            try {
-                                playerHitSound.currentTime = 0;
-                                playerHitSound.play();
-                            } catch (e) {
-                                console.error("Error playing player hit sound:", e);
-                            }
+                            playerHitSound.play();
                             this.loseLife(enemy.baseHit);
+                            game.player.isHit = true; // Trigger player hit effect
+                            game.player.hitEffectEndTime = performance.now() + 200; // 200ms flash
                             return false; // Remove enemy on collision
                         }
                     }
@@ -1363,8 +1417,7 @@
             }
             gameOver() {
                 this.running = false;
-                backgroundMusic.pause();
-                backgroundMusic.currentTime = 0; // Reset music
+                backgroundMusic.stopContinuous(); // Stop background music
                 this.updateLeaderboard(config.player.name, this.score);
                 mainUiOverlay.style.display = 'flex'; // Show the overlay for game over
             }
@@ -1438,12 +1491,7 @@
                 if (!game.paused && !game.shopOpen && game.running) {
                     const angle = Utils.angleBetween(game.player.x, game.player.y, mouseX, mouseY);
                     game.bullets.push(new Bullet(game.player.x, game.player.y, angle));
-                    try {
-                        shootSound.currentTime = 0;
-                        shootSound.play();
-                    } catch (e) {
-                        console.error("Error playing shoot sound:", e);
-                    }
+                    shootSound.play();
                 }
             }
             if (e.key === "p" || e.key === "P") {
@@ -1484,9 +1532,10 @@
                         game.running = true;
                         game.paused = false;
                         mainUiOverlay.style.display = 'none'; // Hide overlay
-                        backgroundMusic.play().then(() => {
-                            backgroundMusic.volume = 0.3;
-                        }).catch(e => console.log("Background music autoplay failed:", e));
+                        if (game.isSoundOn) { // Only start music if sound is enabled
+                            backgroundMusic.startContinuous();
+                            backgroundMusic.setVolume(0.3);
+                        }
                         lastTime = performance.now();
                         requestAnimationFrame(game.gameLoop.bind(game));
                     }
@@ -1501,12 +1550,7 @@
                 // Normal shooting
                 const angle = Utils.angleBetween(game.player.x, game.player.y, clickX, clickY);
                 game.bullets.push(new Bullet(game.player.x, game.player.y, angle));
-                try {
-                    shootSound.currentTime = 0;
-                    shootSound.play();
-                } catch (e) {
-                    console.error("Error playing shoot sound:", e);
-                }
+                shootSound.play();
             }
         });
 
@@ -1532,13 +1576,21 @@
             if (!game.running) {
                 // Handle "Start" button click on the overlay
                 // Check if the touch is within the bounds of the startBtn element
-                if (startBtn.offsetParent === mainUiOverlay && // Ensure startBtn is currently visible in the overlay
-                    touchX >= startBtn.offsetLeft && touchX <= startBtn.offsetLeft + startBtn.offsetWidth &&
-                    touchY >= startBtn.offsetTop && touchY <= startBtn.offsetTop + startBtn.offsetHeight) {
+                const startBtnRect = startBtn.getBoundingClientRect();
+                if (touchX >= (startBtnRect.left - rect.left) && touchX <= (startBtnRect.right - rect.left) &&
+                    touchY >= (startBtnRect.top - rect.top) && touchY <= (startBtnRect.bottom - rect.top)) {
                     game.start();
                     mainUiOverlay.style.display = 'none'; // Hide overlay after starting
                     return;
                 }
+                // Handle "Sound Toggle" button click on the overlay
+                const soundToggleBtnRect = soundToggleBtn.getBoundingClientRect();
+                if (touchX >= (soundToggleBtnRect.left - rect.left) && touchX <= (soundToggleBtnRect.right - rect.left) &&
+                    touchY >= (soundToggleBtnRect.top - rect.top) && touchY <= (soundToggleBtnRect.bottom - rect.top)) {
+                    soundToggleBtn.click(); // Simulate a click on the sound toggle button
+                    return;
+                }
+
                 // Handle game over screen buttons (drawn on canvas, so use canvas-relative touchX/Y)
                 if (game.lives <= 0) {
                     if (game.continueButton && touchX >= game.continueButton.x && touchX <= game.continueButton.x + game.continueButton.width &&
@@ -1549,9 +1601,10 @@
                             game.running = true;
                             game.paused = false;
                             mainUiOverlay.style.display = 'none'; // Hide overlay
-                            backgroundMusic.play().then(() => {
-                                backgroundMusic.volume = 0.3;
-                            }).catch(e => console.log("Background music autoplay failed:", e));
+                            if (game.isSoundOn) { // Only start music if sound is enabled
+                                backgroundMusic.startContinuous();
+                                backgroundMusic.setVolume(0.3);
+                            }
                             lastTime = performance.now();
                             requestAnimationFrame(game.gameLoop.bind(game));
                         }
@@ -1586,12 +1639,7 @@
                 if (!game.paused && game.running) {
                     const angle = Utils.angleBetween(game.player.x, game.player.y, touchX, touchY);
                     game.bullets.push(new Bullet(game.player.x, game.player.y, angle));
-                    try {
-                        shootSound.currentTime = 0;
-                        shootSound.play();
-                    } catch (e) {
-                        console.error("Error playing shoot sound:", e);
-                    }
+                    shootSound.play();
                 }
             }
         }, { passive: false }); // Set to false to allow preventDefault
@@ -1638,6 +1686,28 @@
             game.start();
             mainUiOverlay.style.display = "none"; // Hide main UI overlay after starting
         });
+
+        // Sound Toggle Button Listener
+        soundToggleBtn.addEventListener("click", () => {
+            if (game.isSoundOn) {
+                backgroundMusic.stopContinuous(); // Stop continuous sound
+                backgroundMusic.setVolume(0);
+                shootSound.setVolume(0);
+                enemyHitSound.setVolume(0);
+                playerHitSound.setVolume(0);
+                game.isSoundOn = false;
+                soundToggleBtn.textContent = "Start Sound";
+            } else {
+                backgroundMusic.startContinuous(); // Start continuous sound
+                backgroundMusic.setVolume(0.3); // Restore desired volume
+                shootSound.setVolume(0.5); // Restore original volumes
+                enemyHitSound.setVolume(0.5);
+                playerHitSound.setVolume(0.6);
+                game.isSoundOn = true;
+                soundToggleBtn.textContent = "Mute Sound";
+            }
+        });
+
 
         // Show tutorial on first load
         if (tutorialVisible) {
