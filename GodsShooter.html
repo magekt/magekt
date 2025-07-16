@@ -10,10 +10,10 @@
             background: #000;
             overflow: hidden;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            width: 100vw;
+            flex-direction: column; /* Stack elements vertically */
+            justify-content: flex-start; /* Align content to the top */
+            align-items: center; /* Center horizontally */
+            min-height: 100vh; /* Ensure body takes full viewport height */
             font-family: 'Inter', sans-serif; /* Using Inter font */
         }
         canvas {
@@ -22,24 +22,27 @@
             touch-action: none; /* Prevents default browser touch gestures */
             border-radius: 10px; /* Rounded corners for the canvas */
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.5); /* Glowing border */
-            /* Fixed size as requested */
-            width: 340px;
-            height: 150px;
+            width: 340px; /* Fixed width */
+            height: 340px; /* Fixed height as requested */
+            margin-top: 20px; /* Small margin from the top */
         }
-        #ui {
+
+        /* Overlay for Start Button and Full Leaderboard */
+        #main-ui-overlay {
             position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #fff;
-            font-family: 'Inter', sans-serif;
-            z-index: 10;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
+            justify-content: center;
             align-items: center;
-            gap: 10px;
+            z-index: 10; /* Above canvas, below tutorial */
+            background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
+            display: none; /* Hidden by default */
         }
-        #ui button {
+        #main-ui-overlay button {
             background-color: #007bff;
             color: white;
             border: none;
@@ -49,18 +52,19 @@
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
             transition: background-color 0.3s ease, transform 0.2s ease;
-            position: relative; /* For bubble effect */
-            overflow: hidden; /* For bubble effect */
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 10px; /* Space between button and leaderboard */
         }
-        #ui button:hover {
+        #main-ui-overlay button:hover {
             background-color: #0056b3;
             transform: translateY(-2px);
         }
-        #ui button:active {
+        #main-ui-overlay button:active {
             transform: translateY(1px);
         }
         /* Bubble effect for buttons */
-        #ui button::before {
+        #main-ui-overlay button::before {
             content: '';
             position: absolute;
             top: 50%;
@@ -73,28 +77,29 @@
             opacity: 0;
             transition: width 0.4s ease-out, height 0.4s ease-out, opacity 0.4s ease-out;
         }
-        #ui button:active::before {
+        #main-ui-overlay button:active::before {
             width: 200%;
             height: 200%;
             opacity: 1;
         }
 
-        #ui ul {
+        #main-ui-overlay ul {
             list-style: none;
             padding: 0;
-            margin: 5px 0 0 0;
+            margin: 0;
             background-color: rgba(0, 0, 0, 0.6);
             border-radius: 8px;
             padding: 10px 20px;
             box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
         }
-        #ui ul li {
+        #main-ui-overlay ul li {
             padding: 5px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            font-size: 16px;
-            color: #e0e0e0;
         }
-        #ui ul li:last-child {
+        #main-ui-overlay ul li:last-child {
             border-bottom: none;
         }
 
@@ -118,26 +123,26 @@
             box-sizing: border-box;
         }
         #tutorialOverlay h2 {
-            font-size: 1.3em;
+            font-size: 1.3em; /* Adjusted for smaller screen */
             margin-bottom: 13px;
             color: #00ffff;
             text-shadow: 0 0 10px #00ffff;
         }
         #tutorialOverlay p {
-            font-size: 0.8em;
+            font-size: 0.8em; /* Adjusted for smaller screen */
             margin-bottom: 10px;
-            line-height: 0.8;
-            max-width: 600px;
+            line-height: 1.2; /* Adjusted for smaller screen */
+            max-width: 300px; /* Constrain width for smaller screen */
         }
         #tutorialOverlay button {
             background-color: #007bff;
             color: white;
             border: none;
-            padding: 15px 30px;
-            font-size: 20px;
+            padding: 10px 20px; /* Adjusted for smaller screen */
+            font-size: 16px; /* Adjusted for smaller screen */
             border-radius: 8px;
             cursor: pointer;
-            margin-top: 30px;
+            margin-top: 15px; /* Adjusted for smaller screen */
             box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
             transition: background-color 0.3s ease, transform 0.2s ease;
         }
@@ -167,8 +172,9 @@
     </div>
 
     <canvas id="gameCanvas"></canvas>
-    <div id="ui">
-        <button id="startBtn" style="display: none;">Start Game</button>
+
+    <div id="main-ui-overlay">
+        <button id="startBtn">Start Game</button>
         <ul id="lbListEl"></ul>
     </div>
 
@@ -192,25 +198,25 @@
 
         // Configuration for game constants.
         const config = {
-            canvas: { width: 340, height: 150 }, // Fixed size as requested
-            player: { size: 10, acceleration: 600, friction: 0.9, maxSpeed: 150, color: "#00ff00", name: "GANESH", level: 1 }, // Adjusted player size/speed for smaller canvas
-            bullet: { size: 2, speed: 250, lifetime: 1000, color: "#ffffff" }, // Adjusted bullet size/speed
+            canvas: { width: 340, height: 340 }, // Fixed size as requested
+            player: { size: 15, acceleration: 600, friction: 0.9, maxSpeed: 200, color: "#00ff00", name: "GANESH", level: 1 }, // Adjusted player size/speed for smaller canvas
+            bullet: { size: 3, speed: 350, lifetime: 1000, color: "#ffffff" }, // Adjusted bullet size/speed
             divine: {
                 types: ["Loki", "Thor", "Buddha", "Sun", "Hermes", "Zeus", "Odin", "Ra", "Anubis"],
                 boss: "Boss",
-                baseSize: 15, // Adjusted base enemy size
+                baseSize: 20, // Adjusted base enemy size
                 vanishInterval: 2000,
                 vanishDuration: 500,
                 lightningDelay: 1200,
-                circleGrowth: 15, // Adjusted circle growth
+                circleGrowth: 20, // Adjusted circle growth
                 sunHits: 3
             },
-            enemy: { spawnInterval: 2000, baseSpeed: 40, speedIncrease: 2, maxSpeed: 75 }, // Adjusted enemy speed
-            boss: { color: "#ff00ff", size: 25, health: 5, speed: 25 }, // Adjusted boss size/speed
-            particles: { count: 10, size: 1.5, lifetime: 500, colors: ["#ff4444", "#ffcc00", "#00aaff"] }, // Adjusted particle size/count
-            levelUpScore: 500, // Adjusted level up score
-            continueCost: 250, // Adjusted continue cost
-            powerUpSpawnInterval: 5000 // Adjusted power-up spawn interval
+            enemy: { spawnInterval: 2000, baseSpeed: 60, speedIncrease: 2, maxSpeed: 100 }, // Adjusted enemy speed
+            boss: { color: "#ff00ff", size: 35, health: 5, speed: 35 }, // Adjusted boss size/speed
+            particles: { count: 15, size: 2, lifetime: 500, colors: ["#ff4444", "#ffcc00", "#00aaff"] }, // Adjusted particle size/count
+            levelUpScore: 750, // Adjusted level up score
+            continueCost: 350, // Adjusted continue cost
+            powerUpSpawnInterval: 7000 // Adjusted power-up spawn interval
         };
 
         // Canvas setup.
@@ -225,13 +231,61 @@
         // No need to listen for window resize if fixed size
         // window.addEventListener("resize", resizeCanvas);
 
-        // Audio assets (placeholders - replace with actual paths if available)
-        const shootSound = new Audio("https://cdn.jsdelivr.net/gh/Tonejs/Tone.js/examples/audio/505_kick.mp3"); // Placeholder
-        const enemyHitSound = new Audio("https://cdn.jsdelivr.net/gh/Tonejs/Tone.js/examples/audio/505_snare.mp3"); // Placeholder
-        const playerHitSound = new Audio("https://cdn.jsdelivr.net/gh/Tonejs/Tone.js/examples/audio/505_clap.mp3"); // Placeholder
-        const backgroundMusic = new Audio("https://cdn.jsdelivr.net/gh/Tonejs/Tone.js/examples/audio/sfx/glitch.mp3"); // Placeholder
+        // Function to generate a simple audio buffer (sine wave)
+        function createAudioBuffer(frequency, duration, sampleRate = 44100) {
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            const numSamples = sampleRate * duration;
+            const buffer = context.createBuffer(1, numSamples, sampleRate);
+            const data = buffer.getChannelData(0);
+
+            for (let i = 0; i < numSamples; i++) {
+                data[i] = Math.sin(2 * Math.PI * frequency * (i / sampleRate));
+            }
+
+            // Encode to WAV data URI
+            const wavHeader = new ArrayBuffer(44);
+            const view = new DataView(wavHeader);
+
+            // RIFF chunk
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + numSamples * 2, true); // ChunkSize
+            writeString(view, 8, 'WAVE');
+
+            // fmt chunk
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true); // Subchunk1Size (16 for PCM)
+            view.setUint16(20, 1, true); // AudioFormat (1 for PCM)
+            view.setUint32(24, sampleRate, true); // NumChannels
+            view.setUint32(28, sampleRate * 2, true); // SampleRate
+            view.setUint16(32, 2, true); // ByteRate (SampleRate * NumChannels * BitsPerSample/8)
+            view.setUint16(34, 16, true); // BlockAlign (NumChannels * BitsPerSample/8)
+
+            // data chunk
+            writeString(view, 36, 'data');
+            view.setUint32(40, numSamples * 2, true); // Subchunk2Size
+
+            const pcmData = new Int16Array(numSamples);
+            for (let i = 0; i < numSamples; i++) {
+                pcmData[i] = Math.max(-1, Math.min(1, data[i])) * 0x7FFF; // Convert to 16-bit PCM
+            }
+
+            const blob = new Blob([wavHeader, pcmData], { type: 'audio/wav' });
+            return URL.createObjectURL(blob);
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+
+        // Audio assets using generated sounds
+        const shootSound = new Audio(createAudioBuffer(880, 0.05)); // High frequency, short duration
+        const enemyHitSound = new Audio(createAudioBuffer(440, 0.1)); // Mid frequency, short duration
+        const playerHitSound = new Audio(createAudioBuffer(220, 0.2)); // Low frequency, slightly longer duration
+        const backgroundMusic = new Audio(createAudioBuffer(110, 5)); // Very low frequency, longer duration for background
         backgroundMusic.loop = true;
-        backgroundMusic.volume = 0.3; // Lower volume for background music
+        backgroundMusic.volume = 0; // Start at 0 volume to comply with autoplay policies
 
         // Global joystick for mobile.
         let joystick = { active: false, touchId: null, startX: 0, startY: 0, currentX: 0, currentY: 0, dx: 0, dy: 0 };
@@ -242,6 +296,7 @@
         const lbListEl = document.getElementById("lbListEl");
         const tutorialOverlay = document.getElementById("tutorialOverlay");
         const closeTutorialBtn = document.getElementById("closeTutorialBtn");
+        const mainUiOverlay = document.getElementById("main-ui-overlay"); // Get the new overlay div
 
         // Starfield background.
         class Star {
@@ -871,14 +926,17 @@
                 // For shield perk, store initial durability to calculate alpha
                 this.playerPerks.initialShieldDurability = 5;
 
-                for (let i = 0; i < 50; i++) { this.stars.push(new Star()); } // Reduced stars for smaller canvas
+                for (let i = 0; i < 75; i++) { this.stars.push(new Star()); } // Adjusted stars for new canvas size
             }
             start() {
                 this.reset();
                 this.running = true;
                 this.paused = false;
                 lastTime = performance.now();
-                backgroundMusic.play().catch(e => console.log("Music play failed:", e)); // Handle potential autoplay policy issues
+                // Try playing music and set volume after successful play
+                backgroundMusic.play().then(() => {
+                    backgroundMusic.volume = 0.3;
+                }).catch(e => console.log("Background music autoplay failed:", e));
                 requestAnimationFrame(this.gameLoop.bind(this));
             }
             reset() {
@@ -907,19 +965,19 @@
                 this.shopOpen = true;
                 this.paused = true; // Pause game when shop is open
                 const possibleUpgrades = [
-                    { name: "Increase Bullet Speed", cost: 50, effect: () => { config.bullet.speed *= 1.1; } }, // Adjusted cost
-                    { name: "Increase Player Speed", cost: 50, effect: () => { config.player.maxSpeed += 10; } }, // Adjusted cost
+                    { name: "Increase Bullet Speed", cost: 50, effect: () => { config.bullet.speed *= 1.1; } },
+                    { name: "Increase Player Speed", cost: 50, effect: () => { config.player.maxSpeed += 10; } },
                     {
-                        name: "Improve Shield", cost: 75, effect: () => { // Adjusted cost
-                            if (this.playerPerks.shield) { this.playerPerks.shieldDurability += 1; } // Adjusted durability increase
-                            else { this.playerPerks.shield = true; this.playerPerks.shieldDurability = this.playerPerks.initialShieldDurability; } // Initialize shield
+                        name: "Improve Shield", cost: 75, effect: () => {
+                            if (this.playerPerks.shield) { this.playerPerks.shieldDurability += 1; }
+                            else { this.playerPerks.shield = true; this.playerPerks.shieldDurability = this.playerPerks.initialShieldDurability; }
                         }
                     },
-                    { name: "Boost Score Multiplier", cost: 100, effect: () => { this.scoreMultiplier *= 1.1; } }, // Adjusted cost/multiplier
-                    { name: "Extra Life", cost: 150, effect: () => { this.lives++; } }, // Adjusted cost
-                    { name: "Invisibility Perk", cost: 125, effect: () => { this.playerPerks.invisibility = true; this.playerPerks.invisibilityDuration = 3000; this.playerPerks.invisibilityStart = performance.now(); } }, // Adjusted cost/duration
-                    { name: "Magic Bullets", cost: 200, effect: () => { this.playerPerks.magicBullets = true; } }, // Adjusted cost
-                    { name: "Magnetic Field", cost: 75, effect: () => { this.playerPerks.magnetic = true; } } // New perk, adjusted cost
+                    { name: "Boost Score Multiplier", cost: 100, effect: () => { this.scoreMultiplier *= 1.1; } },
+                    { name: "Extra Life", cost: 150, effect: () => { this.lives++; } },
+                    { name: "Invisibility Perk", cost: 125, effect: () => { this.playerPerks.invisibility = true; this.playerPerks.invisibilityDuration = 3000; this.playerPerks.invisibilityStart = performance.now(); } },
+                    { name: "Magic Bullets", cost: 200, effect: () => { this.playerPerks.magicBullets = true; } },
+                    { name: "Magnetic Field", cost: 75, effect: () => { this.playerPerks.magnetic = true; } }
                 ];
                 this.upgradeOptions = [];
                 // Select 3 random unique upgrades
@@ -966,7 +1024,7 @@
                         bullet.update(effectiveDt);
                         // Remove bullets that are too old or off-screen
                         return (timestamp - bullet.created) < bullet.lifetime &&
-                            bullet.x > -10 && bullet.x < config.canvas.width + 10 && // Adjusted off-screen check
+                            bullet.x > -10 && bullet.x < config.canvas.width + 10 &&
                             bullet.y > -10 && bullet.y < config.canvas.height + 10;
                     });
 
@@ -1004,7 +1062,7 @@
                     // Magic Bullet perk logic: auto-fire homing bullets at nearest enemy
                     if (this.playerPerks.magicBullets) {
                         // Fire a magic bullet every 1.2 seconds (or config.divine.lightningDelay)
-                        if (now - this.lastMagicBulletTime > config.divine.lightningDelay / 2 && this.enemies.length > 0) { // Faster magic bullets
+                        if (now - this.lastMagicBulletTime > config.divine.lightningDelay / 2 && this.enemies.length > 0) {
                             let nearest = this.enemies[0];
                             let nearestDist = Utils.distance(this.player.x, this.player.y, nearest.x, nearest.y);
                             for (let enemy of this.enemies) {
@@ -1083,7 +1141,10 @@
                 // Draw joystick if active.
                 if (joystick.active) {
                     ctx.beginPath();
-                    ctx.arc(joystick.startX, joystick.startY, 20, 0, Math.PI * 2); // Adjusted joystick size
+                    // Joystick drawn relative to bottom-left of canvas
+                    const joystickBaseX = config.canvas.width * 0.2;
+                    const joystickBaseY = config.canvas.height * 0.8;
+                    ctx.arc(joystickBaseX, joystickBaseY, 20, 0, Math.PI * 2); // Adjusted joystick size
                     ctx.fillStyle = "rgba(255,255,255,0.2)";
                     ctx.fill();
                     let dx = joystick.currentX - joystick.startX;
@@ -1092,26 +1153,40 @@
                     let maxDist = 20; // Adjusted maxDist
                     if (dist > maxDist) { dx = dx / dist * maxDist; dy = dy / dist * maxDist; }
                     ctx.beginPath();
-                    ctx.arc(joystick.startX + dx, joystick.startY + dy, 10, 0, Math.PI * 2); // Adjusted joystick knob size
+                    ctx.arc(joystickBaseX + dx, joystickBaseY + dy, 10, 0, Math.PI * 2); // Adjusted joystick knob size
                     ctx.fillStyle = "rgba(255,255,255,0.5)";
                     ctx.fill();
                 }
+
+                // Draw Top 2 High Scores at bottom right
+                let leaderboard = JSON.parse(localStorage.getItem("divineShooterLeaderboard")) || [];
+                if (leaderboard.length > 0) {
+                    ctx.fillStyle = "#fff";
+                    ctx.font = "10px 'Inter', sans-serif";
+                    ctx.textAlign = "right";
+                    ctx.fillText("High Scores:", config.canvas.width - 10, config.canvas.height - 30);
+                    for (let i = 0; i < Math.min(2, leaderboard.length); i++) { // Limit to top 2
+                        const entry = leaderboard[i];
+                        ctx.fillText(`${i + 1}. ${entry.name}: ${entry.score}`, config.canvas.width - 10, config.canvas.height - 15 + (i * 10));
+                    }
+                }
+
 
                 // Draw shop overlay
                 if (this.shopOpen) {
                     this.ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
                     this.ctx.fillRect(0, 0, config.canvas.width, config.canvas.height);
                     this.ctx.fillStyle = "#fff";
-                    this.ctx.font = "bold 1.2em 'Inter', sans-serif"; // Adjusted font size
+                    this.ctx.font = "bold 1.2em 'Inter', sans-serif";
                     this.ctx.textAlign = "center";
-                    this.ctx.fillText("Upgrade Shop", config.canvas.width / 2, config.canvas.height / 2 - 40); // Adjusted Y position
-                    this.ctx.font = "0.8em 'Inter', sans-serif"; // Adjusted font size
-                    this.ctx.fillText(`Your Score: ${this.score}`, config.canvas.width / 2, config.canvas.height / 2 - 20); // Adjusted Y position
+                    this.ctx.fillText("Upgrade Shop", config.canvas.width / 2, config.canvas.height / 2 - 40);
+                    this.ctx.font = "0.8em 'Inter', sans-serif";
+                    this.ctx.fillText(`Your Score: ${this.score}`, config.canvas.width / 2, config.canvas.height / 2 - 20);
 
-                    const optionWidth = Math.min(150, config.canvas.width * 0.7); // Adjusted option width
-                    const optionHeight = 30; // Adjusted option height
-                    const startY = config.canvas.height / 2 - 5; // Adjusted start Y
-                    const padding = 10; // Adjusted padding
+                    const optionWidth = Math.min(150, config.canvas.width * 0.7);
+                    const optionHeight = 30;
+                    const startY = config.canvas.height / 2 - 5;
+                    const padding = 10;
 
                     this.upgradeOptions.forEach((option, index) => {
                         const x = config.canvas.width / 2 - optionWidth / 2;
@@ -1121,20 +1196,19 @@
                         option.width = optionWidth;
                         option.height = optionHeight;
 
-                        // Button styling based on affordability
                         ctx.fillStyle = this.score >= option.cost ? "#007bff" : "#888";
                         ctx.beginPath();
-                        ctx.roundRect(x, y, optionWidth, optionHeight, 5); // Rounded rectangle for buttons, adjusted radius
+                        ctx.roundRect(x, y, optionWidth, optionHeight, 5);
                         ctx.fill();
                         ctx.strokeStyle = "#fff";
-                        ctx.lineWidth = 1; // Adjusted line width
+                        ctx.lineWidth = 1;
                         ctx.stroke();
 
                         ctx.fillStyle = "#fff";
-                        ctx.font = "bold 0.7em 'Inter', sans-serif"; // Adjusted font size
-                        ctx.fillText(option.name, x + optionWidth / 2, y + optionHeight / 2 - 5); // Adjusted text position
-                        ctx.font = "0.6em 'Inter', sans-serif"; // Adjusted font size
-                        ctx.fillText(`Cost: ${option.cost} Score`, x + optionWidth / 2, y + optionHeight / 2 + 8); // Adjusted text position
+                        ctx.font = "bold 0.7em 'Inter', sans-serif";
+                        ctx.fillText(option.name, x + optionWidth / 2, y + optionHeight / 2 - 5);
+                        ctx.font = "0.6em 'Inter', sans-serif";
+                        ctx.fillText(`Cost: ${option.cost} Score`, x + optionWidth / 2, y + optionHeight / 2 + 8);
                     });
                 }
 
@@ -1143,46 +1217,46 @@
                     this.ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
                     this.ctx.fillRect(0, 0, config.canvas.width, config.canvas.height);
                     this.ctx.fillStyle = "#fff";
-                    this.ctx.font = "bold 1.5em 'Inter', sans-serif"; // Adjusted font size
+                    this.ctx.font = "bold 1.5em 'Inter', sans-serif";
                     this.ctx.textAlign = "center";
-                    this.ctx.fillText("GAME OVER", config.canvas.width / 2, config.canvas.height / 2 - 30); // Adjusted Y position
-                    this.ctx.font = "bold 0.8em 'Inter', sans-serif"; // Adjusted font size
-                    this.ctx.fillText(`Final Score: ${this.score}`, config.canvas.width / 2, config.canvas.height / 2 - 5); // Adjusted Y position
+                    this.ctx.fillText("GAME OVER", config.canvas.width / 2, config.canvas.height / 2 - 30);
+                    this.ctx.font = "bold 0.8em 'Inter', sans-serif";
+                    this.ctx.fillText(`Final Score: ${this.score}`, config.canvas.width / 2, config.canvas.height / 2 - 5);
 
                     // "Continue?" button
-                    const continueButtonWidth = Math.min(120, config.canvas.width * 0.6); // Adjusted width
-                    const continueButtonHeight = 30; // Adjusted height
+                    const continueButtonWidth = Math.min(120, config.canvas.width * 0.6);
+                    const continueButtonHeight = 30;
                     const continueButtonX = config.canvas.width / 2 - continueButtonWidth / 2;
-                    const continueButtonY = config.canvas.height / 2 + 15; // Adjusted Y position
+                    const continueButtonY = config.canvas.height / 2 + 15;
 
-                    ctx.fillStyle = this.score >= config.continueCost ? "#00ff00" : "#ff0000"; // Green if affordable, red if not
+                    ctx.fillStyle = this.score >= config.continueCost ? "#00ff00" : "#ff0000";
                     ctx.beginPath();
-                    ctx.roundRect(continueButtonX, continueButtonY, continueButtonWidth, continueButtonHeight, 5); // Adjusted radius
+                    ctx.roundRect(continueButtonX, continueButtonY, continueButtonWidth, continueButtonHeight, 5);
                     ctx.fill();
                     ctx.strokeStyle = "#fff";
-                    ctx.lineWidth = 1; // Adjusted line width
+                    ctx.lineWidth = 1;
                     ctx.stroke();
                     ctx.fillStyle = "#000";
-                    ctx.font = "bold 0.7em 'Inter', sans-serif"; // Adjusted font size
-                    ctx.fillText(`Continue? (${config.continueCost} Score)`, config.canvas.width / 2, continueButtonY + 18); // Adjusted text position
+                    ctx.font = "bold 0.7em 'Inter', sans-serif";
+                    ctx.fillText(`Continue? (${config.continueCost} Score)`, config.canvas.width / 2, continueButtonY + 18);
                     game.continueButton = { x: continueButtonX, y: continueButtonY, width: continueButtonWidth, height: continueButtonHeight };
 
                     // "Restart" button
-                    const restartButtonWidth = Math.min(120, config.canvas.width * 0.6); // Adjusted width
-                    const restartButtonHeight = 30; // Adjusted height
+                    const restartButtonWidth = Math.min(120, config.canvas.width * 0.6);
+                    const restartButtonHeight = 30;
                     const restartButtonX = config.canvas.width / 2 - restartButtonWidth / 2;
-                    const restartButtonY = config.canvas.height / 2 + 55; // Adjusted Y position
+                    const restartButtonY = config.canvas.height / 2 + 55;
 
                     ctx.fillStyle = "#007bff";
                     ctx.beginPath();
-                    ctx.roundRect(restartButtonX, restartButtonY, restartButtonWidth, restartButtonHeight, 5); // Adjusted radius
+                    ctx.roundRect(restartButtonX, restartButtonY, restartButtonWidth, restartButtonHeight, 5);
                     ctx.fill();
                     ctx.strokeStyle = "#fff";
-                    ctx.lineWidth = 1; // Adjusted line width
+                    ctx.lineWidth = 1;
                     ctx.stroke();
                     ctx.fillStyle = "#000";
-                    ctx.font = "bold 0.7em 'Inter', sans-serif"; // Adjusted font size
-                    ctx.fillText("Restart Game", config.canvas.width / 2, restartButtonY + 18); // Adjusted text position
+                    ctx.font = "bold 0.7em 'Inter', sans-serif";
+                    ctx.fillText("Restart Game", config.canvas.width / 2, restartButtonY + 18);
                     game.restartButton = { x: restartButtonX, y: restartButtonY, width: restartButtonWidth, height: restartButtonHeight };
                 }
             }
@@ -1213,8 +1287,13 @@
                                 hitEnemy = true; // Bullet is consumed
                                 return true; // Enemy remains
                             }
-                            shootSound.currentTime = 0; // Play sound on hit
-                            shootSound.play();
+                            // Play sound on hit, with error handling
+                            try {
+                                shootSound.currentTime = 0;
+                                shootSound.play();
+                            } catch (e) {
+                                console.error("Error playing shoot sound:", e);
+                            }
                             enemy.hp--;
                             for (let i = 0; i < config.particles.count; i++) {
                                 this.particles.push(new Particle(enemy.x, enemy.y));
@@ -1240,8 +1319,13 @@
                 this.enemies = this.enemies.filter(enemy => {
                     if (enemy.visible && Utils.distance(this.player.x, this.player.y, enemy.x, enemy.y) < config.player.size + enemy.size) {
                         if (!this.playerPerks.invisibility) { // Player cannot be hit if invisible
-                            playerHitSound.currentTime = 0;
-                            playerHitSound.play();
+                            // Play sound on hit, with error handling
+                            try {
+                                playerHitSound.currentTime = 0;
+                                playerHitSound.play();
+                            } catch (e) {
+                                console.error("Error playing player hit sound:", e);
+                            }
                             this.loseLife(enemy.baseHit);
                             return false; // Remove enemy on collision
                         }
@@ -1282,6 +1366,7 @@
                 backgroundMusic.pause();
                 backgroundMusic.currentTime = 0; // Reset music
                 this.updateLeaderboard(config.player.name, this.score);
+                mainUiOverlay.style.display = 'flex'; // Show the overlay for game over
             }
             updateLevel() {
                 // Level up when score reaches the threshold
@@ -1317,7 +1402,7 @@
                 leaderboard.sort((a, b) => b.score - a.score); // Sort descending
                 leaderboard = leaderboard.slice(0, 5); // Keep top 5
                 localStorage.setItem("divineShooterLeaderboard", JSON.stringify(leaderboard));
-                this.drawLeaderboard();
+                this.drawLeaderboard(); // Update the full leaderboard on the overlay
             }
             drawLeaderboard() {
                 lbListEl.innerHTML = "";
@@ -1351,11 +1436,14 @@
             if (e.key === " ") { // Spacebar for shooting
                 e.preventDefault(); // Prevent scrolling
                 if (!game.paused && !game.shopOpen && game.running) {
-                    // Shoot towards mouse position if mouse moved, otherwise straight ahead (or last known dir)
                     const angle = Utils.angleBetween(game.player.x, game.player.y, mouseX, mouseY);
                     game.bullets.push(new Bullet(game.player.x, game.player.y, angle));
-                    shootSound.currentTime = 0;
-                    shootSound.play();
+                    try {
+                        shootSound.currentTime = 0;
+                        shootSound.play();
+                    } catch (e) {
+                        console.error("Error playing shoot sound:", e);
+                    }
                 }
             }
             if (e.key === "p" || e.key === "P") {
@@ -1395,7 +1483,10 @@
                         game.lives = 1; // Give one life to continue
                         game.running = true;
                         game.paused = false;
-                        backgroundMusic.play();
+                        mainUiOverlay.style.display = 'none'; // Hide overlay
+                        backgroundMusic.play().then(() => {
+                            backgroundMusic.volume = 0.3;
+                        }).catch(e => console.log("Background music autoplay failed:", e));
                         lastTime = performance.now();
                         requestAnimationFrame(game.gameLoop.bind(game));
                     }
@@ -1404,13 +1495,18 @@
                 if (game.restartButton && clickX >= game.restartButton.x && clickX <= game.restartButton.x + game.restartButton.width &&
                     clickY >= game.restartButton.y && clickY <= game.restartButton.y + game.restartButton.height) {
                     game.start(); // Restart the game
+                    mainUiOverlay.style.display = 'none'; // Hide overlay
                 }
             } else if (!game.paused && game.running) {
                 // Normal shooting
                 const angle = Utils.angleBetween(game.player.x, game.player.y, clickX, clickY);
                 game.bullets.push(new Bullet(game.player.x, game.player.y, angle));
-                shootSound.currentTime = 0;
-                shootSound.play();
+                try {
+                    shootSound.currentTime = 0;
+                    shootSound.play();
+                } catch (e) {
+                    console.error("Error playing shoot sound:", e);
+                }
             }
         });
 
@@ -1428,22 +1524,22 @@
                 if (e.touches[0].target.id === 'closeTutorialBtn') {
                     tutorialOverlay.style.display = 'none';
                     tutorialVisible = false;
-                    startBtn.style.display = 'block'; // Show start button after tutorial
+                    mainUiOverlay.style.display = 'flex'; // Show main UI overlay with start button
                 }
                 return;
             }
 
             if (!game.running) {
-                // Handle "Start" button for initial game start on mobile
-                // Need to adjust button coordinates relative to canvas if they are positioned absolutely
-                // For simplicity, assuming UI buttons are outside canvas and use clientX/Y
-                if (startBtn.style.display !== 'none' && e.touches[0].clientX > startBtn.offsetLeft && e.touches[0].clientX < startBtn.offsetLeft + startBtn.offsetWidth &&
-                    e.touches[0].clientY > startBtn.offsetTop && e.touches[0].clientY < startBtn.offsetTop + startBtn.offsetHeight) {
+                // Handle "Start" button click on the overlay
+                // Check if the touch is within the bounds of the startBtn element
+                if (startBtn.offsetParent === mainUiOverlay && // Ensure startBtn is currently visible in the overlay
+                    touchX >= startBtn.offsetLeft && touchX <= startBtn.offsetLeft + startBtn.offsetWidth &&
+                    touchY >= startBtn.offsetTop && touchY <= startBtn.offsetTop + startBtn.offsetHeight) {
                     game.start();
-                    startBtn.style.display = 'none'; // Hide start button
+                    mainUiOverlay.style.display = 'none'; // Hide overlay after starting
                     return;
                 }
-                // Handle game over screen buttons
+                // Handle game over screen buttons (drawn on canvas, so use canvas-relative touchX/Y)
                 if (game.lives <= 0) {
                     if (game.continueButton && touchX >= game.continueButton.x && touchX <= game.continueButton.x + game.continueButton.width &&
                         touchY >= game.continueButton.y && touchY <= game.continueButton.y + game.continueButton.height) {
@@ -1452,7 +1548,10 @@
                             game.lives = 1;
                             game.running = true;
                             game.paused = false;
-                            backgroundMusic.play();
+                            mainUiOverlay.style.display = 'none'; // Hide overlay
+                            backgroundMusic.play().then(() => {
+                                backgroundMusic.volume = 0.3;
+                            }).catch(e => console.log("Background music autoplay failed:", e));
                             lastTime = performance.now();
                             requestAnimationFrame(game.gameLoop.bind(game));
                         }
@@ -1460,6 +1559,7 @@
                     if (game.restartButton && touchX >= game.restartButton.x && touchX <= game.restartButton.x + game.restartButton.width &&
                         touchY >= game.restartButton.y && touchY <= game.restartButton.y + game.restartButton.height) {
                         game.start();
+                        mainUiOverlay.style.display = 'none'; // Hide overlay
                     }
                 }
                 return;
@@ -1486,8 +1586,12 @@
                 if (!game.paused && game.running) {
                     const angle = Utils.angleBetween(game.player.x, game.player.y, touchX, touchY);
                     game.bullets.push(new Bullet(game.player.x, game.player.y, angle));
-                    shootSound.currentTime = 0;
-                    shootSound.play();
+                    try {
+                        shootSound.currentTime = 0;
+                        shootSound.play();
+                    } catch (e) {
+                        console.error("Error playing shoot sound:", e);
+                    }
                 }
             }
         }, { passive: false }); // Set to false to allow preventDefault
@@ -1527,21 +1631,21 @@
         closeTutorialBtn.addEventListener("click", () => {
             tutorialOverlay.style.display = 'none';
             tutorialVisible = false;
-            startBtn.style.display = 'block'; // Show start button after tutorial
+            mainUiOverlay.style.display = 'flex'; // Show main UI overlay with start button
         });
 
         startBtn.addEventListener("click", () => {
             game.start();
-            startBtn.style.display = "none";
+            mainUiOverlay.style.display = "none"; // Hide main UI overlay after starting
         });
 
         // Show tutorial on first load
         if (tutorialVisible) {
             tutorialOverlay.style.display = 'flex';
-            startBtn.style.display = 'none'; // Hide start button until tutorial is closed
+            mainUiOverlay.style.display = 'none'; // Hide main UI overlay until tutorial is closed
         } else {
             tutorialOverlay.style.display = 'none';
-            startBtn.style.display = 'block';
+            mainUiOverlay.style.display = 'flex'; // Show main UI overlay with start button
         }
 
         // Initial leaderboard draw
@@ -1549,10 +1653,7 @@
 
         // Start the game loop only after the tutorial is closed or if it's not visible
         window.onload = function () {
-            if (!tutorialVisible) {
-                // If tutorial is not visible, the game can be started directly via the start button
-                // or if the user clicks the start button.
-            }
+            // This onload is mainly for initial setup. Game loop starts via start button click.
         }
     </script>
 </body>
