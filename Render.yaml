@@ -7,10 +7,10 @@
 #    plan: free
 
 services:
- - type: static
-    name: magekt-static
+ -  type: static
+    name: my-static-site
     env: static
-    buildCommand: npm run build       # Adjust if you're using yarn, vite, etc.
-    staticPublishPath: build          # Common folder for React/Vite static output
-    branch: main                      # Change to your correct branch name
+    buildCommand: ""
+    staticPublishPath: .
+    branch: main
     repo: https://github.com/magekt/magekt/TextBasedGameMain.py
