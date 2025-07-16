@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>magekt's HTML Index</title>
+    <title>magekt's Site Index</title>
     <style>
         :root {
             --primary-color: #0366d6;
@@ -12,6 +12,7 @@
             --text-color: #24292e;
             --border-color: #e1e4e8;
             --hover-color: #f6f8fa;
+            --time-color: #28a745;
         }
 
         body {
@@ -41,10 +42,26 @@
             margin-bottom: 10px;
         }
 
+        .time-display {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: var(--time-color);
+            display: inline-block;
+            margin: 10px 0;
+        }
+
         .meta-info {
             color: var(--secondary-color);
             font-size: 0.9em;
-            margin-bottom: 20px;
+            margin: 20px 0;
+            background: var(--hover-color);
+            padding: 15px;
+            border-radius: 6px;
+            text-align: left;
         }
 
         #searchInput {
@@ -68,24 +85,28 @@
             border: 1px solid var(--border-color);
             border-radius: 6px;
             margin-bottom: 10px;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
 
         .file-item:hover {
             background: var(--hover-color);
             transform: translateX(5px);
+            border-color: var(--primary-color);
         }
 
         .file-link {
-            display: block;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             padding: 15px 20px;
             color: var(--primary-color);
             text-decoration: none;
             font-weight: 500;
         }
 
-        .file-link:hover {
-            text-decoration: underline;
+        .file-meta {
+            font-size: 0.9em;
+            color: var(--secondary-color);
         }
 
         .empty-message {
@@ -95,24 +116,18 @@
             font-style: italic;
         }
 
-        #lastUpdated {
-            text-align: center;
-            color: var(--secondary-color);
-            font-size: 0.9em;
-            margin-top: 20px;
-        }
-
         @media (max-width: 600px) {
             .container {
                 padding: 10px;
             }
             
-            #searchInput {
-                padding: 10px;
-            }
-            
             .file-link {
-                padding: 12px 15px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .file-meta {
+                margin-top: 5px;
             }
         }
     </style>
@@ -120,37 +135,61 @@
 <body>
     <div class="container">
         <header>
-            <h1>HTML File Index</h1>
+            <h1>Site Index</h1>
+            <div class="time-display" id="utcTime">
+                2025-07-16 06:36:58
+            </div>
             <div class="meta-info">
-                <div>Repository: magekt/magekt</div>
-                <div>Static Service on Render</div>
+                <div>👤 Current User: magekt</div>
+                <div>📁 Repository: magekt/magekt</div>
+                <div>🌐 Environment: Production</div>
             </div>
         </header>
 
         <input type="text" id="searchInput" placeholder="Search HTML files...">
         <ul id="fileList"></ul>
-        <div id="lastUpdated"></div>
     </div>
 
     <script>
+        // Format date exactly as specified: YYYY-MM-DD HH:MM:SS
+        function formatDate(date) {
+            const pad = (num) => String(num).padStart(2, '0');
+            
+            const year = date.getUTCFullYear();
+            const month = pad(date.getUTCMonth() + 1);
+            const day = pad(date.getUTCDate());
+            const hours = pad(date.getUTCHours());
+            const minutes = pad(date.getUTCMinutes());
+            const seconds = pad(date.getUTCSeconds());
+
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        }
+
+        // Update UTC time
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('utcTime').textContent = formatDate(now);
+        }
+
         // Initialize files array
         let files = [];
         
         // Function to get all HTML files from current directory
         async function getHtmlFiles() {
             try {
-                // Get the current directory listing
                 const response = await fetch('.');
                 const text = await response.text();
                 
-                // Create a temporary element to parse the HTML
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(text, 'text/html');
                 
                 // Find all links that end with .html
                 const links = Array.from(doc.getElementsByTagName('a'));
                 files = links
-                    .filter(link => link.href.toLowerCase().endsWith('.html'))
+                    .filter(link => {
+                        const href = link.href.toLowerCase();
+                        return href.endsWith('.html') || href.endsWith('.htm');
+                    })
                     .map(link => {
                         const fileName = link.href.split('/').pop();
                         return {
@@ -159,10 +198,10 @@
                             isIndex: fileName.toLowerCase() === 'index.html'
                         };
                     })
-                    .filter(file => !file.isIndex); // Remove index.html from the list
+                    .filter(file => !file.isIndex) // Remove index.html from the list
+                    .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
 
                 renderFiles(files);
-                updateLastUpdated();
             } catch (error) {
                 console.error('Error fetching files:', error);
                 document.getElementById('fileList').innerHTML = `
@@ -177,7 +216,7 @@
             
             if (filesToShow.length === 0) {
                 fileList.innerHTML = `
-                    <li class="empty-message">No HTML files found</li>
+                    <li class="empty-message">No HTML files found in directory</li>
                 `;
                 return;
             }
@@ -186,7 +225,8 @@
                 .map(file => `
                     <li class="file-item">
                         <a href="${file.path}" class="file-link">
-                            ${file.name}
+                            <span class="file-name">${file.name}</span>
+                            <span class="file-meta">View Page →</span>
                         </a>
                     </li>
                 `)
@@ -202,17 +242,15 @@
             renderFiles(filteredFiles);
         });
 
-        // Update last updated time
-        function updateLastUpdated() {
-            const now = new Date();
-            const formatted = now.toISOString().replace('T', ' ').split('.')[0];
-            document.getElementById('lastUpdated').textContent = `Last Updated: ${formatted} UTC`;
-        }
-
         // Initial load
-        document.addEventListener('DOMContentLoaded', getHtmlFiles);
+        document.addEventListener('DOMContentLoaded', () => {
+            getHtmlFiles();
+            updateTime();
+            // Update time every second
+            setInterval(updateTime, 1000);
+        });
 
-        // Refresh every 5 minutes
+        // Refresh file list every 5 minutes
         setInterval(getHtmlFiles, 300000);
     </script>
 </body>
