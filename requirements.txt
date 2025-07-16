@@ -1,0 +1,9 @@
+# requirements.txt for magekt/magekt
+
+# The Python code in main.py uses:
+# - random (standard library)
+# - time (standard library)
+# - input/output (no external library detected)
+
+# No external Python packages are required for main.py.
+# If you use additional Python files or dependencies elsewhere, please check them directly.
