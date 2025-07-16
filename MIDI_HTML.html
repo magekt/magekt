@@ -847,18 +847,16 @@
          * @returns {Array<string>} A new array with transposed note strings.
          */
         function transposeNotes(notesArray, semitones) {
-            return notesArray.map(noteString => {
-                // Handle empty or invalid note strings gracefully
-                if (!noteString || typeof noteString !== 'string' || noteString.length < 2) {
-                    console.warn(`Invalid note string for transposition: ${noteString}. Skipping.`);
-                    return noteString;
-                }
+            // Filter out any non-string or invalid notes first
+            const validNotes = notesArray.filter(noteString => typeof noteString === 'string' && noteString.length >= 2);
+
+            return validNotes.map(noteString => {
                 const baseNote = noteString.slice(0, -1);
                 const octave = parseInt(noteString.slice(-1));
                 
                 if (!noteToSemitone.hasOwnProperty(baseNote)) {
                     console.warn(`Unknown base note for transposition: ${baseNote}. Returning original.`);
-                    return noteString; // Return original if unknown
+                    return noteString; // Return original if unknown base note
                 }
 
                 let semitoneValue = noteToSemitone[baseNote] + semitones;
@@ -931,6 +929,12 @@
          * @returns {Array<Object>} An array of phrase steps.
          */
         function generateRagaMelody(scale, phraseLength, humanizationFactor) {
+            // Ensure scale is a non-empty array of strings
+            if (!Array.isArray(scale) || scale.length === 0) {
+                console.error("generateRagaMelody received an empty or invalid scale array:", scale);
+                return []; // Return an empty phrase to prevent errors
+            }
+
             const generatedPhrase = [];
             let currentSynthNoteIndex = Math.floor(Math.random() * scale.length); // Start randomly
             let lastSynthDirection = Math.random() < 0.5 ? 1 : -1;
