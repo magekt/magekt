@@ -15,10 +15,43 @@
             color: #e2e8f0; /* Light text */
             font-family: "Inter", sans-serif; /* Preferred font */
             display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden; /* Prevent scrolling */
+            flex-direction: column; /* Stack children vertically */
+            justify-content: center; /* Center content vertically */
+            align-items: center; /* Center content horizontally */
+            overflow: hidden; /* Prevent scrolling on the body */
+            padding: 0.5rem; /* Small padding around the entire game container */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+        .game-container {
+            display: flex;
+            flex-direction: column; /* Stack children vertically */
+            align-items: center; /* Center content horizontally */
+            flex-grow: 1; /* Allow container to take up available vertical space */
+            justify-content: space-between; /* Distribute space between title, canvas, controls */
+            width: 100%; /* Take full width */
+            height: 100%; /* Take full height of parent (body) */
+            max-width: 100%;
+            max-height: 100%; /* Ensure container doesn't exceed viewport height */
+            box-sizing: border-box;
+            padding: 0.5rem; /* Padding inside the container */
+        }
+        .game-title {
+            font-size: 2.5rem; /* Larger title */
+            font-weight: bold;
+            color: #63b3ed; /* Lighter blue for title */
+            margin-bottom: 0.5rem; /* Reduced margin */
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            line-height: 1.1; /* Adjust line height for smaller screens */
+            flex-shrink: 0; /* Prevent title from shrinking */
+        }
+        .game-instructions {
+            font-size: 0.9rem; /* Slightly smaller font for instructions */
+            color: #a0aec0;
+            text-align: center;
+            margin-bottom: 0.8rem; /* Reduced margin */
+            max-width: 90%; /* Prevent text from being too wide on small screens */
+            flex-shrink: 0; /* Prevent instructions from shrinking */
         }
         canvas {
             display: block;
@@ -26,38 +59,53 @@
             background-color: #2d3748; /* Slightly lighter background for canvas */
             border-radius: 0.5rem; /* Rounded corners */
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Soft shadow */
-            max-width: 90vw; /* Max width relative to viewport */
-            max-height: 80vh; /* Max height relative to viewport */
-            width: auto; /* Allow width to adjust */
-            height: auto; /* Allow height to adjust */
+            /* Fixed internal game grid size, but allow the canvas element to shrink/grow */
+            width: 600px; /* Original fixed width for internal drawing */
+            height: 600px; /* Original fixed height for internal drawing */
+            max-width: 100%; /* Allow canvas to shrink to fit container width */
+            max-height: 100%; /* Allow canvas to shrink to fit container height */
+            flex-grow: 1; /* Allow canvas to take up available space */
+            flex-shrink: 1; /* Allow canvas to shrink */
+            min-width: 0; /* Important for flex items to shrink below their content size */
+            min-height: 0; /* Important for flex items to shrink below their content size */
+            object-fit: contain; /* Shrink to fit while maintaining aspect ratio */
             touch-action: none; /* Prevent default touch actions like scrolling/zooming */
         }
-        .game-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem; /* Space between elements */
-            padding: 1rem;
-            max-width: 100%;
+
+        /* Adjust font sizes for very small screens if necessary */
+        @media (max-width: 650px) {
+            .game-title {
+                font-size: 2rem; /* Smaller title on very narrow screens */
+            }
+            .game-instructions {
+                font-size: 0.8rem;
+            }
         }
+
         .controls {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 0.5rem; /* Space between buttons */
-            margin-top: 10px;
+            gap: 0.4rem; /* Reduced space between buttons */
+            margin-top: 0.8rem; /* Reduced margin */
+            width: 100%; /* Ensure controls take full width to wrap effectively */
+            box-sizing: border-box;
+            padding: 0 0.5rem; /* Small horizontal padding */
+            flex-shrink: 0; /* Prevent controls from shrinking */
         }
         .controls button {
-            padding: 0.75rem 1.25rem;
+            padding: 0.6rem 1rem; /* Slightly smaller padding for buttons */
             background-color: #4299e1; /* Blue button */
             color: white;
             border: none;
             border-radius: 0.375rem;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 0.9rem; /* Slightly smaller font for buttons */
             transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            min-width: 80px; /* Ensure buttons have a minimum width */
+            min-width: 70px; /* Ensure buttons have a minimum width, slightly smaller */
+            flex-grow: 1; /* Allow buttons to grow to fill space in their row */
+            max-width: 120px; /* Limit max width for individual buttons */
         }
         .controls button:hover {
             background-color: #3182ce; /* Darker blue on hover */
@@ -66,19 +114,7 @@
         .controls button:active {
             transform: translateY(1px); /* Press effect */
         }
-        .game-title {
-            font-size: 2.5rem; /* Larger title */
-            font-weight: bold;
-            color: #63b3ed; /* Lighter blue for title */
-            margin-bottom: 1rem;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-        .game-instructions {
-            font-size: 1rem;
-            color: #a0aec0;
-            text-align: center;
-            margin-bottom: 1rem;
-        }
+
         /* Styles for the upgrade menu buttons */
         #upgrade-menu-buttons {
             position: absolute;
@@ -94,6 +130,10 @@
             z-index: 100; /* Ensure it's on top */
             border: 2px solid #63b3ed;
             box-shadow: 0 0 15px rgba(99, 179, 237, 0.5);
+            max-width: 90vw; /* Ensure upgrade menu fits screen width */
+            max-height: 90vh; /* Ensure upgrade menu fits screen height */
+            overflow-y: auto; /* Allow scrolling within the upgrade menu if content is too long */
+            box-sizing: border-box;
         }
         #upgrade-menu-buttons button {
             background-color: #4c51bf; /* Indigo */
@@ -104,6 +144,7 @@
             cursor: pointer;
             transition: background-color 0.2s ease-in-out;
             border: none;
+            white-space: nowrap; /* Prevent button text from wrapping */
         }
         #upgrade-menu-buttons button:hover {
             background-color: #5a67d8; /* Lighter indigo */
@@ -116,7 +157,7 @@
 <body>
     <div class="game-container">
         <h1 class="game-title">Infinite Map Adventure</h1>
-        <p class="game-instructions">Navigate the endless world, collect coins, defeat enemies, and upgrade your hero!</p>
+        <p class="game-instructions">Navigate the fixed game area, collect coins, defeat enemies, and upgrade your hero!</p>
 
         <canvas id="gameCanvas"></canvas>
 
@@ -154,8 +195,16 @@
         let bossSpecialTimer = 300; // Timer for boss special homing attack
 
         // -------------------- CONSTANTS & SETTINGS --------------------
-        const CANVAS_WIDTH = 600; // Increased canvas size for better visibility
+        const CANVAS_WIDTH = 600; // Original canvas size
         const CANVAS_HEIGHT = 600;
+
+        // Game Viewport Constants: All game logic and drawing happens within this area
+        const GAME_VIEWPORT_WIDTH = 340;
+        const GAME_VIEWPORT_HEIGHT = 150;
+        // Offset to center the game viewport on the larger 600x600 canvas
+        const GAME_VIEWPORT_X_OFFSET = (CANVAS_WIDTH - GAME_VIEWPORT_WIDTH) / 2;
+        const GAME_VIEWPORT_Y_OFFSET = (CANVAS_HEIGHT - GAME_VIEWPORT_HEIGHT) / 2;
+
         const PLAYER_SIZE = 10;
         const COIN_SIZE = 8;
         const OBSTACLE_SIZE = 10;
@@ -195,21 +244,22 @@
 
         const INITIAL_BASE_SPEED = 0.01;
 
-        const SPAWN_NEAR_MIN = 50;
-        const SPAWN_NEAR_MAX = 150;
-        const SPAWN_ENEMY_MIN = 100;
-        const SPAWN_ENEMY_MAX = 200;
-        const SPAWN_OBSTACLE_MIN = 100;
-        const SPAWN_OBSTACLE_MAX = 200;
-        const SPAWN_BOSS_MIN = 150;
-        const SPAWN_BOSS_MAX = 250;
+        // Spawn distances adjusted for the smaller game viewport
+        const SPAWN_NEAR_MIN = 20;
+        const SPAWN_NEAR_MAX = 60;
+        const SPAWN_ENEMY_MIN = 30;
+        const SPAWN_ENEMY_MAX = 80;
+        const SPAWN_OBSTACLE_MIN = 20;
+        const SPAWN_OBSTACLE_MAX = 70;
+        const SPAWN_BOSS_MIN = 40;
+        const SPAWN_BOSS_MAX = 90;
 
         const SAFEZONE_RADIUS = 50;
         const SAFEZONE_DURATION = 600;
-        const SAFEZONE_CHANCE = 0.0005; // Spawns within 100 units of player
+        const SAFEZONE_CHANCE = 0.0005;
 
-        // -------------------- TOWN LOCATION --------------------
-        let town = { x: 600, y: 0, width: 100, height: 100 };
+        // -------------------- TOWN LOCATION (relative to game viewport) --------------------
+        let town = { x: GAME_VIEWPORT_WIDTH - 60, y: 20, width: 40, height: 40 };
 
         // -------------------- FALLING DEBRIS --------------------
         const DEBRIS_SPAWN_CHANCE = 0.001;
@@ -217,11 +267,11 @@
         let debris = [];
 
         /**
-         * Spawns falling debris from above the player's view.
+         * Spawns falling debris from above the game viewport.
          */
         function spawnDebris() {
-            let x = player.x - CANVAS_WIDTH/2 + Math.random() * CANVAS_WIDTH;
-            let y = player.y - CANVAS_HEIGHT/2;
+            let x = Math.random() * GAME_VIEWPORT_WIDTH;
+            let y = -10; // Start slightly above the game viewport
             debris.push({ x: x, y: y, speed: DEBRIS_SPEED });
         }
 
@@ -232,7 +282,7 @@
         // Initialize stars
         for (let i = 0; i < STAR_COUNT; i++) {
             stars.push({
-                x: Math.random() * CANVAS_WIDTH,
+                x: Math.random() * CANVAS_WIDTH, // Stars span the whole canvas
                 y: Math.random() * CANVAS_HEIGHT,
                 size: Math.random() * 2 + 0.5,
                 opacity: Math.random() * 0.5 + 0.5
@@ -240,7 +290,7 @@
         }
 
         // -------------------- CANVAS & AUDIO SETUP --------------------
-        const canvas = document.getElementById("gameCanvas"); // Renamed from 'c' for clarity
+        const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         canvas.width = CANVAS_WIDTH;
         canvas.height = CANVAS_HEIGHT;
@@ -265,9 +315,9 @@
         function soundPlayerHit() { playSound(200, 0.1); }
         function soundBossShoot() { playSound(500, 0.08); }
         function soundUltimate() { playSound(800, 0.2); }
-        function soundCoinCollect() { playSound(900, 0.05); } // New sound for coin collection
-        function soundPowerupCollect() { playSound(1200, 0.08); } // New sound for powerup collection
-        function soundBombExplode() { playSound(250, 0.3); } // New sound for bomb
+        function soundCoinCollect() { playSound(900, 0.05); }
+        function soundPowerupCollect() { playSound(1200, 0.08); }
+        function soundBombExplode() { playSound(250, 0.3); }
 
         // -------------------- SCREEN SHAKE --------------------
         let shakeTimer = 0;
@@ -303,8 +353,8 @@
                 b.x += b.vx;
                 b.y += b.vy;
 
-                // Remove bullets that go off-screen
-                if(b.x < -CANVAS_WIDTH || b.x > CANVAS_WIDTH*2 || b.y < -CANVAS_HEIGHT || b.y > CANVAS_HEIGHT*2) {
+                // Remove bullets that go off-screen (relative to game viewport)
+                if(b.x < -10 || b.x > GAME_VIEWPORT_WIDTH + 10 || b.y < -10 || b.y > GAME_VIEWPORT_HEIGHT + 10) {
                     bossBullets.splice(i,1);
                     continue;
                 }
@@ -376,6 +426,14 @@
         let currentShootCooldown = INITIAL_SHOOT_COOLDOWN;
         let currentSpecialCooldown = INITIAL_SPECIAL_COOLDOWN;
 
+        // Player movement state
+        let keys = {
+            ArrowUp: false,
+            ArrowDown: false,
+            ArrowLeft: false,
+            ArrowRight: false
+        };
+
         // Safe zone variables
         let safeZone = null;
         let playerSafe = false;
@@ -423,16 +481,23 @@
 
         // -------------------- SPAWN FUNCTIONS --------------------
         /**
-         * Spawns an entity near a given reference entity within a specified distance range.
-         * @param {object} entity - The reference entity (e.g., player).
-         * @param {number} minDist - Minimum distance from the reference entity.
-         * @param {number} maxDist - Maximum distance from the reference entity.
-         * @returns {object} New coordinates for the spawned entity.
+         * Spawns an entity within the game viewport, relative to its center.
+         * @param {number} minDistFromCenter - Minimum distance from the viewport center.
+         * @param {number} maxDistFromCenter - Maximum distance from the viewport center.
+         * @returns {object} New coordinates for the spawned entity, relative to viewport top-left.
          */
-        function spawnNear(entity, minDist, maxDist) {
+        function spawnInGameArea(minDistFromCenter, maxDistFromCenter) {
+            let centerX = GAME_VIEWPORT_WIDTH / 2;
+            let centerY = GAME_VIEWPORT_HEIGHT / 2;
             let angle = Math.random() * Math.PI * 2;
-            let dist = minDist + Math.random() * (maxDist - minDist);
-            return { x: entity.x + Math.cos(angle) * dist, y: entity.y + Math.sin(angle) * dist };
+            let dist = minDistFromCenter + Math.random() * (maxDistFromCenter - minDistFromCenter);
+            let x = centerX + Math.cos(angle) * dist;
+            let y = centerY + Math.sin(angle) * dist;
+
+            // Clamp to ensure within game viewport bounds with a small buffer
+            x = Math.max(5, Math.min(GAME_VIEWPORT_WIDTH - 5, x));
+            y = Math.max(5, Math.min(GAME_VIEWPORT_HEIGHT - 5, y));
+            return { x: x, y: y };
         }
 
         /**
@@ -450,7 +515,7 @@
                 let speed = INITIAL_BASE_SPEED + (level * 0.001); // Scale enemy speed with level
                 let extraHealth = (type !== "normal") ? Math.floor(level / 3) : 0;
                 let health = enemyTypes[type].health + extraHealth;
-                let pos = spawnNear(player, SPAWN_ENEMY_MIN, SPAWN_ENEMY_MAX);
+                let pos = spawnInGameArea(SPAWN_ENEMY_MIN, SPAWN_ENEMY_MAX);
                 enemies.push({ x: pos.x, y: pos.y, s: speed, h: health, maxH: health, type, size: enemyTypes[type].size, hitTimer: 0 });
             }
         }
@@ -460,7 +525,7 @@
          */
         function spawnBoss() {
             if(level % 5 === 0) {
-                let pos = spawnNear(player, SPAWN_BOSS_MIN, SPAWN_BOSS_MAX);
+                let pos = spawnInGameArea(SPAWN_BOSS_MIN, SPAWN_BOSS_MAX);
                 let bossHealth = 5 + level * 2; // Boss health scales more
                 boss = { x: pos.x, y: pos.y, s: INITIAL_BASE_SPEED * 0.5, h: bossHealth, maxH: bossHealth, minionsSpawned: false, size: 20, hitTimer: 0 };
             } else {
@@ -474,7 +539,7 @@
         function spawnObstacles() {
             obstacles = [];
             for (let i = 0; i < 3 + Math.floor(level/5); i++) { // More obstacles at higher levels
-                let pos = spawnNear(player, SPAWN_OBSTACLE_MIN, SPAWN_OBSTACLE_MAX);
+                let pos = spawnInGameArea(SPAWN_OBSTACLE_MIN, SPAWN_OBSTACLE_MAX);
                 obstacles.push({ x: pos.x, y: pos.y, size: OBSTACLE_SIZE + Math.random() * 5 }); // Vary obstacle size
             }
         }
@@ -492,7 +557,7 @@
             else if(rand < 0.8)  type = "freeze";
             else if(rand < 0.9)  type = "health"; // New Health Pack (10% chance)
             else                type = "bomb";   // New Bomb (10% chance)
-            let pos = spawnNear(player, SPAWN_ENEMY_MIN, SPAWN_ENEMY_MAX);
+            let pos = spawnInGameArea(SPAWN_ENEMY_MIN, SPAWN_ENEMY_MAX);
             powerups.push({ x: pos.x, y: pos.y, type });
         }
 
@@ -500,7 +565,7 @@
          * Spawns a coin near the player.
          */
         function spawnCoin() {
-            coin = spawnNear(player, SPAWN_NEAR_MIN, SPAWN_NEAR_MAX);
+            coin = spawnInGameArea(SPAWN_NEAR_MIN, SPAWN_NEAR_MAX);
         }
 
         // -------------------- INITIALIZE / RESET GAME --------------------
@@ -508,10 +573,11 @@
          * Initializes or resets all game variables to their starting values.
          */
         function initGame() {
-            player = { x: 0, y: 0, h: PLAYER_MAX_HEALTH, maxH: PLAYER_MAX_HEALTH, hitTimer: 0 }; // Player now has health and hitTimer
+            // Player starts in the center of the game viewport
+            player = { x: GAME_VIEWPORT_WIDTH / 2, y: GAME_VIEWPORT_HEIGHT / 2, h: PLAYER_MAX_HEALTH, maxH: PLAYER_MAX_HEALTH, hitTimer: 0, vx: 0, vy: 0 };
             spawnCoin();
             score = 0;
-            lives = 3; // Extra lives remain a concept, player health is primary
+            lives = 3;
             level = 1;
             specialTimer = 0;
             shootTimer = 0;
@@ -543,8 +609,8 @@
             currentFreezeDuration = 180;
             energy = 0;
             particles = [];
-            scorePopups = []; // Reset score popups
-            dashParticles = []; // Reset dash particles
+            scorePopups = [];
+            dashParticles = [];
             debris = [];
             stars = []; // Re-initialize stars
             for (let i = 0; i < STAR_COUNT; i++) {
@@ -568,14 +634,22 @@
 
             // Hide upgrade menu buttons on reset
             document.getElementById('upgrade-menu-buttons').style.display = 'none';
+
+            // Reset keys state
+            keys = {
+                ArrowUp: false,
+                ArrowDown: false,
+                ArrowLeft: false,
+                ArrowRight: false
+            };
         }
         initGame(); // Call initGame once to set up the initial state
 
         // -------------------- DRAWING UTILITIES --------------------
         /**
          * Draws a health bar for an entity.
-         * @param {number} x - X coordinate of the health bar.
-         * @param {number} y - Y coordinate of the health bar.
+         * @param {number} x - X coordinate of the health bar (relative to viewport).
+         * @param {number} y - Y coordinate of the health bar (relative to viewport).
          * @param {number} width - Total width of the health bar.
          * @param {number} height - Height of the health bar.
          * @param {number} currentHealth - Current health value.
@@ -600,7 +674,7 @@
         function drawScrollingBackground() {
             ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
             stars.forEach(star => {
-                // Calculate star position relative to player and canvas center
+                // Stars are drawn relative to the full canvas, not the game viewport
                 let screenX = star.x - (player.x * STAR_SPEED_FACTOR) % CANVAS_WIDTH;
                 let screenY = star.y - (player.y * STAR_SPEED_FACTOR) % CANVAS_HEIGHT;
 
@@ -630,11 +704,15 @@
             ctx.fillRect(mapX, mapY, mapWidth, mapHeight);
             ctx.strokeStyle = "#fff";
             ctx.strokeRect(mapX, mapY, mapWidth, mapHeight);
-            let scale = 0.05;
+
+            // Scaling factors for mapping game viewport coordinates to minimap coordinates
+            let scaleX = mapWidth / GAME_VIEWPORT_WIDTH;
+            let scaleY = mapHeight / GAME_VIEWPORT_HEIGHT;
 
             function drawMarker(worldObj, color, label) {
-                let x = mapX + (worldObj.x - player.x) * scale + mapWidth/2;
-                let y = mapY + (worldObj.y - player.y) * scale + mapHeight/2;
+                // Map world coordinates (0 to GAME_VIEWPORT_WIDTH/HEIGHT) to minimap coordinates
+                let x = mapX + worldObj.x * scaleX;
+                let y = mapY + worldObj.y * scaleY;
                 ctx.fillStyle = color;
                 ctx.beginPath();
                 ctx.arc(x, y, 3, 0, Math.PI*2);
@@ -656,7 +734,7 @@
          * @returns {string} RGB color string for the background.
          */
         function updateDayNightCycle() {
-            timeOfDay += 0.05; // Slower cycle
+            timeOfDay += 0.005; // Slower cycle for more gradual transition
             // Adjust brightness and color more significantly for day/night
             let baseBrightness = 10; // Darkest at night
             let maxBrightness = 60; // Brightest during day
@@ -667,11 +745,13 @@
             let blue = Math.floor(currentBrightness * 0.8);
 
             // Add a slight tint for sunrise/sunset
-            if (Math.sin(timeOfDay) > 0.8) { // Approaching peak day
-                red = Math.floor(red * 1.1);
-                green = Math.floor(green * 1.05);
-            } else if (Math.sin(timeOfDay) < -0.8) { // Approaching peak night
-                blue = Math.floor(blue * 1.1);
+            if (Math.sin(timeOfDay) > 0.8) { // Approaching peak day (morning)
+                red = Math.floor(red * 1.1 + 20); // More red/orange
+                green = Math.floor(green * 1.05 + 10);
+            } else if (Math.sin(timeOfDay) < -0.8) { // Approaching peak night (evening)
+                red = Math.floor(red * 0.9);
+                green = Math.floor(green * 0.9);
+                blue = Math.floor(blue * 1.1 + 20); // More blue/purple
             }
             return `rgb(${red},${green},${blue})`;
         }
@@ -817,8 +897,8 @@
                 b.x += b.vx;
                 b.y += b.vy;
 
-                // Remove bullets that go off-screen
-                if(b.x < -CANVAS_WIDTH || b.x > CANVAS_WIDTH*2 || b.y < -CANVAS_HEIGHT || b.y > CANVAS_HEIGHT*2) {
+                // Remove bullets that go off-screen (relative to game viewport)
+                if(b.x < -10 || b.x > GAME_VIEWPORT_WIDTH + 10 || b.y < -10 || b.y > GAME_VIEWPORT_HEIGHT + 10) {
                     bullets.splice(i, 1);
                     continue;
                 }
@@ -848,7 +928,7 @@
                                         spawnScorePopup(enemy.x, enemy.y, `+${coinScore}`, "#00ff00"); // Score popup for enemy kill
                                         comboCount++;
                                         comboTimer = COMBO_RESET_TIME;
-                                        spawnExplosion(enemy.x, enemy.y);
+                                        spawnExplosion(enemy.x, en.y);
                                         soundEnemyDeath();
                                         let index = enemies.indexOf(enemy);
                                         if(index > -1) enemies.splice(index, 1);
@@ -964,8 +1044,8 @@
         function updateBoss() {
             bossTime++;
             // Boss moves in a pattern around the player
-            let offsetX = 100 * Math.cos(bossTime * 0.05);
-            let offsetY = 100 * Math.sin(bossTime * 0.05);
+            let offsetX = 50 * Math.cos(bossTime * 0.05); // Adjusted for smaller viewport
+            let offsetY = 50 * Math.sin(bossTime * 0.05); // Adjusted for smaller viewport
             boss.x += ((player.x + offsetX) - boss.x) * boss.s;
             boss.y += ((player.y + offsetY) - boss.y) * boss.s;
 
@@ -1020,7 +1100,7 @@
          */
         function spawnBossMinions() {
             for(let i = 0; i < 2; i++){
-                let pos = spawnNear(boss, 20, 40);
+                let pos = spawnInGameArea(20, 40); // Adjusted for smaller viewport
                 enemies.push({ x: pos.x, y: pos.y, s: baseSpeed, h: enemyTypes.normal.health, maxH: enemyTypes.normal.health, type: "normal", size: enemyTypes.normal.size, hitTimer: 0 });
             }
         }
@@ -1034,8 +1114,8 @@
                 let d = debris[i];
                 d.y += d.speed; // Debris falls downwards
 
-                // Remove debris that has fallen off-screen
-                if(d.y > player.y + CANVAS_HEIGHT/2 + 20) {
+                // Remove debris that has fallen off-screen (relative to game viewport)
+                if(d.y > GAME_VIEWPORT_HEIGHT + 20) {
                     debris.splice(i, 1);
                     continue;
                 }
@@ -1118,31 +1198,48 @@
 
             if(gameState === "playing") {
                 if(e.key === "p") { gameState = "paused"; return; }
-                // Player movement using arrow keys
-                if(e.key === "ArrowUp")    { player.y -= currentMoveSpeed * playerSpeedBoost; lastDir = "up"; }
-                else if(e.key === "ArrowDown")  { player.y += currentMoveSpeed * playerSpeedBoost; lastDir = "down"; }
-                else if(e.key === "ArrowLeft")  { player.x -= currentMoveSpeed * playerSpeedBoost; lastDir = "left"; }
-                else if(e.key === "ArrowRight") { player.x += currentMoveSpeed * playerSpeedBoost; lastDir = "right"; }
+                if (keys.hasOwnProperty(e.key)) {
+                    keys[e.key] = true;
+                    if (e.key === "ArrowUp") lastDir = "up";
+                    else if (e.key === "ArrowDown") lastDir = "down";
+                    else if (e.key === "ArrowLeft") lastDir = "left";
+                    else if (e.key === "ArrowRight") lastDir = "right";
+                }
             } else if(gameState === "paused") {
                 if(e.key === "p") { gameState = "playing"; } // Resume game
             }
         };
 
-        // Button event listeners for touch/click controls
-        ["up", "down", "left", "right", "pause"].forEach(id => {
-            document.getElementById(id).addEventListener("click", () => {
-                if(upgradeMenuActive) return; // Prevent input during upgrade menu
-                if(gameState !== "playing" && id !== "pause" && id !== "soundToggle") return; // Only allow movement in playing state
+        document.onkeyup = e => {
+            if (keys.hasOwnProperty(e.key)) {
+                keys[e.key] = false;
+            }
+        };
 
-                if(id === "up")    { player.y -= currentMoveSpeed * playerSpeedBoost; lastDir = "up"; }
-                else if(id === "down")  { player.y += currentMoveSpeed * playerSpeedBoost; lastDir = "down"; }
-                else if(id === "left")  { player.x -= currentMoveSpeed * playerSpeedBoost; lastDir = "left"; }
-                else if(id === "right") { player.x += currentMoveSpeed * playerSpeedBoost; lastDir = "right"; }
-                else if(id === "pause") {
-                    // Toggle pause state
-                    gameState = (gameState === "paused") ? "playing" : "paused";
-                }
-            });
+        // Button event listeners for touch/click controls
+        document.getElementById("up").addEventListener("mousedown", () => { keys.ArrowUp = true; lastDir = "up"; });
+        document.getElementById("up").addEventListener("mouseup", () => { keys.ArrowUp = false; });
+        document.getElementById("up").addEventListener("touchstart", (e) => { e.preventDefault(); keys.ArrowUp = true; lastDir = "up"; });
+        document.getElementById("up").addEventListener("touchend", () => { keys.ArrowUp = false; });
+
+        document.getElementById("down").addEventListener("mousedown", () => { keys.ArrowDown = true; lastDir = "down"; });
+        document.getElementById("down").addEventListener("mouseup", () => { keys.ArrowDown = false; });
+        document.getElementById("down").addEventListener("touchstart", (e) => { e.preventDefault(); keys.ArrowDown = true; lastDir = "down"; });
+        document.getElementById("down").addEventListener("touchend", () => { keys.ArrowDown = false; });
+
+        document.getElementById("left").addEventListener("mousedown", () => { keys.ArrowLeft = true; lastDir = "left"; });
+        document.getElementById("left").addEventListener("mouseup", () => { keys.ArrowLeft = false; });
+        document.getElementById("left").addEventListener("touchstart", (e) => { e.preventDefault(); keys.ArrowLeft = true; lastDir = "left"; });
+        document.getElementById("left").addEventListener("touchend", () => { keys.ArrowLeft = false; });
+
+        document.getElementById("right").addEventListener("mousedown", () => { keys.ArrowRight = true; lastDir = "right"; });
+        document.getElementById("right").addEventListener("mouseup", () => { keys.ArrowRight = false; });
+        document.getElementById("right").addEventListener("touchstart", (e) => { e.preventDefault(); keys.ArrowRight = true; lastDir = "right"; });
+        document.getElementById("right").addEventListener("touchend", () => { keys.ArrowRight = false; });
+
+        document.getElementById("pause").addEventListener("click", () => {
+            if(upgradeMenuActive) return;
+            gameState = (gameState === "paused") ? "playing" : "paused";
         });
 
         // Add event listeners for upgrade menu buttons
@@ -1155,13 +1252,15 @@
             });
         });
 
-        // -------------------- TOUCH INPUT HANDLERS --------------------
+        // -------------------- TOUCH INPUT HANDLERS (for canvas swipe) --------------------
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault(); // Prevent scrolling/zooming
             if (gameState === "playing" && !upgradeMenuActive) {
                 isTouching = true;
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY;
+                // Get touch coordinates relative to the canvas
+                const rect = canvas.getBoundingClientRect();
+                touchStartX = e.touches[0].clientX - rect.left;
+                touchStartY = e.touches[0].clientY - rect.top;
                 touchMoveX = touchStartX; // Initialize current touch position
                 touchMoveY = touchStartY;
             } else if (gameState === "start") {
@@ -1174,13 +1273,19 @@
         canvas.addEventListener('touchmove', (e) => {
             e.preventDefault(); // Prevent scrolling/zooming
             if (isTouching && gameState === "playing" && !upgradeMenuActive) {
-                touchMoveX = e.touches[0].clientX;
-                touchMoveY = e.touches[0].clientY;
+                const rect = canvas.getBoundingClientRect();
+                touchMoveX = e.touches[0].clientX - rect.left;
+                touchMoveY = e.touches[0].clientY - rect.top;
             }
         });
 
         canvas.addEventListener('touchend', () => {
             isTouching = false;
+            // When touch ends, release all movement keys to stop player
+            keys.ArrowUp = false;
+            keys.ArrowDown = false;
+            keys.ArrowLeft = false;
+            keys.ArrowRight = false;
             touchStartX = 0;
             touchStartY = 0;
             touchMoveX = 0;
@@ -1189,23 +1294,35 @@
 
         /**
          * Applies player movement based on touch input.
+         * This function now sets the 'keys' state, which is then processed by the main loop's velocity system.
          */
         function applyTouchMovement() {
-            if (isTouching && gameState === "playing" && !upgradeMenuActive) {
-                let dx = touchMoveX - touchStartX;
-                let dy = touchMoveY - touchStartY;
+            // Reset keys based on touch input, only if currently touching
+            keys.ArrowUp = false;
+            keys.ArrowDown = false;
+            keys.ArrowLeft = false;
+            keys.ArrowRight = false;
 
-                // Only move if swipe exceeds a threshold
+            if (isTouching && gameState === "playing" && !upgradeMenuActive) {
+                // Scale touch movement to the internal game viewport coordinates
+                const scaledTouchStartX = (touchStartX - GAME_VIEWPORT_X_OFFSET) * (GAME_VIEWPORT_WIDTH / canvas.clientWidth);
+                const scaledTouchStartY = (touchStartY - GAME_VIEWPORT_Y_OFFSET) * (GAME_VIEWPORT_HEIGHT / canvas.clientHeight);
+                const scaledTouchMoveX = (touchMoveX - GAME_VIEWPORT_X_OFFSET) * (GAME_VIEWPORT_WIDTH / canvas.clientWidth);
+                const scaledTouchMoveY = (touchMoveY - GAME_VIEWPORT_Y_OFFSET) * (GAME_VIEWPORT_HEIGHT / canvas.clientHeight);
+
+                let dx = scaledTouchMoveX - scaledTouchStartX;
+                let dy = scaledTouchMoveY - scaledTouchStartY;
+
                 if (Math.abs(dx) > SWIPE_THRESHOLD || Math.abs(dy) > SWIPE_THRESHOLD) {
-                    // Determine dominant direction and move
                     if (Math.abs(dx) > Math.abs(dy)) {
-                        if (dx > 0) { player.x += currentMoveSpeed * playerSpeedBoost; lastDir = "right"; }
-                        else { player.x -= currentMoveSpeed * playerSpeedBoost; lastDir = "left"; }
+                        if (dx > 0) { keys.ArrowRight = true; lastDir = "right"; }
+                        else { keys.ArrowLeft = true; lastDir = "left"; }
                     } else {
-                        if (dy > 0) { player.y += currentMoveSpeed * playerSpeedBoost; lastDir = "down"; }
-                        else { player.y -= currentMoveSpeed * playerSpeedBoost; lastDir = "up"; }
+                        if (dy > 0) { keys.ArrowDown = true; lastDir = "down"; }
+                        else { keys.ArrowUp = true; lastDir = "up"; }
                     }
-                    // Reset start position to current position to make continuous movement feel more natural
+                    // For continuous touch movement, update start position to current touch position
+                    // This makes the player continue moving as long as finger is moving
                     touchStartX = touchMoveX;
                     touchStartY = touchMoveY;
                 }
@@ -1222,8 +1339,8 @@
         // -------------------- PARTICLE EXPLOSIONS --------------------
         /**
          * Spawns a burst of particles at a given location.
-         * @param {number} x - X coordinate for the explosion.
-         * @param {number} y - Y coordinate for the explosion.
+         * @param {number} x - X coordinate for the explosion (relative to viewport).
+         * @param {number} y - Y coordinate for the explosion (relative to viewport).
          */
         function spawnExplosion(x, y) {
             for(let i = 0; i < PARTICLE_COUNT; i++){
@@ -1258,7 +1375,7 @@
             particles.forEach(p => {
                 ctx.fillStyle = p.color;
                 ctx.globalAlpha = p.life / PARTICLE_MAX_LIFE; // Fade out particles
-                ctx.fillRect(p.x, p.y, 3, 3); // Slightly larger particles
+                ctx.fillRect(p.x, p.y, 3, 3); // Draw relative to viewport
             });
             ctx.globalAlpha = 1; // Reset alpha
         }
@@ -1266,8 +1383,8 @@
         // -------------------- DASH PARTICLES --------------------
         /**
          * Spawns particles to create a dash trail effect.
-         * @param {number} x - X coordinate of the player.
-         * @param {number} y - Y coordinate of the player.
+         * @param {number} x - X coordinate of the player (relative to viewport).
+         * @param {number} y - Y coordinate of the player (relative to viewport).
          * @param {number} dx - Player's dash direction X.
          * @param {number} dy - Player's dash direction Y.
          */
@@ -1296,7 +1413,7 @@
                 } else {
                     ctx.fillStyle = p.color;
                     ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
+                    ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2); // Draw relative to viewport
                     ctx.fill();
                 }
             }
@@ -1304,7 +1421,7 @@
 
         // -------------------- SCORE POP-UPS --------------------
         /**
-         * Spawns a floating score text at a given location.
+         * Spawns a floating score text at a given location (relative to viewport).
          * @param {number} x - X coordinate for the popup.
          * @param {number} y - Y coordinate for the popup.
          * @param {string} text - The text to display (e.g., "+10").
@@ -1336,49 +1453,50 @@
         }
 
         /**
-         * Draws all active score pop-ups.
+         * Draws all active score pop-ups (relative to viewport).
          */
         function drawScorePopups() {
             scorePopups.forEach(popup => {
                 ctx.globalAlpha = popup.life / 60; // Fade out
                 ctx.fillStyle = popup.color;
                 ctx.font = "bold 14px Arial";
-                ctx.fillText(popup.text, popup.x, popup.y);
+                ctx.fillText(popup.text, popup.x, popup.y); // Draw relative to viewport
                 ctx.globalAlpha = 1; // Reset alpha
             });
         }
 
         // -------------------- INDICATOR OVERLAY FUNCTIONS --------------------
         /**
-         * Checks if a target object is currently visible on the canvas screen.
-         * @param {object} target - The object to check (with x, y coordinates).
+         * Checks if a target object is currently visible within the game viewport.
+         * @param {object} target - The object to check (with x, y coordinates relative to viewport).
          * @returns {boolean} True if the object is on screen, false otherwise.
          */
         function isOnScreen(target) {
-            let screenX = target.x - player.x + CANVAS_WIDTH/2;
-            let screenY = target.y - player.y + CANVAS_HEIGHT/2;
-            return (screenX >= -50 && screenX <= CANVAS_WIDTH + 50 && screenY >= -50 && screenY <= CANVAS_HEIGHT + 50);
+            // Check if target is within the game viewport boundaries
+            return (target.x >= 0 && target.x <= GAME_VIEWPORT_WIDTH && target.y >= 0 && target.y <= GAME_VIEWPORT_HEIGHT);
         }
 
         /**
          * Draws an off-screen indicator pointing towards a target object.
-         * @param {object} target - The object to point to (with x, y coordinates).
+         * @param {object} target - The object to point to (with x, y coordinates relative to viewport).
          * @param {string} color - Color of the indicator.
          * @param {string} label - Text label for the indicator.
          */
         function drawIndicator(target, color, label) {
             if (isOnScreen(target)) return; // Don't draw indicator if target is on screen
 
-            let dx = target.x - player.x;
-            let dy = target.y - player.y;
-            let angle = Math.atan2(dy, dx); // Angle from player to target
+            // Calculate direction from center of game viewport to target
+            let centerX = GAME_VIEWPORT_WIDTH / 2;
+            let centerY = GAME_VIEWPORT_HEIGHT / 2;
+            let dx = target.x - centerX;
+            let dy = target.y - centerY;
+            let angle = Math.atan2(dy, dx); // Angle from viewport center to target
 
-            let centerX = CANVAS_WIDTH/2, centerY = CANVAS_HEIGHT/2;
-            let margin = 20; // Margin from canvas edge
-            let halfWidth = CANVAS_WIDTH/2 - margin;
-            let halfHeight = CANVAS_HEIGHT/2 - margin;
+            // Calculate intersection point with game viewport boundary
+            let margin = 10; // Margin from viewport edge for indicators
+            let halfWidth = GAME_VIEWPORT_WIDTH / 2 - margin;
+            let halfHeight = GAME_VIEWPORT_HEIGHT / 2 - margin;
 
-            // Calculate intersection point with canvas boundary
             let scale = Math.min(
                 halfWidth / Math.abs(Math.cos(angle)),
                 halfHeight / Math.abs(Math.sin(angle))
@@ -1386,6 +1504,10 @@
 
             let arrowX = centerX + Math.cos(angle) * scale;
             let arrowY = centerY + Math.sin(angle) * scale;
+
+            ctx.save(); // Save context before applying viewport offset
+            // Translate to viewport position for drawing indicators
+            ctx.translate(GAME_VIEWPORT_X_OFFSET, GAME_VIEWPORT_Y_OFFSET);
 
             ctx.fillStyle = color;
             ctx.beginPath();
@@ -1406,7 +1528,8 @@
             ctx.fill();
 
             ctx.font = "10px sans-serif";
-            ctx.fillText(label, arrowX - arrowSize, arrowY - arrowSize);
+            ctx.fillText(label, arrowX - ctx.measureText(label).width/2, arrowY - arrowSize - 2); // Label above arrow
+            ctx.restore(); // Restore context
         }
 
 
@@ -1437,7 +1560,7 @@
             ctx.fillStyle = bgColor;
             ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Fill entire canvas with background
 
-            // Draw scrolling background stars
+            // Draw scrolling background stars (relative to full canvas)
             drawScrollingBackground();
 
             // Update energy and double score timer
@@ -1450,11 +1573,10 @@
             // -------------------- SAFE ZONE SPAWN & UPDATE --------------------
             // Spawn new safe zone if none exists and chance allows
             if(safeZone === null && Math.random() < SAFEZONE_CHANCE) {
-                let angle = Math.random() * Math.PI * 2;
-                let dist = Math.random() * 100; // Spawn within 100 units of player
+                let pos = spawnInGameArea(SPAWN_NEAR_MIN, SPAWN_NEAR_MAX);
                 safeZone = {
-                    x: player.x + Math.cos(angle) * dist,
-                    y: player.y + Math.sin(angle) * dist,
+                    x: pos.x,
+                    y: pos.y,
                     radius: SAFEZONE_RADIUS,
                     duration: SAFEZONE_DURATION
                 };
@@ -1487,6 +1609,41 @@
             if(gameState === "playing" && !upgradeMenuActive) {
                 autoPowers(); // Run automated player abilities
                 applyTouchMovement(); // Apply touch-based movement
+
+                // Player movement logic (velocity-based for smoother movement)
+                let targetVx = 0;
+                let targetVy = 0;
+                let currentSpeed = currentMoveSpeed * playerSpeedBoost;
+
+                if (keys.ArrowUp) targetVy = -currentSpeed;
+                if (keys.ArrowDown) targetVy = currentSpeed;
+                if (keys.ArrowLeft) targetVx = -currentSpeed;
+                if (keys.ArrowRight) targetVx = currentSpeed;
+
+                // Normalize diagonal movement speed
+                if (targetVx !== 0 && targetVy !== 0) {
+                    let diagonalFactor = Math.sqrt(2);
+                    targetVx /= diagonalFactor;
+                    targetVy /= diagonalFactor;
+                }
+
+                const acceleration = 0.2; // How quickly player reaches target speed
+                const friction = 0.8; // How quickly player slows down when no input
+
+                player.vx += (targetVx - player.vx) * acceleration;
+                player.vy += (targetVy - player.vy) * acceleration;
+
+                // Apply friction if no input in that direction
+                if (targetVx === 0) player.vx *= friction;
+                if (targetVy === 0) player.vy *= friction;
+
+                player.x += player.vx;
+                player.y += player.vy;
+
+                // Clamp player position to the game viewport
+                player.x = Math.max(PLAYER_SIZE / 2, Math.min(GAME_VIEWPORT_WIDTH - PLAYER_SIZE / 2, player.x));
+                player.y = Math.max(PLAYER_SIZE / 2, Math.min(GAME_VIEWPORT_HEIGHT - PLAYER_SIZE / 2, player.y));
+
 
                 // Update enemy and boss positions (if not frozen)
                 if(freezeTimer <= 0) {
@@ -1537,7 +1694,7 @@
                         else if(pw.type === "shield") { shieldActive = true; shieldTimer = currentShieldDuration; }
                         else if(pw.type === "freeze") { freezeTimer = currentFreezeDuration; }
                         else if(pw.type === "double") { doubleScoreActive = true; doubleScoreTimer = 600; }
-                        else if(pw.type === "health") { player.h = Math.min(player.maxH, player.h + 3); } // Restore 3 health
+                        else if(pw.type === "health") { player.h = Math.min(player.maxH, player.h + 3); spawnScorePopup(player.x, player.y, `+3 HP`, "#00ff00"); } // Restore 3 health
                         else if(pw.type === "bomb") {
                             enemies.forEach(en => { spawnExplosion(en.x, en.y); });
                             if(boss) { spawnExplosion(boss.x, boss.y); }
@@ -1590,9 +1747,15 @@
             // -------------------- DRAWING --------------------
             ctx.save(); // Save the current canvas state
 
-            // Apply screen shake translation
-            ctx.translate(CANVAS_WIDTH/2 - player.x, CANVAS_HEIGHT/2 - player.y);
-            applyShake();
+            // Translate to the game viewport position
+            ctx.translate(GAME_VIEWPORT_X_OFFSET, GAME_VIEWPORT_Y_OFFSET);
+            applyShake(); // Apply screen shake relative to the viewport
+
+            // Draw the game area border
+            ctx.strokeStyle = "#63b3ed"; // Blue border
+            ctx.lineWidth = 2;
+            ctx.strokeRect(0, 0, GAME_VIEWPORT_WIDTH, GAME_VIEWPORT_HEIGHT);
+
 
             // Draw Safe Zone
             if(safeZone) {
@@ -1634,7 +1797,7 @@
 
             // Draw Enemies
             enemies.forEach(en => {
-                ctx.fillStyle = (en.hitTimer > 0) ? enemyTypes[en.type].hitColor : enemyTypes[en.type].color;
+                ctx.fillStyle = (en.hitTimer > 0 && Math.floor(en.hitTimer / 2) % 2 === 0) ? enemyTypes[en.type].hitColor : enemyTypes[en.type].color; // Flash effect
                 ctx.beginPath();
                 ctx.arc(en.x, en.y, en.size/2, 0, Math.PI * 2);
                 ctx.fill();
@@ -1644,7 +1807,7 @@
 
             // Draw Boss
             if(boss) {
-                ctx.fillStyle = (boss.hitTimer > 0) ? "#fff" : "#f0f"; // Boss flashes white
+                ctx.fillStyle = (boss.hitTimer > 0 && Math.floor(boss.hitTimer / 2) % 2 === 0) ? "#fff" : "#f0f"; // Boss flashes white
                 ctx.beginPath();
                 ctx.arc(boss.x, boss.y, boss.size/2, 0, Math.PI * 2);
                 ctx.fill();
@@ -1655,21 +1818,21 @@
             // Draw Powerups
             powerups.forEach(pw => {
                 ctx.fillStyle = "#00f"; // Default blue
-                if (pw.type === "inv") ctx.fillStyle = "#0ff"; // Cyan
-                else if (pw.type === "speed") ctx.fillStyle = "#f00"; // Red
-                else if (pw.type === "shield") ctx.fillStyle = "#ff0"; // Yellow
-                else if (pw.type === "freeze") ctx.fillStyle = "#00ffff"; // Aqua
-                else if (pw.type === "double") ctx.fillStyle = "#ff8c00"; // Dark Orange
-                else if (pw.type === "health") ctx.fillStyle = "#0f0"; // Green for health pack
-                else if (pw.type === "bomb") ctx.fillStyle = "#800080"; // Purple for bomb
+                let label = "";
+                if (pw.type === "inv") { ctx.fillStyle = "#0ff"; label = "I"; } // Cyan
+                else if (pw.type === "speed") { ctx.fillStyle = "#f00"; label = "S"; } // Red
+                else if (pw.type === "shield") { ctx.fillStyle = "#ff0"; label = "D"; } // Yellow
+                else if (pw.type === "freeze") { ctx.fillStyle = "#00ffff"; label = "F"; } // Aqua
+                else if (pw.type === "double") { ctx.fillStyle = "#ff8c00"; label = "2X"; } // Dark Orange
+                else if (pw.type === "health") { ctx.fillStyle = "#0f0"; label = "H"; } // Green for health pack
+                else if (pw.type === "bomb") { ctx.fillStyle = "#800080"; label = "B"; } // Purple for bomb
                 ctx.beginPath();
                 ctx.arc(pw.x, pw.y, 8, 0, Math.PI * 2);
                 ctx.fill();
                 // Add a small icon/text for powerups
                 ctx.fillStyle = "#fff";
                 ctx.font = "bold 10px Arial";
-                if (pw.type === "health") ctx.fillText("H", pw.x - 3, pw.y + 4);
-                else if (pw.type === "bomb") ctx.fillText("B", pw.x - 3, pw.y + 4);
+                ctx.fillText(label, pw.x - ctx.measureText(label).width/2, pw.y + 4);
             });
 
             // Draw Player Bullets
@@ -1684,7 +1847,7 @@
             drawDebris();
 
             // Draw Player
-            ctx.fillStyle = (player.hitTimer > 0) ? "#f00" : (invincible ? "#0ff" : "#0f0"); // Red if hit, Cyan if invincible, green otherwise
+            ctx.fillStyle = (player.hitTimer > 0 && Math.floor(player.hitTimer / 2) % 2 === 0) ? "#f00" : (invincible ? "#0ff" : "#0f0"); // Red if hit (flashing), Cyan if invincible, green otherwise
             ctx.beginPath();
             ctx.arc(player.x, player.y, PLAYER_SIZE/2, 0, Math.PI * 2);
             ctx.fill();
@@ -1705,6 +1868,7 @@
             ctx.restore(); // Restore canvas state (undoes translation/shake)
 
             // -------------------- DRAW HUD (Heads-Up Display) --------------------
+            // HUD elements are drawn directly on the main 600x600 canvas, outside the game viewport translation
             ctx.fillStyle = "#fff"; // White text for HUD
             ctx.font = "12px sans-serif";
             ctx.fillText("Score: " + score, 5, 12);
@@ -1713,6 +1877,7 @@
 
             // Player Health Bar
             ctx.fillText("Health:", 5, 50);
+            // Health bar drawn directly on canvas, not relative to game viewport
             drawHealthBar(50, 42, 100, 10, player.h, player.maxH, "#0f0");
 
             ctx.fillText("Shoot CD: " + (shootTimer/60).toFixed(1), 5, 68); // Display in seconds
