@@ -216,10 +216,15 @@
             box-shadow: 0 0 8px rgba(144, 238, 144, 0.7);
             border: 2px solid #1a1a1a;
         }
+        /* Enhanced focus styles for range inputs */
+        .knob-group input[type="range"]:focus {
+            box-shadow: 0 0 0 3px rgba(144, 238, 144, 0.5); /* Green glow on focus */
+        }
+
         .knob-value {
-            font-size: 0.9em; /* Slightly larger */
+            font-size: 1.1em; /* Slightly larger for better readability */
             color: #a0ffa0;
-            font-weight: 600;
+            font-weight: 700; /* Bolder for emphasis */
             margin-top: 5px;
         }
         .knob-group select {
@@ -236,6 +241,10 @@
             background-repeat: no-repeat;
             background-position: right 8px top 50%;
             background-size: 12px auto;
+        }
+        /* Enhanced focus styles for select inputs */
+        .knob-group select:focus {
+            box-shadow: 0 0 0 3px rgba(144, 238, 144, 0.5); /* Green glow on focus */
         }
 
         /* Audio Visualizer */
@@ -480,8 +489,8 @@
                 <h3>Instrument Gains</h3>
                 <div class="knob-group">
                     <label for="bassVolume">Bass Volume</label>
-                    <input type="range" id="bassVolume" min="0" max="0.5" step="0.01" value="0.13" title="Adjust bass instrument volume. (Shift + Up/Down for fine tune)">
-                    <span class="knob-value" id="bassVolumeValue">0.13</span>
+                    <input type="range" id="bassVolume" min="0" max="0.5" step="0.01" value="0.03" title="Adjust bass instrument volume. (Shift + Up/Down for fine tune)">
+                    <span class="knob-value" id="bassVolumeValue">0.03</span>
                 </div>
                 <div class="knob-group">
                     <label for="synthVolume">Synth Volume</label>
@@ -632,6 +641,7 @@
                 <button id="stopButton" disabled title="Stop the music loop (Hotkey: Space/Enter)">Stop Looping</button>
             </div>
             <div id="currentSectionDisplay">Current Section: --</div>
+            <div id="songIterationDisplay">Song Iteration: 0</div> <!-- New element for iteration count -->
             <div id="messageBox" class="message-box"></div>
 
             <!-- Audio Visualization Canvas -->
@@ -691,7 +701,7 @@
 
         // Musical parameters controlled by knobs - initialized to default values
         let masterVolume = 0.55;
-        let bassVolume = 0.13;
+        let bassVolume = 0.03; // Changed bass volume to 0.03
         let synthVolume = 0.08;
         let kickVolume = 0.89;
         let snareVolume = 0.21;
@@ -826,7 +836,9 @@
 
         let currentKey = 'C'; // Initial key for the loop
         let sectionsSinceLastKeyChange = 0;
-        const sectionsPerKeyChange = 2; // Change key every 2 sections
+        let sectionsPerKeyChange = 2; // Base value, will be randomized
+
+        let songIterationCount = 0; // New: Counter for full song iterations
 
         /**
          * Transposes an array of note strings by a given number of semitones.
@@ -865,7 +877,7 @@
             khamaj: ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'A#4', 'C5'], // Natural minor with major 7th
             bhimpalasi: ['C4', 'Eb4', 'F4', 'G4', 'Bb4', 'C5'], // Sa Komal Ga Ma Pa Komal Ni (simplified for 6 notes)
             kedar: ['C4', 'D4', 'E4', 'F#4', 'G4', 'A4', 'B4', 'C5'], // Sa Re Ga Tivra Ma Pa Dha Ni (similar to Yaman, but different characteristic phrases)
-            bageshri: ['C4', 'Eb4', 'F4', 'Ab4', 'Bb4', 'C5'], // Sa Komal Ga Ma Komal Dha Komal Ni (simplified for 6 notes)
+            bageshri: ['C4', 'Eb4', 'F4', 'Ab4', 'Bb4', 'C5'], // Sa Komal Dha Ma Komal Dha Komal Ni (simplified for 6 notes)
             malkauns: ['C4', 'Eb4', 'F4', 'Ab4', 'Bb4', 'C5'], // Sa Komal Ga Ma Komal Dha Komal Ni (pentatonic, no Re, Pa)
             darbari: ['C4', 'D4', 'Eb4', 'F4', 'G4', 'Ab4', 'Bb4', 'C5'], // Sa Re Komal Ga Ma Pa Komal Dha Komal Ni
             bhairav: ['C4', 'C#4', 'E4', 'F4', 'G4', 'G#4', 'B4', 'C5'] // Sa Komal Re Ga Ma Pa Komal Dha Ni
@@ -1279,6 +1291,16 @@
         }
 
         /**
+         * Updates the display with the current song iteration count.
+         */
+        function updateSongIterationDisplay() {
+            const displayElement = document.getElementById('songIterationDisplay');
+            if (displayElement) {
+                displayElement.textContent = `Song Iteration: ${songIterationCount}`;
+            }
+        }
+
+        /**
          * Displays a temporary message to the user in a dedicated message box.
          * @param {string} message - The text message to display.
          * @param {number} duration - How long the message should be visible in milliseconds.
@@ -1518,6 +1540,63 @@
             }
         }
 
+        /**
+         * Selects the next key based on weighted probabilities for musical coherence.
+         * Favors tonic, dominant, subdominant, and nearby keys on the Circle of Fifths.
+         * @param {string} currentKey - The current key (e.g., 'C').
+         * @returns {string} The newly selected key.
+         */
+        function selectNextKey(currentKey) {
+            const currentKeyIndex = majorKeysCircleOfFifths.indexOf(currentKey);
+            let nextKey = currentKey; // Default to staying in the same key
+            let transitionMessage = `Staying in ${currentKey} Major.`;
+
+            // Probabilities (sum to 1.0)
+            const probabilities = {
+                tonic: 0.40, // Stay in current key
+                dominant: 0.30, // Move to dominant (e.g., C -> G)
+                subdominant: 0.20, // Move to subdominant (e.g., C -> F)
+                nearbyRandom: 0.10 // Move to a nearby key (e.g., +/- 2 or 3 steps on CoF)
+            };
+
+            const rand = Math.random();
+            let cumulativeProbability = 0;
+
+            // Tonic
+            cumulativeProbability += probabilities.tonic;
+            if (rand < cumulativeProbability) {
+                nextKey = currentKey;
+                transitionMessage = `Staying in ${currentKey} Major.`;
+            } else {
+                // Dominant
+                cumulativeProbability += probabilities.dominant;
+                if (rand < cumulativeProbability) {
+                    nextKey = majorKeysCircleOfFifths[(currentKeyIndex + 1) % majorKeysCircleOfFifths.length];
+                    transitionMessage = `Modulating to Dominant: ${nextKey} Major!`;
+                } else {
+                    // Subdominant
+                    cumulativeProbability += probabilities.subdominant;
+                    if (rand < cumulativeProbability) {
+                        nextKey = majorKeysCircleOfFifths[(currentKeyIndex - 1 + majorKeysCircleOfFifths.length) % majorKeysCircleOfFifths.length];
+                        transitionMessage = `Modulating to Subdominant: ${nextKey} Major!`;
+                    } else {
+                        // Nearby Random (e.g., +/- 2 or 3 steps on CoF)
+                        let offset;
+                        do {
+                            offset = Math.floor(Math.random() * 6) - 3; // -3, -2, -1, 1, 2, 3 (avoid 0)
+                            if (offset >= 0) offset += 1; // Ensure no 0
+                        } while (offset === 0);
+                        
+                        const newIndex = (currentKeyIndex + offset + majorKeysCircleOfFifths.length * 2) % majorKeysCircleOfFifths.length;
+                        nextKey = majorKeysCircleOfFifths[newIndex];
+                        transitionMessage = `Modulating to a nearby key: ${nextKey} Major!`;
+                    }
+                }
+            }
+            showMessage(transitionMessage, 2500);
+            return nextKey;
+        }
+
 
         /**
          * Initializes the Web Audio API context and the main audio graph nodes.
@@ -1672,7 +1751,7 @@
                     // Connect send effects (Delay, Reverb) from preCompressorGain
                     preCompressorGain.connect(delaySendGain); // Send signal to delay
                     // Reverb is now connected from preCompressorGain to dry/wet paths
-                    updateReverbBypassConnection(); // Ensure reverb is connected correctly on init
+                    updateReverbBypassConnection();
 
                     // Initialize UI elements for visualization and volume meter
                     audioVisualizerCanvas = document.getElementById('audioVisualizer');
@@ -2159,49 +2238,29 @@
 
                     if (currentSongSectionIndex >= songStructure.length) {
                         currentSongSectionIndex = 0;
-                        console.log("End of song structure reached. Looping back to Intro.");
+                        songIterationCount++; // Increment song iteration count
+                        updateSongIterationDisplay(); // Update display
+                        console.log("End of song structure reached. Looping back to Intro. Song Iteration:", songIterationCount);
                     }
 
                     const nextSectionDef = songStructure[currentSongSectionIndex];
                     currentSectionType = nextSectionDef.type;
                     let phraseToUse = []; // Temporary variable to hold the phrase before assignment
                     
-                    // Determine the new key based on Circle of Fifths logic
-                    let previousKey = currentKey; // Store the key of the just-finished section
-                    let newKeyCandidate = previousKey; // Default to staying in the same key
-
+                    // Key Change Logic
+                    let previousKey = currentKey;
                     sectionsSinceLastKeyChange++;
 
                     if (sectionsSinceLastKeyChange >= sectionsPerKeyChange) {
+                        currentKey = selectNextKey(previousKey); // Use the new function for weighted key selection
                         sectionsSinceLastKeyChange = 0; // Reset counter
-
-                        const currentKeyIndex = majorKeysCircleOfFifths.indexOf(previousKey);
-                        
-                        const rand = Math.random();
-                        if (rand < 0.5) { // 50% chance for dominant or subdominant
-                            if (Math.random() < 0.5) { // 25% for dominant
-                                newKeyCandidate = majorKeysCircleOfFifths[(currentKeyIndex + 1) % majorKeysCircleOfFifths.length];
-                                showMessage(`Modulating to Dominant: ${newKeyCandidate} Major!`, 2500);
-                            } else { // 25% for subdominant
-                                newKeyCandidate = majorKeysCircleOfFifths[(currentKeyIndex - 1 + majorKeysCircleOfFifths.length) % majorKeysCircleOfFifths.length];
-                                showMessage(`Modulating to Subdominant: ${newKeyCandidate} Major!`, 2500);
-                            }
-                        } else if (rand < 0.8) { // 30% chance to stay on tonic
-                            newKeyCandidate = previousKey;
-                            showMessage(`Staying in ${newKeyCandidate} Major.`, 2500);
-                        } else { // 20% chance for a random key
-                            let randomKeyIndex;
-                            do {
-                                randomKeyIndex = Math.floor(Math.random() * majorKeysCircleOfFifths.length);
-                            } while (randomKeyIndex === currentKeyIndex); // Ensure it's not the current key
-                            newKeyCandidate = majorKeysCircleOfFifths[randomKeyIndex];
-                            showMessage(`Modulating to a new key: ${newKeyCandidate} Major!`, 2500);
-                        }
+                        // Introduce variability to the next key change interval
+                        sectionsPerKeyChange = Math.floor(Math.random() * 3) + 2; // Randomly 2, 3, or 4 sections
+                        console.log(`Next key change will happen in ${sectionsPerKeyChange} sections.`);
                     } else {
                         // If not time for a key change, just keep the current key
-                        showMessage(`Staying in ${newKeyCandidate} Major.`, 2500);
+                        showMessage(`Staying in ${currentKey} Major.`, 2500); // Re-emphasize current key
                     }
-                    currentKey = newKeyCandidate; // Update global currentKey
 
                     const semitonesToTranspose = keyToSemitoneOffsetFromC[currentKey] - keyToSemitoneOffsetFromC['C'];
 
@@ -2319,6 +2378,9 @@
             nextNoteTime = audioContext.currentTime;
             
             currentSongSectionIndex = 0;
+            songIterationCount = 0; // Reset iteration count on fresh start
+            updateSongIterationDisplay(); // Update display
+
             const initialSectionDef = songStructure[currentSongSectionIndex];
             currentSectionType = initialSectionDef.type;
             currentKey = initialSectionDef.initialKey || 'C'; // Set initial key
@@ -2326,7 +2388,7 @@
             let initialPhraseToUse = [];
             const semitonesToTranspose = keyToSemitoneOffsetFromC[currentKey] - keyToSemitoneOffsetFromC['C'];
 
-            if (currentSectionType === 'verse') {
+            if (currentSectionType === 'verse' && verseIterationCount % 2 === 0) {
                 verseIterationCount = 1;
                 currentSectionName = initialSectionDef.baseName + '_A'; // Start with verse1_A
                 // Transpose the initial verse phrase to the initial key
@@ -2355,7 +2417,8 @@
             currentPhraseIndex = 0;
             stepsPlayedInCurrentSection = 0;
             sectionsSinceLastKeyChange = 0; // Reset key change counter at start
-            
+            sectionsPerKeyChange = Math.floor(Math.random() * 3) + 2; // Initialize with random 2-4 sections
+
             // Calculate total steps based on the assigned currentSectionPhrase length
             currentSectionTotalSteps = currentSectionPhrase.length * initialSectionDef.durationMultiplier;
 
@@ -2951,10 +3014,39 @@
 
             // Check if preset already exists
             if (localStorage.getItem(presetManager.storageKeyPrefix + presetName)) {
-                if (!confirm(`Preset "${presetName}" already exists. Do you want to overwrite it?`)) {
-                    showMessage("Preset save cancelled.", 2000);
-                    return;
-                }
+                // Modified to use custom message box instead of confirm
+                const confirmOverwrite = () => {
+                    const confirmBox = document.createElement('div');
+                    confirmBox.style.cssText = `
+                        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                        background-color: #3a3a3a; padding: 20px; border-radius: 10px;
+                        box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 1000;
+                        color: #e0e0e0; text-align: center;
+                    `;
+                    confirmBox.innerHTML = `
+                        <p>Preset "${presetName}" already exists. Do you want to overwrite it?</p>
+                        <button id="confirmOverwriteYes" style="margin-right: 10px;">Yes</button>
+                        <button id="confirmOverwriteNo">No</button>
+                    `;
+                    document.body.appendChild(confirmBox);
+
+                    document.getElementById('confirmOverwriteYes').onclick = () => {
+                        document.body.removeChild(confirmBox);
+                        const settings = getCurrentSettings();
+                        if (presetManager.savePreset(presetName, settings)) {
+                            showMessage(`Preset "${presetName}" saved!`);
+                            console.log(`Preset "${presetName}" saved:`, settings);
+                        } else {
+                            showMessage("Failed to save preset. Local storage might be full or unavailable.", 3000);
+                        }
+                    };
+                    document.getElementById('confirmOverwriteNo').onclick = () => {
+                        document.body.removeChild(confirmBox);
+                        showMessage("Preset save cancelled.", 2000);
+                    };
+                };
+                confirmOverwrite();
+                return;
             }
 
             const settings = getCurrentSettings();
@@ -3383,6 +3475,7 @@
 
 
             updateSectionDisplay();
+            updateSongIterationDisplay(); // Initialize iteration display
 
             // Initialize keyboard controls
             initializeKeyboardControls();
