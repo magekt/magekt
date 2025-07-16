@@ -155,6 +155,36 @@
         #tutorialOverlay button:active {
             transform: translateY(1px);
         }
+
+        /* Divine Blast Button */
+        #divineBlastBtn {
+            position: absolute;
+            bottom: 20px; /* Adjust as needed */
+            right: 20px; /* Adjust as needed */
+            background-color: #8a2be2; /* Purple color */
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            z-index: 10;
+            display: none; /* Hidden by default, shown when game starts */
+        }
+        #divineBlastBtn:hover {
+            background-color: #6a00b3;
+            transform: translateY(-2px);
+        }
+        #divineBlastBtn:active {
+            transform: translateY(1px);
+        }
+        #divineBlastBtn.disabled {
+            background-color: #555;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
     </style>
     <!-- Google Fonts - Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
@@ -181,6 +211,8 @@
         <ul id="lbListEl"></ul>
     </div>
 
+    <button id="divineBlastBtn">Divine Blast (0)</button> <!-- Divine Blast Button -->
+
     <script>
         // Consolidated utility functions.
         const Utils = {
@@ -205,21 +237,25 @@
             player: { size: 7.5, acceleration: 300, friction: 0.9, maxSpeed: 100, color: "#00ff00", name: "GANESH", level: 1 }, // Adjusted player size/speed for smaller canvas
             bullet: { size: 1.5, speed: 175, lifetime: 1000, color: "#ffffff" }, // Adjusted bullet size/speed
             divine: {
-                types: ["Loki", "Thor", "Buddha", "Sun", "Hermes", "Zeus", "Odin", "Ra", "Anubis"],
+                types: ["Loki", "Thor", "Buddha", "Sun", "Hermes", "Zeus", "Odin", "Ra", "Anubis", "Shiva"], // Added Shiva
                 boss: "Boss",
                 baseSize: 10, // Adjusted base enemy size
                 vanishInterval: 2000,
                 vanishDuration: 500,
                 lightningDelay: 1200,
                 circleGrowth: 20, // Adjusted circle growth
-                sunHits: 3
+                sunHits: 3,
+                shivaProjectileSize: 5, // Shiva projectile size
+                shivaProjectileSpeed: 100, // Shiva projectile speed
+                shivaTeleportInterval: 2500 // Shiva teleport interval
             },
             enemy: { spawnInterval: 2000, baseSpeed: 30, speedIncrease: 2, maxSpeed: 50 }, // Adjusted enemy speed
             boss: { color: "#ff00ff", size: 17.5, health: 5, speed: 17.5 }, // Adjusted boss size/speed
             particles: { count: 15, size: 1, lifetime: 500, colors: ["#ff4444", "#ffcc00", "#00aaff"] }, // Adjusted particle size/count
             levelUpScore: 750, // Adjusted level up score
             continueCost: 350, // Adjusted continue cost
-            powerUpSpawnInterval: 7000 // Adjusted power-up spawn interval
+            powerUpSpawnInterval: 7000, // Adjusted power-up spawn interval
+            divineBlast: { cooldown: 5000, maxCharges: 3, radius: 75, damage: 2 } // Divine Blast properties
         };
 
         // Canvas setup.
@@ -329,6 +365,7 @@
         const tutorialOverlay = document.getElementById("tutorialOverlay");
         const closeTutorialBtn = document.getElementById("closeTutorialBtn");
         const mainUiOverlay = document.getElementById("main-ui-overlay"); // Get the new overlay div
+        const divineBlastBtn = document.getElementById("divineBlastBtn"); // Divine Blast button
 
         // Starfield background.
         class Star {
@@ -404,6 +441,9 @@
                 } else if (this.type === "speedBoost") {
                     ctx.fillStyle = "#ff00ff";
                     label = "⚡"; // Lightning emoji for speed boost
+                } else if (this.type === "shieldRecharge") { // New power-up
+                    ctx.fillStyle = "#00ffff";
+                    label = "🛡️"; // Shield emoji for shield recharge
                 }
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
@@ -566,6 +606,32 @@
             }
         }
 
+        // Shiva's Projectile
+        class ShivaProjectile {
+            constructor(x, y, targetX, targetY) {
+                this.x = x;
+                this.y = y;
+                this.size = config.divine.shivaProjectileSize;
+                this.speed = config.divine.shivaProjectileSpeed;
+                this.angle = Utils.angleBetween(x, y, targetX, targetY);
+                this.lifetime = 2000; // Projectile disappears after a while
+                this.created = performance.now();
+            }
+
+            update(dt) {
+                this.x += Math.cos(this.angle) * this.speed * dt;
+                this.y += Math.sin(this.angle) * this.speed * dt;
+            }
+
+            draw(ctx) {
+                ctx.fillStyle = "#8a2be2"; // Purple color for Shiva's projectile
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+
         // Enemy class with behavior determined by type.
         class Enemy {
             constructor(type, game) {
@@ -574,6 +640,7 @@
                 this.size = config.divine.baseSize;
                 this.visible = true;
                 this.state = {};
+                this.projectiles = []; // For Shiva's projectiles
 
                 // Set defaults for health and speed based on type and level.
                 if (game.level % 10 === 0 || type === config.divine.boss) {
@@ -605,7 +672,7 @@
                     let dist = minDistance + Math.random() * (Math.min(config.canvas.width, config.canvas.height) / 3);
                     this.x = game.player.x + Math.cos(angle) * dist;
                     this.y = game.player.y + Math.sin(angle) * dist;
-                } else if (["Loki", "Thor", config.divine.boss, "Anubis"].includes(this.type)) {
+                } else if (["Loki", "Thor", config.divine.boss, "Anubis", "Shiva"].includes(this.type)) { // Added Shiva
                     // These types spawn from edges
                     const pos = getRandomSpawn();
                     this.x = pos.x;
@@ -651,6 +718,11 @@
                     this.state.lastTeleport = performance.now();
                     this.state.teleportInterval = 1600 - (game.level * 30); // Anubis teleports faster
                     if (this.state.teleportInterval < 500) this.state.teleportInterval = 500;
+                } else if (this.type === "Shiva") { // Shiva specific state
+                    this.state.lastTeleport = performance.now();
+                    this.state.teleportInterval = config.divine.shivaTeleportInterval;
+                    this.state.lastProjectileFire = performance.now();
+                    this.state.projectileFireInterval = 1000; // Shiva fires every 1 second after teleport
                 }
             }
             update(dt) {
@@ -668,9 +740,15 @@
                     case "Odin": this.updateOdin(effectiveDt); break;
                     case "Ra": this.updateRa(effectiveDt); break;
                     case "Anubis": this.updateAnubis(effectiveDt); break;
+                    case "Shiva": this.updateShiva(effectiveDt); break; // Shiva update
                     case config.divine.boss: this.updateBoss(effectiveDt); break;
                     default: this.moveTowardsPlayer(effectiveDt);
                 }
+                // Update Shiva's projectiles
+                this.projectiles = this.projectiles.filter(p => {
+                    p.update(effectiveDt);
+                    return (now - p.created) < p.lifetime;
+                });
             }
             updateLoki(dt) {
                 if (performance.now() - this.state.lastVanish > this.state.vanishInterval) {
@@ -805,6 +883,22 @@
                     this.state.lastTeleport = performance.now();
                 }
                 this.moveTowardsPlayer(dt); // Anubis still moves towards player when not teleporting
+            }
+            updateShiva(dt) {
+                const now = performance.now();
+                if (now - this.state.lastTeleport > this.state.teleportInterval) {
+                    // Teleport to a random position on the canvas
+                    this.x = Math.random() * (config.canvas.width - this.size * 2) + this.size;
+                    this.y = Math.random() * (config.canvas.height - this.size * 2) + this.size;
+                    this.state.lastTeleport = now;
+                    this.state.lastProjectileFire = now; // Reset projectile fire timer after teleport
+                }
+
+                // Fire projectile after a delay from teleport
+                if (now - this.state.lastProjectileFire > this.state.projectileFireInterval) {
+                    this.projectiles.push(new ShivaProjectile(this.x, this.y, game.player.x, game.player.y));
+                    this.state.lastProjectileFire = now;
+                }
             }
             updateBoss(dt) {
                 this.moveWithBounce(dt); // Boss moves and bounces off walls
@@ -945,6 +1039,9 @@
                     ctx.fillStyle = "#0f0";
                     ctx.fillRect(barX, barY, healthWidth, barHeight);
                 }
+
+                // Draw Shiva's projectiles
+                this.projectiles.forEach(p => p.draw(ctx));
             }
         }
 
@@ -988,6 +1085,10 @@
                 this.speedBoostEnd = 0;
                 this.isSoundOn = false; // Track sound state
 
+                // Divine Blast properties
+                this.divineBlastCharges = 0;
+                this.lastDivineBlastTime = 0;
+
                 // For shield perk, store initial durability to calculate alpha
                 this.playerPerks.initialShieldDurability = 5;
 
@@ -999,6 +1100,8 @@
                 this.paused = false;
                 lastTime = performance.now();
                 // Background music control moved to soundToggleBtn
+                divineBlastBtn.style.display = 'block'; // Show divine blast button
+                this.updateDivineBlastUI();
                 requestAnimationFrame(this.gameLoop.bind(this));
             }
             reset() {
@@ -1021,6 +1124,8 @@
                 this.shopOpen = false;
                 this.slowTimeActive = false;
                 this.speedBoostActive = false;
+                this.divineBlastCharges = 0; // Reset divine blast charges
+                this.lastDivineBlastTime = 0; // Reset divine blast cooldown
                 // Do not reset isSoundOn here, it's controlled by the button
             }
             togglePause() { this.paused = !this.paused; }
@@ -1040,7 +1145,8 @@
                     { name: "Extra Life", cost: 150, effect: () => { this.lives++; } },
                     { name: "Invisibility Perk", cost: 125, effect: () => { this.playerPerks.invisibility = true; this.playerPerks.invisibilityDuration = 3000; this.playerPerks.invisibilityStart = performance.now(); } },
                     { name: "Magic Bullets", cost: 200, effect: () => { this.playerPerks.magicBullets = true; } },
-                    { name: "Magnetic Field", cost: 75, effect: () => { this.playerPerks.magnetic = true; } }
+                    { name: "Magnetic Field", cost: 75, effect: () => { this.playerPerks.magnetic = true; } },
+                    { name: "Divine Blast", cost: 250, effect: () => { this.divineBlastCharges = config.divineBlast.maxCharges; this.updateDivineBlastUI(); } } // New Divine Blast upgrade
                 ];
                 this.upgradeOptions = [];
                 // Select 3 random unique upgrades
@@ -1153,6 +1259,13 @@
                         this.spawnPowerUp();
                         this.lastPowerUpSpawn = timestamp;
                     }
+
+                    // Divine Blast Cooldown
+                    if (this.divineBlastCharges < config.divineBlast.maxCharges && now - this.lastDivineBlastTime > config.divineBlast.cooldown) {
+                        this.divineBlastCharges++;
+                        this.lastDivineBlastTime = now;
+                        this.updateDivineBlastUI();
+                    }
                 }
             }
             draw() {
@@ -1171,7 +1284,14 @@
                     ctx.fillStyle = "#fff";
                     ctx.font = "10px 'Inter', sans-serif"; // Adjusted font size
                     ctx.textAlign = "center";
-                    ctx.fillText(`Score: ${this.score}   Lives: ${this.lives}   Level: ${this.level}`, config.canvas.width / 2, 25); // Adjusted Y position
+                    ctx.fillText(`Score: ${this.score}   Level: ${this.level}`, config.canvas.width / 2, 25); // Adjusted Y position
+
+                    // Draw lives as hearts
+                    ctx.textAlign = "left";
+                    for (let i = 0; i < this.lives; i++) {
+                        ctx.fillText("❤️", 5 + (i * 12), 25); // Adjusted position for hearts
+                    }
+                    ctx.textAlign = "center"; // Reset alignment
 
                     if (this.comboCount > 1) {
                         ctx.fillStyle = "#ffcc00"; // Combo text color
@@ -1387,6 +1507,25 @@
                     return true; // Enemy remains
                 });
 
+                // Player-Shiva Projectile collisions
+                this.enemies.forEach(enemy => {
+                    if (enemy.type === "Shiva") {
+                        enemy.projectiles = enemy.projectiles.filter(p => {
+                            if (Utils.distance(this.player.x, this.player.y, p.x, p.y) < config.player.size + p.size) {
+                                if (!this.playerPerks.invisibility) {
+                                    playerHitSound.play();
+                                    this.loseLife(1); // Shiva's projectile deals 1 damage
+                                    game.player.isHit = true; // Trigger player hit effect
+                                    game.player.hitEffectEndTime = performance.now() + 200; // 200ms flash
+                                }
+                                return false; // Remove projectile
+                            }
+                            return true; // Projectile remains
+                        });
+                    }
+                });
+
+
                 // Player-PowerUp collisions
                 this.powerUps = this.powerUps.filter(pu => {
                     if (Utils.distance(this.player.x, this.player.y, pu.x, pu.y) < config.player.size + pu.size) {
@@ -1398,6 +1537,13 @@
                         } else if (pu.type === "speedBoost") {
                             this.speedBoostActive = true;
                             this.speedBoostEnd = performance.now() + 7000; // 7 seconds speed boost
+                        } else if (pu.type === "shieldRecharge") { // New power-up effect
+                            if (this.playerPerks.shield) {
+                                this.playerPerks.shieldDurability = this.playerPerks.initialShieldDurability;
+                            } else {
+                                this.playerPerks.shield = true;
+                                this.playerPerks.shieldDurability = this.playerPerks.initialShieldDurability;
+                            }
                         }
                         return false; // Remove power-up
                     }
@@ -1418,6 +1564,7 @@
             gameOver() {
                 this.running = false;
                 backgroundMusic.stopContinuous(); // Stop background music
+                divineBlastBtn.style.display = 'none'; // Hide divine blast button
                 this.updateLeaderboard(config.player.name, this.score);
                 mainUiOverlay.style.display = 'flex'; // Show the overlay for game over
             }
@@ -1443,7 +1590,7 @@
                 this.enemies.push(new Enemy(chosenType, this));
             }
             spawnPowerUp() {
-                const powerUpTypes = ["extraLife", "timeSlow", "speedBoost"];
+                const powerUpTypes = ["extraLife", "timeSlow", "speedBoost", "shieldRecharge"]; // Added shieldRecharge
                 const type = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
                 const x = Math.random() * config.canvas.width;
                 const y = Math.random() * config.canvas.height;
@@ -1477,6 +1624,57 @@
                     });
                 }
             }
+            // New Divine Blast method
+            activateDivineBlast() {
+                if (this.divineBlastCharges > 0 && !this.paused && this.running) {
+                    this.divineBlastCharges--;
+                    this.lastDivineBlastTime = performance.now(); // Start cooldown
+                    this.updateDivineBlastUI();
+
+                    // Create a visual blast effect (e.g., a rapidly expanding circle)
+                    let blastRadius = 0;
+                    const maxBlastRadius = config.divineBlast.radius;
+                    const blastDuration = 150; // ms
+                    const blastStart = performance.now();
+
+                    const animateBlast = () => {
+                        const elapsed = performance.now() - blastStart;
+                        if (elapsed < blastDuration) {
+                            blastRadius = maxBlastRadius * (elapsed / blastDuration);
+                            // Draw blast effect
+                            ctx.beginPath();
+                            ctx.arc(this.player.x, this.player.y, blastRadius, 0, Math.PI * 2);
+                            ctx.fillStyle = `rgba(138, 43, 226, ${1 - (elapsed / blastDuration)})`; // Fade out
+                            ctx.fill();
+                            requestAnimationFrame(animateBlast);
+                        }
+                    };
+                    animateBlast();
+
+                    // Damage/destroy enemies within the blast radius
+                    this.enemies = this.enemies.filter(enemy => {
+                        if (Utils.distance(this.player.x, this.player.y, enemy.x, enemy.y) < maxBlastRadius) {
+                            enemy.hp -= config.divineBlast.damage;
+                            for (let i = 0; i < config.particles.count * 2; i++) { // More particles for blast
+                                this.particles.push(new Particle(enemy.x, enemy.y));
+                            }
+                            if (enemy.hp <= 0) {
+                                this.score += 100 * this.scoreMultiplier; // Get score for destroyed enemies
+                                return false; // Remove enemy
+                            }
+                        }
+                        return true; // Enemy remains
+                    });
+                }
+            }
+            updateDivineBlastUI() {
+                divineBlastBtn.textContent = `Divine Blast (${this.divineBlastCharges})`;
+                if (this.divineBlastCharges === 0) {
+                    divineBlastBtn.classList.add('disabled');
+                } else {
+                    divineBlastBtn.classList.remove('disabled');
+                }
+            }
         }
 
         const game = new Game();
@@ -1496,6 +1694,9 @@
             }
             if (e.key === "p" || e.key === "P") {
                 game.togglePause();
+            }
+            if (e.key === "q" || e.key === "Q") { // 'Q' key for Divine Blast
+                game.activateDivineBlast();
             }
         });
 
@@ -1532,6 +1733,8 @@
                         game.running = true;
                         game.paused = false;
                         mainUiOverlay.style.display = 'none'; // Hide overlay
+                        divineBlastBtn.style.display = 'block'; // Show divine blast button
+                        game.updateDivineBlastUI();
                         if (game.isSoundOn) { // Only start music if sound is enabled
                             backgroundMusic.startContinuous();
                             backgroundMusic.setVolume(0.3);
@@ -1601,6 +1804,8 @@
                             game.running = true;
                             game.paused = false;
                             mainUiOverlay.style.display = 'none'; // Hide overlay
+                            divineBlastBtn.style.display = 'block'; // Show divine blast button
+                            game.updateDivineBlastUI();
                             if (game.isSoundOn) { // Only start music if sound is enabled
                                 backgroundMusic.startContinuous();
                                 backgroundMusic.setVolume(0.3);
@@ -1674,6 +1879,16 @@
                 }
             }
         });
+
+        // Divine Blast button listener (for both desktop click and mobile touch)
+        divineBlastBtn.addEventListener("click", () => {
+            game.activateDivineBlast();
+        });
+        divineBlastBtn.addEventListener("touchend", (e) => {
+            e.preventDefault(); // Prevent default touch behavior
+            game.activateDivineBlast();
+        });
+
 
         // Initial setup and event listeners
         closeTutorialBtn.addEventListener("click", () => {
