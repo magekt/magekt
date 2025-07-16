@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML File Index - magekt</title>
+    <style>
+        :root {
+            --primary-color: #0366d6;
+            --background-color: #ffffff;
+            --text-color: #24292e;
+            --border-color: #e1e4e8;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+        }
+
+        .meta-info {
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+
+        .search-container {
+            margin-bottom: 20px;
+        }
+
+        #searchInput {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .file-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 8px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+
+        .file-item:hover {
+            background-color: #f6f8fa;
+        }
+
+        .file-link {
+            text-decoration: none;
+            color: var(--primary-color);
+            flex-grow: 1;
+        }
+
+        .file-meta {
+            color: #666;
+            font-size: 0.9em;
+            margin-left: 20px;
+        }
+
+        .sort-controls {
+            margin-bottom: 20px;
+        }
+
+        .sort-btn {
+            padding: 8px 16px;
+            margin-right: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .sort-btn:hover {
+            background-color: #f6f8fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>HTML File Index</h1>
+            <div class="meta-info">
+                <div>Repository: magekt/magekt</div>
+                <div>Last Updated: <span id="currentTime"></span></div>
+            </div>
+        </header>
+
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search files...">
+        </div>
+
+        <div class="sort-controls">
+            <button class="sort-btn" onclick="sortFiles('name')">Sort by Name</button>
+            <button class="sort-btn" onclick="sortFiles('date')">Sort by Date</button>
+        </div>
+
+        <ul id="fileList" class="file-list">
+            <!-- File list will be dynamically populated -->
+        </ul>
+    </div>
+
+    <script>
+        // Update current time
+        function updateTime() {
+            const timeElement = document.getElementById('currentTime');
+            const now = new Date();
+            timeElement.textContent = now.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        // File handling
+        let files = [];
+
+        // Simulate file scanning (in real implementation, this would come from server)
+        async function scanFiles() {
+            // This is a simulation - in real implementation, 
+            // this would make an API call to get the actual files
+            files = [
+                {
+                    name: 'index.html',
+                    path: './index.html',
+                    modified: '2025-07-16 06:32:38',
+                    size: '2.4 KB'
+                },
+                // Add more files as they're discovered
+            ];
+            renderFiles(files);
+        }
+
+        // Render file list
+        function renderFiles(filesToRender) {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+
+            filesToRender.forEach(file => {
+                const li = document.createElement('li');
+                li.className = 'file-item';
+                li.innerHTML = `
+                    <a href="${file.path}" class="file-link">${file.name}</a>
+                    <span class="file-meta">
+                        ${file.modified} | ${file.size}
+                    </span>
+                `;
+                fileList.appendChild(li);
+            });
+        }
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredFiles = files.filter(file => 
+                file.name.toLowerCase().includes(searchTerm)
+            );
+            renderFiles(filteredFiles);
+        });
+
+        // Sorting functionality
+        function sortFiles(criterion) {
+            const sortedFiles = [...files].sort((a, b) => {
+                if (criterion === 'name') {
+                    return a.name.localeCompare(b.name);
+                } else if (criterion === 'date') {
+                    return new Date(b.modified) - new Date(a.modified);
+                }
+            });
+            renderFiles(sortedFiles);
+        }
+
+        // Initial scan
+        scanFiles();
+    </script>
+</body>
+</html>
