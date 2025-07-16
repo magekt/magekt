@@ -215,11 +215,29 @@
         /* Removed max-height/overflow from .debug-content div to allow individual sections to manage their own overflow */
         /* Apply scrolling specifically to the system info section */
         #debug-system-info {
-            max-height: 200px; /* Limit height of system info log */
+            max-height: 250px; /* Limit height of system info log */
             overflow-y: auto; /* Enable scrolling for system info log */
-            border-top: 1px dashed #4a90e2; /* Visual separator */
+            border: 1px solid #00ff00; /* Visual separator and clear boundary */
             padding-top: 5px;
             margin-top: 5px;
+            background: rgba(0, 0, 0, 0.6); /* Add a background to make it distinct */
+            border-radius: 3px; /* Slightly rounded corners */
+            padding: 5px; /* Padding inside the scrollable area */
+            /* Custom scrollbar for this specific element */
+            scrollbar-width: thin;
+            scrollbar-color: #39ff14 #333; /* Green thumb, dark track */
+        }
+        #debug-system-info::-webkit-scrollbar {
+            width: 8px;
+        }
+        #debug-system-info::-webkit-scrollbar-track {
+            background: #333;
+            border-radius: 10px;
+        }
+        #debug-system-info::-webkit-scrollbar-thumb {
+            background-color: #39ff14;
+            border-radius: 10px;
+            border: 1px solid #00b300;
         }
     </style>
 </head>
@@ -615,14 +633,25 @@
 
                 if (gameState === "game_over") return;
 
+                // If in a specific choosing state, try to handle the choice first
                 if (gameState === "choosing" || gameState === "using_inventory") {
-                    handleChoice(cmd);
-                    return;
-                }
-                
-                if (gameState === "battle") {
-                    handleBattle(cmd);
-                    return;
+                    const choiceResult = handleChoice(cmd); // handleChoice now returns an object
+                    debugSystem?.log(`executeCommand: handleChoice returned: ${JSON.stringify(choiceResult)}`, 'debug');
+
+                    if (choiceResult.handled) {
+                        // If a specific choice was handled successfully, endDay was called by handleChoice.
+                        // So, we return here to prevent further processing in executeCommand.
+                        return;
+                    } else if (choiceResult.type === 'redirect_to_general') {
+                        // If handleChoice determined it was a general command,
+                        // it already set gameState to 'playing' and cleared context.
+                        // Now, we let the execution fall through to the general command handling below.
+                        // No 'return' here, allowing the switch statement to catch it.
+                    } else { // choiceResult.type === 'invalid_context_command'
+                        // Invalid choice for the current context, message already displayed by handleChoice.
+                        // Stay in the current choosing state and wait for valid input.
+                        return;
+                    }
                 }
                 
                 let shouldDisplayGeneralOptions = true;
@@ -923,18 +952,31 @@
         function handleChoice(cmd) {
             try {
                 debugSystem?.log(`handleChoice: Received raw command '${cmd}' for context ${currentChoiceContext?.type}`, 'info');
-                let choiceHandled = false;
-                // getActualChoiceFromInput now returns the raw string, not lowercased/trimmed
+                const normalizedCmd = cmd.trim().toLowerCase(); // Normalize command for internal checks
                 let actualCmdRaw = getActualChoiceFromInput(cmd, currentChoiceContext.choices);
                 debugSystem?.log(`handleChoice: Resolved actualCmd (raw) is '${actualCmdRaw}'`, 'debug');
 
+                // Define general game commands
+                const generalCommands = ['stats', 'wander', 'rest', 'remember', 'inventory', 'meditate', 'debug', 'quit'];
+
+                // Check if the input is a general game command
+                if (generalCommands.includes(normalizedCmd)) {
+                    addToStory(`You step away from the current interaction to ${normalizedCmd}.`);
+                    currentChoiceContext = null; // Exit the specific choice context
+                    gameState = "playing"; // Return to general playing state
+                    return { handled: false, type: 'redirect_to_general' }; // Signal to executeCommand to process this as a general command
+                }
+
+                // If not a general command, proceed with specific choice handling
+                let choiceHandled = false;
+
                 // If getActualChoiceFromInput couldn't resolve a valid choice (e.g., out-of-bounds number)
                 // it would return the original (potentially invalid) rawCmd.
-                // We need to ensure it's a non-empty string before proceeding.
-                if (!actualCmdRaw) { // This handles cases where getActualChoiceFromInput might return empty string for invalid numeric input
-                     addToStory("Invalid choice. Please enter a valid option.");
+                // We need to ensure it's a non-empty string before proceeding with specific choice logic.
+                if (!actualCmdRaw) { 
+                     addToStory("That action is not available right now. Please choose one of the listed options or a general command like 'stats' or 'wander'.");
                      displayOptions();
-                     return;
+                     return { handled: false, type: 'invalid_context_command' };
                 }
 
                 switch (currentChoiceContext.type) {
@@ -942,11 +984,9 @@
                         choiceHandled = handleExploreChoice(currentChoiceContext.location, actualCmdRaw);
                         break;
                     case "explore_dying_tree_comfort":
-                        // Fixed: Changed 'actualChoiceRaw' to 'actualCmdRaw'
                         choiceHandled = handleDyingTreeComfortChoice(actualCmdRaw);
                         break;
                     case "explore_memory_shrine_add_name":
-                        // For this specific case, we want the raw user input as the name
                         addToStory(`You carve '${actualCmdRaw}' into the stone. They will not be forgotten.`);
                         player.addMemory(`Honored ${actualCmdRaw} at the shrine`);
                         player.changeHope(5);
@@ -965,21 +1005,25 @@
                         choiceHandled = handleInventoryUse(actualCmdRaw);
                         break;
                     default:
-                        addToStory("Invalid choice. Please choose one of the available options.");
+                        addToStory("That action is not available right now. Please choose one of the listed options or a general command like 'stats' or 'wander'.");
                         displayOptions();
-                        return;
+                        return { handled: false, type: 'invalid_context_command' };
                 }
 
                 if (choiceHandled) {
+                    debugSystem?.log(`handleChoice: Specific choice handled successfully.`, 'debug');
                     currentChoiceContext = null;
                     gameState = "playing";
-                    endDay();
+                    endDay(); // Day ends after a successful specific interaction
+                    return { handled: true, type: 'specific_choice' };
                 } else {
-                    addToStory("Invalid choice. Please choose one of the available options.");
+                    addToStory("That action is not available right now. Please choose one of the listed options or a general command like 'stats' or 'wander'.");
                     displayOptions();
+                    return { handled: false, type: 'invalid_context_command' };
                 }
             } catch (error) {
                 handleGameError(new GameError('Error handling choice', 'CHOICE_HANDLING_ERROR'));
+                return { handled: false, type: 'error' };
             }
         }
 
@@ -1142,114 +1186,64 @@
                     case "meet_npc_marcus": npcName = "Marcus"; break;
                     case "meet_npc_chronicler": npcName = "The Chronicler"; break;
                     case "meet_npc_anna": npcName = "Anna"; break;
-                    default: return false;
+                    default: debugSystem?.log(`handleNpcChoice: Unknown npcType '${npcType}'. Returning false.`, 'error'); return false;
                 }
 
-                const normalizedCmd = cmdRaw.trim().toLowerCase(); // Normalize command here
+                const normalizedCmd = cmdRaw.trim().toLowerCase();
                 debugSystem?.log(`handleNpcChoice: Handling NPC interaction with ${npcName}, normalized command: '${normalizedCmd}'`, 'info');
+                debugSystem?.log(`handleNpcChoice: Type of normalizedCmd: ${typeof normalizedCmd}, Length: ${normalizedCmd.length}`, 'debug'); // NEW LOG
+                debugSystem?.log(`handleNpcChoice: Normalized command value (quoted): '${normalizedCmd}'`, 'debug'); // NEW LOG
 
                 if (!player.relationships[npcName]) {
                     player.relationships[npcName] = 0;
                 }
 
-                // Find the NPC data
                 const npcData = NPCS.find(npc => npc.name === npcName);
                 if (!npcData) {
                     debugSystem?.log(`handleNpcChoice: NPC data not found for ${npcName}`, 'error');
                     return false;
                 }
 
-                // Get the available choices for this NPC, also normalized
                 const validChoices = npcData.choices.map(choice => choice.trim().toLowerCase());
-                debugSystem?.log(`handleNpcChoice: Valid choices for ${npcName}: [${validChoices.map(c => `'${c}'`).join(', ')}]`, 'debug'); // Log valid choices
+                debugSystem?.log(`handleNpcChoice: Valid choices for ${npcName}: [${validChoices.map(c => `'${c}'`).join(', ')}]`, 'debug');
 
-                // Check if the normalized command matches any of the valid normalized choices
                 const isChoiceValid = validChoices.includes(normalizedCmd);
                 debugSystem?.log(`handleNpcChoice: Checking if validChoices.includes('${normalizedCmd}'). Result: ${isChoiceValid}`, 'debug');
 
                 if (!isChoiceValid) {
-                    debugSystem?.log(`handleNpcChoice: Command '${normalizedCmd}' NOT found in valid choices. Returning false.`, 'warning'); // Specific log
+                    debugSystem?.log(`handleNpcChoice: Command '${normalizedCmd}' NOT found in valid choices. Returning false.`, 'warning');
                     return false;
                 }
-                debugSystem?.log(`handleNpcChoice: Command '${normalizedCmd}' IS found in valid choices. Proceeding.`, 'debug'); // Specific log
+                debugSystem?.log(`handleNpcChoice: Command '${normalizedCmd}' IS found in valid choices. Proceeding.`, 'debug');
 
 
                 switch(npcName) {
                     case "The Chronicler":
+                        debugSystem?.log(`Chronicler: Entering switch case. normalizedCmd: '${normalizedCmd}'`, 'debug'); // NEW LOG
                         if (normalizedCmd === "share your story" || normalizedCmd === "share") {
+                            debugSystem?.log(`Chronicler: Matched 'share your story' or 'share'.`, 'debug'); // NEW LOG
                             addToStory("You tell him of your journey. He writes it down with shaking hands.");
                             player.addMemory("Shared your story with the Chronicler");
                             player.sanity += 10;
                             player.relationships["The Chronicler"] += 10;
                             checkStatRewards();
+                            debugSystem?.log(`Chronicler choice 'share story' handled, returning true.`, 'debug');
                             return true;
                         } else if (normalizedCmd === "listen to his" || normalizedCmd === "listen") {
+                            debugSystem?.log(`Chronicler: Matched 'listen to his' or 'listen'.`, 'debug'); // NEW LOG
                             addToStory("He recounts tales of a forgotten world, of heroes and villains long turned to dust.");
                             player.sanity += 5;
                             player.relationships["The Chronicler"] += 5;
                             checkStatRewards();
+                            debugSystem?.log(`Chronicler choice 'listen' handled, returning true.`, 'debug');
                             return true;
                         }
-                        break;
-
-                    case "Elena":
-                        if (normalizedCmd === "offer to help" || normalizedCmd === "help") {
-                            addToStory("You spend the day helping her tend to the wounded.");
-                            player.relationships.Elena += 10;
-                            player.karma += 10;
-                            player.changeHope(5);
-                            addToStory("Elena smiles sadly. 'Thank you. I'd forgotten what kindness looked like.'");
-                            checkStatRewards();
-                            return true;
-                        } else if (normalizedCmd === "ask for healing" || normalizedCmd === "healing") {
-                            if (player.hp < player.max_hp) {
-                                player.hp = Math.min(player.max_hp, player.hp + 20);
-                                addToStory("Elena tends to your wounds without asking for payment.");
-                                player.relationships.Elena += 5;
-                            } else {
-                                addToStory("You are already at full health.");
-                            }
-                            checkStatRewards();
-                            return true;
-                        }
-                        break;
-
-                    case "Marcus":
-                        if (normalizedCmd === "promise to look" || normalizedCmd === "promise") {
-                            addToStory("'Thank you,' he weeps. 'I won't give up. I can't give up.'");
-                            player.addMemory("Promised to help Marcus find his daughter");
-                            player.relationships.Marcus += 15;
-                            player.karma += 10;
-                            checkStatRewards();
-                            return true;
-                        } else if (normalizedCmd === "offer comfort" || normalizedCmd === "comfort") {
-                            addToStory("You offer words of solace. He nods, tears in his eyes.");
-                            player.sanity += 5;
-                            player.relationships.Marcus += 5;
-                            checkStatRewards();
-                            return true;
-                        }
-                        break;
-
-                    case "Anna":
-                        if (normalizedCmd === "help with the garden" || normalizedCmd === "help") {
-                            addToStory("You work together in silence. New shoots push through the ash.");
-                            player.changeHope(10);
-                            player.relationships.Anna += 10;
-                            player.sanity += 5;
-                            checkStatRewards();
-                            return true;
-                        } else if (normalizedCmd === "ask about the past" || normalizedCmd === "ask") {
-                            addToStory("She speaks of vibrant colors and bustling cities, a world that exists only in memory.");
-                            player.sanity += 5;
-                            player.relationships.Anna += 5;
-                            checkStatRewards();
-                            return true;
-                        }
-                        break;
+                        debugSystem?.log(`Chronicler: No specific action matched within Chronicler case.`, 'warning'); // NEW LOG
+                        break; // This break would cause it to fall through to the final return false
+                    // ... other NPC cases ...
                 }
 
-                debugSystem?.log(`handleNpcChoice: No valid action found for ${npcName} with command ${normalizedCmd}`, 'warning');
+                debugSystem?.log(`handleNpcChoice: No valid action found for ${npcName} with command ${normalizedCmd}. Returning false.`, 'warning');
                 return false;
             } catch (error) {
                 handleGameError(new GameError(`Error in NPC interaction with ${npcName}`, 'NPC_INTERACTION_ERROR'));
@@ -1522,22 +1516,36 @@
         // --- Display and Utility Functions ---
         function displayOptions() {
             let optionsText = '';
-            if (gameState === "playing") {
-                optionsText = "What do you do? Options: stats, wander, rest, remember, inventory, meditate, quit";
-            } else if (gameState === "choosing" && currentChoiceContext && currentChoiceContext.choices) {
-                optionsText = "Enter the number of your choice:";
-                // Filter out short keywords for display, only show full phrases for numbered options
-                // This assumes the first two (or N) elements of the choices array are the "primary" options.
-                const displayChoices = currentChoiceContext.choices.filter(choice => 
-                    !["share", "listen", "help", "healing", "promise", "comfort", "ask"].includes(choice.toLowerCase())
-                );
-                // To ensure only the *first* set of choices are numbered, we can slice it.
-                // Assuming the first two are always the main ones for NPCs.
-                const numberedDisplayChoices = displayChoices.slice(0, 2); // Show only first two as numbered options
+            // Define general game commands for display hint
+            const generalCommandsHint = ['stats', 'wander', 'rest', 'remember', 'inventory', 'meditate', 'debug', 'quit'];
 
-                numberedDisplayChoices.forEach((choice, index) => {
+            if (gameState === "playing") {
+                optionsText = `What do you do? Options: ${generalCommandsHint.join(', ')}`;
+            } else if (gameState === "choosing" && currentChoiceContext && currentChoiceContext.choices) {
+                optionsText = "Choose your action:";
+                const allChoices = currentChoiceContext.choices;
+                const primaryDisplayChoices = [];
+                const keywordDisplayChoices = [];
+
+                // Separate full phrases from short keywords (assuming short keywords are single words and lowercase)
+                allChoices.forEach(choice => {
+                    if (choice.split(' ').length > 1) { // Likely a full phrase
+                        primaryDisplayChoices.push(choice);
+                    } else { // Likely a short keyword
+                        keywordDisplayChoices.push(choice);
+                    }
+                });
+
+                // Display numbered primary choices
+                primaryDisplayChoices.forEach((choice, index) => {
                     optionsText += `<br>${index + 1}. ${choice}`;
                 });
+
+                // Add a note about keywords if they exist
+                if (keywordDisplayChoices.length > 0) {
+                    optionsText += `<br>You can also type: ${keywordDisplayChoices.join(', ')}`;
+                }
+                optionsText += `<br>Or a general command like: ${generalCommandsHint.slice(0, 3).join(', ')}...`; // Hint for general commands
             } else if (gameState === "battle" && currentChoiceContext && currentChoiceContext.choices) { 
                 optionsText = "Your turn. Enter the number of your choice:";
                 currentChoiceContext.choices.forEach((choice, index) => {
