@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Game: Infinite Map</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the game, overriding some Tailwind defaults for specific elements */
+        body {
+            margin: 0;
+            height: 100vh; /* Full viewport height */
+            background-color: #1a202c; /* Dark background */
+            color: #e2e8f0; /* Light text */
+            font-family: "Inter", sans-serif; /* Preferred font */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden; /* Prevent scrolling */
+        }
+        canvas {
+            display: block;
+            border: 2px solid #4a5568; /* Subtle border */
+            background-color: #2d3748; /* Slightly lighter background for canvas */
+            border-radius: 0.5rem; /* Rounded corners */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Soft shadow */
+            max-width: 90vw; /* Max width relative to viewport */
+            max-height: 80vh; /* Max height relative to viewport */
+            width: auto; /* Allow width to adjust */
+            height: auto; /* Allow height to adjust */
+            touch-action: none; /* Prevent default touch actions like scrolling/zooming */
+        }
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem; /* Space between elements */
+            padding: 1rem;
+            max-width: 100%;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem; /* Space between buttons */
+            margin-top: 10px;
+        }
+        .controls button {
+            padding: 0.75rem 1.25rem;
+            background-color: #4299e1; /* Blue button */
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            min-width: 80px; /* Ensure buttons have a minimum width */
+        }
+        .controls button:hover {
+            background-color: #3182ce; /* Darker blue on hover */
+            transform: translateY(-1px); /* Slight lift effect */
+        }
+        .controls button:active {
+            transform: translateY(1px); /* Press effect */
+        }
+        .game-title {
+            font-size: 2.5rem; /* Larger title */
+            font-weight: bold;
+            color: #63b3ed; /* Lighter blue for title */
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .game-instructions {
+            font-size: 1rem;
+            color: #a0aec0;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        /* Styles for the upgrade menu buttons */
+        #upgrade-menu-buttons {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100; /* Ensure it's on top */
+            border: 2px solid #63b3ed;
+            box-shadow: 0 0 15px rgba(99, 179, 237, 0.5);
+        }
+        #upgrade-menu-buttons button {
+            background-color: #4c51bf; /* Indigo */
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            border: none;
+        }
+        #upgrade-menu-buttons button:hover {
+            background-color: #5a67d8; /* Lighter indigo */
+        }
+        #upgrade-menu-buttons button:active {
+            transform: translateY(1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="game-title">Infinite Map Adventure</h1>
+        <p class="game-instructions">Navigate the endless world, collect coins, defeat enemies, and upgrade your hero!</p>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="controls" class="controls">
+            <button id="up" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">↑</button>
+            <button id="left" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">←</button>
+            <button id="down" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">↓</button>
+            <button id="right" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">→</button>
+            <button id="pause" class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">Pause</button>
+            <button id="soundToggle" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">Sound: Off</button>
+        </div>
+    </div>
+
+    <!-- Upgrade Menu Buttons Container (initially hidden) -->
+    <div id="upgrade-menu-buttons" style="display: none;">
+        <h2 class="text-white text-center text-xl mb-4">Choose an Upgrade:</h2>
+        <!-- Buttons will be dynamically updated with current values -->
+        <button data-upgrade="1" id="upgrade-1">1: +Move Speed</button>
+        <button data-upgrade="2" id="upgrade-2">2: -Shoot CD</button>
+        <button data-upgrade="3" id="upgrade-3">3: +Dash Dist</button>
+        <button data-upgrade="4" id="upgrade-4">4: -Special CD</button>
+        <button data-upgrade="5" id="upgrade-5">5: +Extra Life</button>
+        <button data-upgrade="6" id="upgrade-6">6: +Bullet DMG</button>
+        <button data-upgrade="7" id="upgrade-7">7: +Combo Bonus</button>
+        <button data-upgrade="8" id="upgrade-8">8: +Shield Dur</button>
+        <button data-upgrade="9" id="upgrade-9">9: +Freeze Dur</button>
+    </div>
+
+    <script>
+        // -------------------- GLOBAL VARIABLES & NEW FEATURE FLAGS --------------------
+        let soundEnabled = false; // Sound off by default
+        let doubleScoreActive = false;
+        let doubleScoreTimer = 0;
+        let timeOfDay = 0; // For day/night cycle
+        let bossSpecialTimer = 300; // Timer for boss special homing attack
+
+        // -------------------- CONSTANTS & SETTINGS --------------------
+        const CANVAS_WIDTH = 600; // Increased canvas size for better visibility
+        const CANVAS_HEIGHT = 600;
+        const PLAYER_SIZE = 10;
+        const COIN_SIZE = 8;
+        const OBSTACLE_SIZE = 10;
+        const BULLET_SIZE = 4;
+        const BULLET_SPEED = 7;
+        const INITIAL_MOVE_SPEED = 5;
+        const INITIAL_DASH_DISTANCE = 20;
+        const INITIAL_SHOOT_COOLDOWN = 20;
+        const INITIAL_SPECIAL_COOLDOWN = 60;
+        const DASH_COOLDOWN = 120;
+        const INVINCIBILITY_DURATION = 300;
+        const SPEED_BOOST_DURATION = 300;
+        const COMBO_RESET_TIME = 120;
+        const SPECIAL_ATTACK_RANGE = 50;
+        const PARTICLE_COUNT = 10;
+        const PARTICLE_MAX_LIFE = 50; // Max life for particles
+        const PLAYER_HIT_FLASH_DURATION = 10; // Frames player flashes red after being hit
+        const ENEMY_HIT_FLASH_DURATION = 5; // Frames enemy flashes white after being hit
+
+        const BOSS_SHOOT_INTERVAL = 150; // frames
+        const BOSS_BULLET_SPEED = 4;
+
+        const ENERGY_REGEN_RATE = 0.05;
+        const MAX_ENERGY = 100;
+        const ULTIMATE_BONUS = 20;
+
+        let currentShieldDuration = 300;
+        let currentFreezeDuration = 180;
+
+        // Enemy types – all use a singular speed.
+        const enemyTypes = {
+            normal: { color: "#f00",    health: 1, size: 10, hitColor: "#fff" },
+            fast:   { color: "#ffa500", health: 1, size: 8, hitColor: "#fff" },
+            tough:  { color: "#800000", health: 2, size: 12, hitColor: "#fff" },
+            rusher: { color: "#a0a0ff", health: 1, size: 10, hitColor: "#fff" }
+        };
+
+        const INITIAL_BASE_SPEED = 0.01;
+
+        const SPAWN_NEAR_MIN = 50;
+        const SPAWN_NEAR_MAX = 150;
+        const SPAWN_ENEMY_MIN = 100;
+        const SPAWN_ENEMY_MAX = 200;
+        const SPAWN_OBSTACLE_MIN = 100;
+        const SPAWN_OBSTACLE_MAX = 200;
+        const SPAWN_BOSS_MIN = 150;
+        const SPAWN_BOSS_MAX = 250;
+
+        const SAFEZONE_RADIUS = 50;
+        const SAFEZONE_DURATION = 600;
+        const SAFEZONE_CHANCE = 0.0005; // Spawns within 100 units of player
+
+        // -------------------- TOWN LOCATION --------------------
+        let town = { x: 600, y: 0, width: 100, height: 100 };
+
+        // -------------------- FALLING DEBRIS --------------------
+        const DEBRIS_SPAWN_CHANCE = 0.001;
+        const DEBRIS_SPEED = 2;
+        let debris = [];
+
+        /**
+         * Spawns falling debris from above the player's view.
+         */
+        function spawnDebris() {
+            let x = player.x - CANVAS_WIDTH/2 + Math.random() * CANVAS_WIDTH;
+            let y = player.y - CANVAS_HEIGHT/2;
+            debris.push({ x: x, y: y, speed: DEBRIS_SPEED });
+        }
+
+        // -------------------- SCROLLING BACKGROUND --------------------
+        const STAR_COUNT = 100;
+        const STAR_SPEED_FACTOR = 0.05;
+        let stars = [];
+        // Initialize stars
+        for (let i = 0; i < STAR_COUNT; i++) {
+            stars.push({
+                x: Math.random() * CANVAS_WIDTH,
+                y: Math.random() * CANVAS_HEIGHT,
+                size: Math.random() * 2 + 0.5,
+                opacity: Math.random() * 0.5 + 0.5
+            });
+        }
+
+        // -------------------- CANVAS & AUDIO SETUP --------------------
+        const canvas = document.getElementById("gameCanvas"); // Renamed from 'c' for clarity
+        const ctx = canvas.getContext("2d");
+        canvas.width = CANVAS_WIDTH;
+        canvas.height = CANVAS_HEIGHT;
+
+        let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(frequency, duration) {
+            if (!soundEnabled) return;
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.frequency.value = frequency;
+            osc.type = "square";
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+            osc.stop(audioCtx.currentTime + duration);
+        }
+        function soundShoot() { playSound(600, 0.05); }
+        function soundEnemyDeath() { playSound(400, 0.08); }
+        function soundLevelUp() { playSound(700, 0.15); }
+        function soundDash() { playSound(300, 0.07); }
+        function soundPlayerHit() { playSound(200, 0.1); }
+        function soundBossShoot() { playSound(500, 0.08); }
+        function soundUltimate() { playSound(800, 0.2); }
+        function soundCoinCollect() { playSound(900, 0.05); } // New sound for coin collection
+        function soundPowerupCollect() { playSound(1200, 0.08); } // New sound for powerup collection
+        function soundBombExplode() { playSound(250, 0.3); } // New sound for bomb
+
+        // -------------------- SCREEN SHAKE --------------------
+        let shakeTimer = 0;
+        function applyShake() {
+            if(shakeTimer > 0) {
+                shakeTimer--;
+                let dx = (Math.random()-0.5)*6;
+                let dy = (Math.random()-0.5)*6;
+                ctx.translate(dx, dy);
+            }
+        }
+
+        // -------------------- BOSS BULLETS --------------------
+        let bossBullets = [];
+        let bossShootTimer = BOSS_SHOOT_INTERVAL;
+
+        /**
+         * Updates the position and behavior of boss bullets, checking for player collisions.
+         */
+        function updateBossBullets() {
+            for(let i = bossBullets.length - 1; i >= 0; i--){
+                let b = bossBullets[i];
+                // For boss special homing bullets, adjust velocity to track player.
+                if(b.isBossSpecial) {
+                    let dx = player.x - b.x, dy = player.y - b.y;
+                    let mag = Math.sqrt(dx*dx + dy*dy) || 1;
+                    let desiredVx = (dx/mag) * BOSS_BULLET_SPEED;
+                    let desiredVy = (dy/mag) * BOSS_BULLET_SPEED;
+                    let homingFactor = 0.05; // Controls how quickly bullets adjust course
+                    b.vx += (desiredVx - b.vx) * homingFactor;
+                    b.vy += (desiredVy - b.vy) * homingFactor;
+                }
+                b.x += b.vx;
+                b.y += b.vy;
+
+                // Remove bullets that go off-screen
+                if(b.x < -CANVAS_WIDTH || b.x > CANVAS_WIDTH*2 || b.y < -CANVAS_HEIGHT || b.y > CANVAS_HEIGHT*2) {
+                    bossBullets.splice(i,1);
+                    continue;
+                }
+
+                // Check for collision with player
+                if(collides(b, player, 8) && !playerSafe) {
+                    if(shieldActive) {
+                        shieldActive = false;
+                        shieldTimer = 0;
+                    } else {
+                        player.h--; // Player takes damage
+                        player.hitTimer = PLAYER_HIT_FLASH_DURATION; // Player flashes on hit
+                    }
+                    bossBullets.splice(i,1);
+                    shakeTimer = 10; // Apply screen shake
+                    soundPlayerHit();
+                }
+            }
+        }
+
+        // -------------------- ULTIMATE ENERGY & MOVE --------------------
+        let energy = 0;
+
+        /**
+         * Regenerates player energy over time.
+         */
+        function updateEnergy() {
+            energy = Math.min(MAX_ENERGY, energy + ENERGY_REGEN_RATE);
+        }
+
+        /**
+         * Executes the ultimate move, clearing enemies and granting bonus score.
+         */
+        function ultimateMove() {
+            if(energy >= MAX_ENERGY) {
+                enemies.forEach(en => { spawnExplosion(en.x, en.y); });
+                if(boss) { spawnExplosion(boss.x, boss.y); }
+                let count = enemies.length + (boss ? 1 : 0);
+                score += ULTIMATE_BONUS + count * 2;
+                spawnScorePopup(player.x, player.y, `+${ULTIMATE_BONUS + count * 2}`, "#00ffff"); // Score popup for ultimate
+                enemies = []; // Clear all enemies
+                boss = null; // Clear boss
+                energy = 0; // Reset energy
+                soundUltimate();
+            }
+        }
+
+        // -------------------- GAME STATE VARIABLES --------------------
+        let gameState = "start";
+        let player, coin, score, lives, level;
+        let specialTimer, shootTimer, dashTimer;
+        let baseSpeed, enemies, boss, obstacles, powerups, bullets;
+        let invincible, invTimer, shieldActive, shieldTimer, freezeTimer;
+        let playerSpeedBoost = 1, speedBoostTimer = 0;
+        let lastDir = "up"; // Last direction player moved, for bullet orientation
+        let comboCount, comboTimer;
+        let upgradeMenuActive = false, upgradeMenuTimer = 0;
+        let levelTransitionTimer = 0;
+        let highScore = localStorage.getItem("highScore") || 0;
+        let currentBulletDamage = 1;
+        let particles = [];
+        let scorePopups = []; // Array to hold floating score texts
+        let dashParticles = []; // For dash visual effect
+
+        // Player health
+        const PLAYER_MAX_HEALTH = 10;
+        let currentMoveSpeed = INITIAL_MOVE_SPEED;
+        let currentDashDistance = INITIAL_DASH_DISTANCE;
+        let currentShootCooldown = INITIAL_SHOOT_COOLDOWN;
+        let currentSpecialCooldown = INITIAL_SPECIAL_COOLDOWN;
+
+        // Safe zone variables
+        let safeZone = null;
+        let playerSafe = false;
+
+        // Touch input variables
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchMoveX = 0;
+        let touchMoveY = 0;
+        let isTouching = false;
+        const SWIPE_THRESHOLD = 20; // Minimum pixel distance for a swipe to register
+
+        // -------------------- COLLISION FUNCTION (Squared Distance) --------------------
+        /**
+         * Checks for collision between two circular entities.
+         * @param {object} a - First entity with x, y coordinates.
+         * @param {object} b - Second entity with x, y coordinates.
+         * @param {number} threshold - The squared distance threshold for collision.
+         * @returns {boolean} True if entities are colliding, false otherwise.
+         */
+        function collides(a, b, threshold = 10) {
+            let dx = a.x - b.x;
+            let dy = a.y - b.y;
+            return dx * dx + dy * dy < threshold * threshold;
+        }
+
+        // -------------------- SPATIAL PARTITIONING --------------------
+        /**
+         * Builds a grid for spatial partitioning of enemies to optimize collision checks.
+         * @param {Array<object>} enemies - Array of enemy objects.
+         * @param {number} cellSize - Size of each grid cell.
+         * @returns {object} A grid object where keys are "x,y" cell coordinates and values are arrays of enemies in that cell.
+         */
+        function buildEnemyGrid(enemies, cellSize) {
+            const grid = {};
+            enemies.forEach(enemy => {
+                let cellX = Math.floor(enemy.x / cellSize);
+                let cellY = Math.floor(enemy.y / cellSize);
+                let key = cellX + "," + cellY;
+                if(!grid[key]) grid[key] = [];
+                grid[key].push(enemy);
+            });
+            return grid;
+        }
+
+        // -------------------- SPAWN FUNCTIONS --------------------
+        /**
+         * Spawns an entity near a given reference entity within a specified distance range.
+         * @param {object} entity - The reference entity (e.g., player).
+         * @param {number} minDist - Minimum distance from the reference entity.
+         * @param {number} maxDist - Maximum distance from the reference entity.
+         * @returns {object} New coordinates for the spawned entity.
+         */
+        function spawnNear(entity, minDist, maxDist) {
+            let angle = Math.random() * Math.PI * 2;
+            let dist = minDist + Math.random() * (maxDist - minDist);
+            return { x: entity.x + Math.cos(angle) * dist, y: entity.y + Math.sin(angle) * dist };
+        }
+
+        /**
+         * Spawns enemies based on the current level.
+         */
+        function spawnEnemies() {
+            enemies = [];
+            for (let i = 0; i < level; i++) {
+                let r = Math.random();
+                let type;
+                if(r < 0.1)      { type = "rusher"; }
+                else if(r < 0.5) { type = "normal"; }
+                else if(r < 0.8) { type = "fast"; }
+                else             { type = "tough"; }
+                let speed = INITIAL_BASE_SPEED + (level * 0.001); // Scale enemy speed with level
+                let extraHealth = (type !== "normal") ? Math.floor(level / 3) : 0;
+                let health = enemyTypes[type].health + extraHealth;
+                let pos = spawnNear(player, SPAWN_ENEMY_MIN, SPAWN_ENEMY_MAX);
+                enemies.push({ x: pos.x, y: pos.y, s: speed, h: health, maxH: health, type, size: enemyTypes[type].size, hitTimer: 0 });
+            }
+        }
+
+        /**
+         * Spawns the boss if the level is a multiple of 5.
+         */
+        function spawnBoss() {
+            if(level % 5 === 0) {
+                let pos = spawnNear(player, SPAWN_BOSS_MIN, SPAWN_BOSS_MAX);
+                let bossHealth = 5 + level * 2; // Boss health scales more
+                boss = { x: pos.x, y: pos.y, s: INITIAL_BASE_SPEED * 0.5, h: bossHealth, maxH: bossHealth, minionsSpawned: false, size: 20, hitTimer: 0 };
+            } else {
+                boss = null;
+            }
+        }
+
+        /**
+         * Spawns environmental obstacles.
+         */
+        function spawnObstacles() {
+            obstacles = [];
+            for (let i = 0; i < 3 + Math.floor(level/5); i++) { // More obstacles at higher levels
+                let pos = spawnNear(player, SPAWN_OBSTACLE_MIN, SPAWN_OBSTACLE_MAX);
+                obstacles.push({ x: pos.x, y: pos.y, size: OBSTACLE_SIZE + Math.random() * 5 }); // Vary obstacle size
+            }
+        }
+
+        /**
+         * Spawns a random power-up.
+         */
+        function spawnPowerup() {
+            let rand = Math.random();
+            let type;
+            if(rand < 0.05)      type = "double";
+            else if(rand < 0.25) type = "inv"; // Increased chance for invincibility
+            else if(rand < 0.45) type = "speed";
+            else if(rand < 0.65) type = "shield";
+            else if(rand < 0.8)  type = "freeze";
+            else if(rand < 0.9)  type = "health"; // New Health Pack (10% chance)
+            else                type = "bomb";   // New Bomb (10% chance)
+            let pos = spawnNear(player, SPAWN_ENEMY_MIN, SPAWN_ENEMY_MAX);
+            powerups.push({ x: pos.x, y: pos.y, type });
+        }
+
+        /**
+         * Spawns a coin near the player.
+         */
+        function spawnCoin() {
+            coin = spawnNear(player, SPAWN_NEAR_MIN, SPAWN_NEAR_MAX);
+        }
+
+        // -------------------- INITIALIZE / RESET GAME --------------------
+        /**
+         * Initializes or resets all game variables to their starting values.
+         */
+        function initGame() {
+            player = { x: 0, y: 0, h: PLAYER_MAX_HEALTH, maxH: PLAYER_MAX_HEALTH, hitTimer: 0 }; // Player now has health and hitTimer
+            spawnCoin();
+            score = 0;
+            lives = 3; // Extra lives remain a concept, player health is primary
+            level = 1;
+            specialTimer = 0;
+            shootTimer = 0;
+            dashTimer = 0;
+            baseSpeed = INITIAL_BASE_SPEED;
+            invincible = false;
+            invTimer = 0;
+            shieldActive = false;
+            shieldTimer = 0;
+            freezeTimer = 0;
+            playerSpeedBoost = 1;
+            speedBoostTimer = 0;
+            bullets = [];
+            powerups = [];
+            bossBullets = [];
+            bossShootTimer = BOSS_SHOOT_INTERVAL;
+            lastDir = "up";
+            comboCount = 0;
+            comboTimer = 0;
+            upgradeMenuActive = false;
+            upgradeMenuTimer = 0;
+            levelTransitionTimer = 0;
+            currentMoveSpeed = INITIAL_MOVE_SPEED;
+            currentDashDistance = INITIAL_DASH_DISTANCE;
+            currentShootCooldown = INITIAL_SHOOT_COOLDOWN;
+            currentSpecialCooldown = INITIAL_SPECIAL_COOLDOWN;
+            currentBulletDamage = 1;
+            currentShieldDuration = 300;
+            currentFreezeDuration = 180;
+            energy = 0;
+            particles = [];
+            scorePopups = []; // Reset score popups
+            dashParticles = []; // Reset dash particles
+            debris = [];
+            stars = []; // Re-initialize stars
+            for (let i = 0; i < STAR_COUNT; i++) {
+                stars.push({
+                    x: Math.random() * CANVAS_WIDTH,
+                    y: Math.random() * CANVAS_HEIGHT,
+                    size: Math.random() * 2 + 0.5,
+                    opacity: Math.random() * 0.5 + 0.5
+                });
+            }
+            spawnEnemies();
+            spawnBoss();
+            spawnObstacles();
+            gameState = "start";
+            shakeTimer = 0;
+            safeZone = null;
+            doubleScoreActive = false;
+            doubleScoreTimer = 0;
+            bossSpecialTimer = 300;
+            timeOfDay = 0;
+
+            // Hide upgrade menu buttons on reset
+            document.getElementById('upgrade-menu-buttons').style.display = 'none';
+        }
+        initGame(); // Call initGame once to set up the initial state
+
+        // -------------------- DRAWING UTILITIES --------------------
+        /**
+         * Draws a health bar for an entity.
+         * @param {number} x - X coordinate of the health bar.
+         * @param {number} y - Y coordinate of the health bar.
+         * @param {number} width - Total width of the health bar.
+         * @param {number} height - Height of the health bar.
+         * @param {number} currentHealth - Current health value.
+         * @param {number} maxHealth - Maximum health value.
+         * @param {string} color - Color of the filled health bar.
+         */
+        function drawHealthBar(x, y, width, height, currentHealth, maxHealth, color = "#0f0") {
+            ctx.fillStyle = "#333"; // Background of health bar
+            ctx.fillRect(x, y, width, height);
+            ctx.fillStyle = color; // Filled health bar color
+            let healthWidth = (currentHealth / maxHealth) * width;
+            ctx.fillRect(x, y, healthWidth, height);
+            ctx.strokeStyle = "#fff"; // Border
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x, y, width, height);
+        }
+
+        // -------------------- SCROLLING BACKGROUND --------------------
+        /**
+         * Draws a scrolling starfield background.
+         */
+        function drawScrollingBackground() {
+            ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+            stars.forEach(star => {
+                // Calculate star position relative to player and canvas center
+                let screenX = star.x - (player.x * STAR_SPEED_FACTOR) % CANVAS_WIDTH;
+                let screenY = star.y - (player.y * STAR_SPEED_FACTOR) % CANVAS_HEIGHT;
+
+                // Wrap stars around if they go off screen
+                if (screenX < 0) screenX += CANVAS_WIDTH;
+                if (screenY < 0) screenY += CANVAS_HEIGHT;
+                if (screenX > CANVAS_WIDTH) screenX -= CANVAS_WIDTH;
+                if (screenY > CANVAS_HEIGHT) screenY -= CANVAS_HEIGHT;
+
+                ctx.globalAlpha = star.opacity;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, star.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1; // Reset alpha
+        }
+
+        // -------------------- MINIMAP FUNCTION --------------------
+        /**
+         * Draws a minimap showing the player, coin, safe zone, and town.
+         */
+        function drawMinimap() {
+            let mapWidth = 80, mapHeight = 80;
+            let mapX = CANVAS_WIDTH - mapWidth - 10, mapY = 10;
+            ctx.save();
+            ctx.fillStyle = "rgba(0,0,0,0.5)";
+            ctx.fillRect(mapX, mapY, mapWidth, mapHeight);
+            ctx.strokeStyle = "#fff";
+            ctx.strokeRect(mapX, mapY, mapWidth, mapHeight);
+            let scale = 0.05;
+
+            function drawMarker(worldObj, color, label) {
+                let x = mapX + (worldObj.x - player.x) * scale + mapWidth/2;
+                let y = mapY + (worldObj.y - player.y) * scale + mapHeight/2;
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, Math.PI*2);
+                ctx.fill();
+                ctx.font = "8px sans-serif";
+                ctx.fillText(label, x+4, y+4);
+            }
+            drawMarker(player, "#0f0", "P");
+            drawMarker(coin, "#ff0", "C");
+            if(safeZone) drawMarker(safeZone, "#0ff", "S");
+            let townCenter = { x: town.x + town.width/2, y: town.y + town.height/2 };
+            drawMarker(townCenter, "#fff", "T");
+            ctx.restore();
+        }
+
+        // -------------------- DAY/NIGHT CYCLE UPDATE --------------------
+        /**
+         * Updates the time of day and returns a corresponding background color.
+         * @returns {string} RGB color string for the background.
+         */
+        function updateDayNightCycle() {
+            timeOfDay += 0.05; // Slower cycle
+            // Adjust brightness and color more significantly for day/night
+            let baseBrightness = 10; // Darkest at night
+            let maxBrightness = 60; // Brightest during day
+            let currentBrightness = baseBrightness + (maxBrightness - baseBrightness) * (0.5 + 0.5 * Math.sin(timeOfDay));
+
+            let red = Math.floor(currentBrightness);
+            let green = Math.floor(currentBrightness * 0.9);
+            let blue = Math.floor(currentBrightness * 0.8);
+
+            // Add a slight tint for sunrise/sunset
+            if (Math.sin(timeOfDay) > 0.8) { // Approaching peak day
+                red = Math.floor(red * 1.1);
+                green = Math.floor(green * 1.05);
+            } else if (Math.sin(timeOfDay) < -0.8) { // Approaching peak night
+                blue = Math.floor(blue * 1.1);
+            }
+            return `rgb(${red},${green},${blue})`;
+        }
+
+        // -------------------- MAGIC ARROW BULLET TRACKING --------------------
+        /**
+         * Finds the nearest enemy to the player for targeting.
+         * @returns {object|null} The nearest enemy object, or null if no enemies are present.
+         */
+        function findNearestEnemy() {
+            let minDist = Infinity;
+            let chosen = null;
+            for(let i = 0; i < enemies.length; i++){
+                let en = enemies[i];
+                let dx = en.x - player.x;
+                let dy = en.y - player.y;
+                let distSq = dx*dx + dy*dy;
+                if(distSq < minDist) {
+                    minDist = distSq;
+                    chosen = en;
+                }
+            }
+            return chosen;
+        }
+
+        // -------------------- AUTOMATED POWERS --------------------
+        /**
+         * Manages automated player abilities like shooting, special attack, and dashing.
+         */
+        function autoPowers() {
+            // Auto-shoot
+            if(shootTimer <= 0) {
+                let target = findNearestEnemy();
+                let vx, vy;
+                if(target) {
+                    let dx = target.x - player.x;
+                    let dy = target.y - player.y;
+                    let mag = Math.sqrt(dx*dx + dy*dy) || 1;
+                    vx = (dx/mag) * BULLET_SPEED;
+                    vy = (dy/mag) * BULLET_SPEED;
+                } else {
+                    // If no target, shoot in last known direction
+                    if(lastDir === "up") { vx = 0; vy = -BULLET_SPEED; }
+                    else if(lastDir === "down") { vx = 0; vy = BULLET_SPEED; }
+                    else if(lastDir === "left") { vx = -BULLET_SPEED; vy = 0; }
+                    else if(lastDir === "right") { vx = BULLET_SPEED; vy = 0; }
+                    else { vx = 0; vy = -BULLET_SPEED; } // Default to up
+                }
+                bullets.push({ x: player.x, y: player.y, vx: vx, vy: vy, target: target });
+                shootTimer = currentShootCooldown;
+                soundShoot();
+            }
+
+            // Auto-special attack (area clear)
+            if(specialTimer <= 0) {
+                enemies = enemies.filter(en => {
+                    if(collides(player, en, SPECIAL_ATTACK_RANGE)) {
+                        let coinScore = 2;
+                        if(doubleScoreActive) coinScore *= 2;
+                        score += coinScore;
+                        spawnScorePopup(en.x, en.y, `+${coinScore}`, "#00ff00"); // Score popup for enemy kill
+                        spawnExplosion(en.x, en.y);
+                        soundEnemyDeath();
+                        return false; // Remove enemy
+                    }
+                    return true;
+                });
+                if(boss) {
+                    if(collides(player, boss, SPECIAL_ATTACK_RANGE)) {
+                        boss.h -= 2;
+                        boss.hitTimer = ENEMY_HIT_FLASH_DURATION; // Boss flashes on hit
+                        if(boss.h <= 0) {
+                            let bossScore = 5;
+                            if(doubleScoreActive) bossScore *= 2;
+                            score += bossScore;
+                            spawnScorePopup(boss.x, boss.y, `+${bossScore}`, "#00ff00"); // Score popup for boss kill
+                            spawnExplosion(boss.x, boss.y);
+                            boss = null;
+                            soundEnemyDeath();
+                        }
+                    }
+                }
+                specialTimer = currentSpecialCooldown;
+            }
+
+            // Auto-dash (evade close enemies)
+            if(dashTimer <= 0) {
+                const dangerRadius = 20;
+                let closeEnemies = enemies.filter(en => collides(player, en, dangerRadius));
+                if(closeEnemies.length > 0) {
+                    // Calculate average position of close enemies to dash away from them
+                    let avgX = 0, avgY = 0;
+                    closeEnemies.forEach(en => { avgX += en.x; avgY += en.y; });
+                    avgX /= closeEnemies.length;
+                    avgY /= closeEnemies.length;
+
+                    let dx = player.x - avgX;
+                    let dy = player.y - avgY;
+                    let mag = Math.sqrt(dx*dx + dy*dy) || 1;
+                    dx /= mag;
+                    dy /= mag;
+
+                    player.x += dx * currentDashDistance;
+                    player.y += dy * currentDashDistance;
+                    dashTimer = DASH_COOLDOWN;
+                    soundDash();
+                    spawnDashParticles(player.x, player.y, dx, dy); // Spawn dash particles
+                }
+            }
+
+            // Auto-ultimate move
+            if(energy >= MAX_ENERGY) {
+                ultimateMove();
+            }
+        }
+
+        // -------------------- BULLET UPDATE & COLLISION CHECKING --------------------
+        /**
+         * Updates the position and behavior of player bullets, handling homing and collisions.
+         */
+        function updateBullets() {
+            for(let i = bullets.length - 1; i >= 0; i--){
+                let b = bullets[i];
+
+                // Homing logic for magic arrows
+                if(b.target) {
+                    let targetExists = enemies.some(en => en === b.target);
+                    if(targetExists) {
+                        let dx = b.target.x - b.x;
+                        let dy = b.target.y - b.y;
+                        let mag = Math.sqrt(dx*dx + dy*dy) || 1;
+                        let desiredVx = (dx/mag) * BULLET_SPEED;
+                        let desiredVy = (dy/mag) * BULLET_SPEED;
+                        let homingFactor = 0.1; // Controls how quickly bullets adjust course
+                        b.vx += (desiredVx - b.vx) * homingFactor;
+                        b.vy += (desiredVy - b.vy) * homingFactor;
+                    } else {
+                        // If target is gone, stop homing
+                        b.target = null;
+                    }
+                }
+
+                b.x += b.vx;
+                b.y += b.vy;
+
+                // Remove bullets that go off-screen
+                if(b.x < -CANVAS_WIDTH || b.x > CANVAS_WIDTH*2 || b.y < -CANVAS_HEIGHT || b.y > CANVAS_HEIGHT*2) {
+                    bullets.splice(i, 1);
+                    continue;
+                }
+
+                // Optimized collision detection using spatial partitioning
+                const cellSize = 50;
+                let cellX = Math.floor(b.x / cellSize);
+                let cellY = Math.floor(b.y / cellSize);
+                let collisionDetected = false;
+                let grid = buildEnemyGrid(enemies, cellSize); // Rebuild grid each frame (could be optimized)
+
+                // Check current cell and neighboring cells for enemies
+                for(let dx = -1; dx <= 1; dx++){
+                    for(let dy = -1; dy <= 1; dy++){
+                        let key = (cellX + dx) + "," + (cellY + dy);
+                        let cellEnemies = grid[key];
+                        if(cellEnemies){
+                            for(let j = 0; j < cellEnemies.length; j++){
+                                let enemy = cellEnemies[j];
+                                if(collides(b, enemy, 8)){ // Bullet-enemy collision
+                                    enemy.h -= currentBulletDamage;
+                                    enemy.hitTimer = ENEMY_HIT_FLASH_DURATION; // Enemy flashes on hit
+                                    if(enemy.h <= 0) {
+                                        let coinScore = (comboCount > 1 ? comboCount : 1);
+                                        if(doubleScoreActive) coinScore *= 2;
+                                        score += coinScore;
+                                        spawnScorePopup(enemy.x, enemy.y, `+${coinScore}`, "#00ff00"); // Score popup for enemy kill
+                                        comboCount++;
+                                        comboTimer = COMBO_RESET_TIME;
+                                        spawnExplosion(enemy.x, enemy.y);
+                                        soundEnemyDeath();
+                                        let index = enemies.indexOf(enemy);
+                                        if(index > -1) enemies.splice(index, 1);
+                                    }
+                                    bullets.splice(i, 1); // Remove bullet
+                                    collisionDetected = true;
+                                    break; // Stop checking enemies in this cell
+                                }
+                            }
+                        }
+                        if(collisionDetected) break; // Stop checking neighboring cells
+                    }
+                    if(collisionDetected) break; // Stop checking neighboring cells
+                }
+
+                // Check for collision with boss if no enemy collision detected
+                if(!collisionDetected && bullets[i] && boss && collides(b, boss, 10)){
+                    boss.h -= currentBulletDamage;
+                    boss.hitTimer = ENEMY_HIT_FLASH_DURATION; // Boss flashes on hit
+                    bullets.splice(i, 1); // Remove bullet
+                    if(boss.h <= 0) {
+                        let bossScore = 5;
+                        if(doubleScoreActive) bossScore *= 2;
+                        score += bossScore;
+                        spawnScorePopup(boss.x, boss.y, `+${bossScore}`, "#00ff00"); // Score popup for boss kill
+                        spawnExplosion(boss.x, boss.y);
+                        boss = null;
+                        soundEnemyDeath();
+                    }
+                }
+            }
+        }
+
+        // -------------------- ENEMY BEHAVIOR LOGIC --------------------
+        /**
+         * Updates the position and behavior of a single enemy based on its type.
+         * @param {object} en - The enemy object to update.
+         */
+        function updateEnemy(en) {
+            if(en.type === "normal") {
+                en.x += (player.x - en.x) * en.s;
+                en.y += (player.y - en.y) * en.s;
+            }
+            else if(en.type === "fast") {
+                // Fast enemies have a slightly erratic, circling movement
+                let dx = player.x - en.x;
+                let dy = player.y - en.y;
+                en.x += dx * en.s * 0.5 + (-dy) * en.s * 0.5;
+                en.y += dy * en.s * 0.5 + (dx) * en.s * 0.5;
+            }
+            else if(en.type === "tough") {
+                // Tough enemies try to keep a distance but can rush if too close
+                let dx = player.x - en.x;
+                let dy = player.y - en.y;
+                let dist = Math.hypot(dx, dy);
+                if(dist < 80) { // If too close, try to back off quickly
+                    en.x -= dx * en.s * 1.5;
+                    en.y -= dy * en.s * 1.5;
+                } else if(dist > 120) { // If too far, approach
+                    en.x += dx * en.s * 0.5;
+                    en.y += dy * en.s * 0.5;
+                } else { // In optimal range, circle the player
+                    en.x += (-dy) * en.s * 0.3;
+                    en.y += (dx) * en.s * 0.3;
+                }
+            }
+            else if(en.type === "rusher") {
+                // Rushers charge when close, otherwise move somewhat randomly
+                let dx = player.x - en.x;
+                let dy = player.y - en.y;
+                let dist = Math.hypot(dx, dy);
+                if(dist < 100) {
+                    en.x += dx * en.s * 2; // Rushing speed
+                    en.y += dy * en.s * 2;
+                } else {
+                    en.x += dx * en.s + (Math.random()-0.5) * en.s; // General movement
+                    en.y += dy * en.s + (Math.random()-0.5) * en.s;
+                }
+            }
+
+            // Repel enemies from safe zone
+            if(safeZone) {
+                let dx = en.x - safeZone.x;
+                let dy = en.y - safeZone.y;
+                let d = Math.sqrt(dx*dx + dy*dy);
+                if(d < safeZone.radius) {
+                    let repelSpeed = 3;
+                    en.x += (dx/d) * repelSpeed;
+                    en.y += (dy/d) * repelSpeed;
+                }
+            }
+            // Repel enemies from town
+            if(en.x > town.x && en.x < town.x + town.width &&
+               en.y > town.y && en.y < town.y + town.height) {
+                let cx = town.x + town.width/2;
+                let cy = town.y + town.height/2;
+                let dx = en.x - cx;
+                let dy = en.y - cy;
+                let d = Math.sqrt(dx*dx + dy*dy) || 1;
+                let repelSpeed = 4;
+                en.x += (dx/d) * repelSpeed;
+                en.y += (dy/d) * repelSpeed;
+            }
+
+            if (en.hitTimer > 0) en.hitTimer--; // Decrement hit flash timer
+        }
+
+        // -------------------- BOSS BEHAVIOR --------------------
+        let bossTime = 0;
+        /**
+         * Updates the boss's position, behavior, and special attacks.
+         */
+        function updateBoss() {
+            bossTime++;
+            // Boss moves in a pattern around the player
+            let offsetX = 100 * Math.cos(bossTime * 0.05);
+            let offsetY = 100 * Math.sin(bossTime * 0.05);
+            boss.x += ((player.x + offsetX) - boss.x) * boss.s;
+            boss.y += ((player.y + offsetY) - boss.y) * boss.s;
+
+            // Repel boss from safe zone
+            if(safeZone) {
+                let dx = boss.x - safeZone.x;
+                let dy = boss.y - safeZone.y;
+                let d = Math.sqrt(dx*dx + dy*dy);
+                if(d < safeZone.radius) {
+                    let repelSpeed = 3;
+                    boss.x += (dx/d) * repelSpeed;
+                    boss.y += (dy/d) * repelSpeed;
+                }
+            }
+            // Repel boss from town
+            if(boss.x > town.x && boss.x < town.x + town.width &&
+               boss.y > town.y && boss.y < town.y + town.height) {
+                let cx = town.x + town.width/2;
+                let cy = town.y + town.height/2;
+                let dx = boss.x - cx;
+                let dy = boss.y - cy;
+                let d = Math.sqrt(dx*dx + dy*dy) || 1;
+                let repelSpeed = 4;
+                boss.x += (dx/d) * repelSpeed;
+                boss.y += (dy/d) * repelSpeed;
+            }
+
+            // Spawn minions when boss health is low
+            if(boss && boss.h < boss.maxH * 0.5 && !boss.minionsSpawned) {
+                spawnBossMinions();
+                boss.minionsSpawned = true;
+            }
+
+            // Boss special homing attack timer
+            bossSpecialTimer--;
+            if(bossSpecialTimer <= 0) {
+                let dx = player.x - boss.x, dy = player.y - boss.y;
+                let mag = Math.sqrt(dx*dx + dy*dy) || 1;
+                let bulletSpeed = 3;
+                let vx = (dx/mag) * bulletSpeed;
+                let vy = (dy/mag) * bulletSpeed;
+                bossBullets.push({ x: boss.x, y: boss.y, vx: vx, vy: vy, isBossSpecial: true });
+                bossSpecialTimer = 300; // Reset timer
+            }
+
+            if (boss.hitTimer > 0) boss.hitTimer--; // Decrement hit flash timer
+        }
+
+        // -------------------- BOSS MINION SPAWN --------------------
+        /**
+         * Spawns two normal enemy minions near the boss.
+         */
+        function spawnBossMinions() {
+            for(let i = 0; i < 2; i++){
+                let pos = spawnNear(boss, 20, 40);
+                enemies.push({ x: pos.x, y: pos.y, s: baseSpeed, h: enemyTypes.normal.health, maxH: enemyTypes.normal.health, type: "normal", size: enemyTypes.normal.size, hitTimer: 0 });
+            }
+        }
+
+        // -------------------- ENVIRONMENTAL HAZARD: DEBRIS --------------------
+        /**
+         * Updates the position of falling debris and checks for player collision.
+         */
+        function updateDebris() {
+            for(let i = debris.length - 1; i >= 0; i--){
+                let d = debris[i];
+                d.y += d.speed; // Debris falls downwards
+
+                // Remove debris that has fallen off-screen
+                if(d.y > player.y + CANVAS_HEIGHT/2 + 20) {
+                    debris.splice(i, 1);
+                    continue;
+                }
+
+                // Check for collision with player
+                if(collides(d, player, PLAYER_SIZE)) {
+                    player.h--; // Player takes damage
+                    player.hitTimer = PLAYER_HIT_FLASH_DURATION; // Player flashes on hit
+                    debris.splice(i, 1); // Remove debris on hit
+                    shakeTimer = 10; // Apply screen shake
+                    soundPlayerHit();
+                }
+            }
+        }
+
+        /**
+         * Draws all active debris on the canvas.
+         */
+        function drawDebris() {
+            ctx.fillStyle = "#777"; // Grey color for debris
+            debris.forEach(d => { ctx.fillRect(d.x, d.y, 6, 6); });
+        }
+
+        // -------------------- UPGRADE MENU --------------------
+        const upgradeMenuButtonsDiv = document.getElementById('upgrade-menu-buttons');
+
+        /**
+         * Updates the text content of the upgrade buttons to show current values.
+         */
+        function updateUpgradeMenuButtons() {
+            document.getElementById('upgrade-1').innerText = `1: +Move Speed (Current: ${currentMoveSpeed})`;
+            document.getElementById('upgrade-2').innerText = `2: -Shoot CD (Current: ${(currentShootCooldown/60).toFixed(1)}s)`;
+            document.getElementById('upgrade-3').innerText = `3: +Dash Dist (Current: ${currentDashDistance})`;
+            document.getElementById('upgrade-4').innerText = `4: -Special CD (Current: ${(currentSpecialCooldown/60).toFixed(1)}s)`;
+            document.getElementById('upgrade-5').innerText = `5: +Extra Life (Current: ${lives})`;
+            document.getElementById('upgrade-6').innerText = `6: +Bullet DMG (Current: ${currentBulletDamage})`;
+            document.getElementById('upgrade-7').innerText = `7: +Combo Bonus (Current Multiplier: x${comboCount > 1 ? comboCount : 1})`;
+            document.getElementById('upgrade-8').innerText = `8: +Shield Dur (Current: ${(currentShieldDuration/60).toFixed(1)}s)`;
+            document.getElementById('upgrade-9').innerText = `9: +Freeze Dur (Current: ${(currentFreezeDuration/60).toFixed(1)}s)`;
+        }
+
+        /**
+         * Processes the chosen upgrade from the upgrade menu.
+         * @param {string} choice - The key pressed by the user (1-9).
+         */
+        function processUpgrade(choice) {
+            if(choice === "1") { currentMoveSpeed += 1; }
+            else if(choice === "2") { currentShootCooldown = Math.max(5, currentShootCooldown - 5); }
+            else if(choice === "3") { currentDashDistance += 10; }
+            else if(choice === "4") { currentSpecialCooldown = Math.max(10, currentSpecialCooldown - 5); }
+            else if(choice === "5") { lives++; }
+            else if(choice === "6") { currentBulletDamage++; }
+            else if(choice === "7") { comboCount += 1; } // This seems unusual, usually combo bonus is a multiplier, not a direct count increase. Keeping as per original.
+            else if(choice === "8") { currentShieldDuration += 50; }
+            else if(choice === "9") { currentFreezeDuration += 30; }
+            upgradeMenuActive = false;
+            levelTransitionTimer = 60; // Short delay after upgrade
+            soundLevelUp();
+            upgradeMenuButtonsDiv.style.display = 'none'; // Hide buttons after selection
+        }
+
+        // -------------------- INPUT HANDLERS --------------------
+        document.onkeydown = e => {
+            if(upgradeMenuActive) {
+                if(["1","2","3","4","5","6","7","8","9"].includes(e.key)) {
+                    processUpgrade(e.key);
+                    return;
+                }
+                return; // Ignore other keys while upgrade menu is active
+            }
+
+            if(gameState === "start" && e.key === "Enter") {
+                gameState = "playing";
+                return;
+            }
+            if(gameState === "gameover" && e.key === "r") {
+                initGame(); // Restart game
+                return;
+            }
+
+            if(gameState === "playing") {
+                if(e.key === "p") { gameState = "paused"; return; }
+                // Player movement using arrow keys
+                if(e.key === "ArrowUp")    { player.y -= currentMoveSpeed * playerSpeedBoost; lastDir = "up"; }
+                else if(e.key === "ArrowDown")  { player.y += currentMoveSpeed * playerSpeedBoost; lastDir = "down"; }
+                else if(e.key === "ArrowLeft")  { player.x -= currentMoveSpeed * playerSpeedBoost; lastDir = "left"; }
+                else if(e.key === "ArrowRight") { player.x += currentMoveSpeed * playerSpeedBoost; lastDir = "right"; }
+            } else if(gameState === "paused") {
+                if(e.key === "p") { gameState = "playing"; } // Resume game
+            }
+        };
+
+        // Button event listeners for touch/click controls
+        ["up", "down", "left", "right", "pause"].forEach(id => {
+            document.getElementById(id).addEventListener("click", () => {
+                if(upgradeMenuActive) return; // Prevent input during upgrade menu
+                if(gameState !== "playing" && id !== "pause" && id !== "soundToggle") return; // Only allow movement in playing state
+
+                if(id === "up")    { player.y -= currentMoveSpeed * playerSpeedBoost; lastDir = "up"; }
+                else if(id === "down")  { player.y += currentMoveSpeed * playerSpeedBoost; lastDir = "down"; }
+                else if(id === "left")  { player.x -= currentMoveSpeed * playerSpeedBoost; lastDir = "left"; }
+                else if(id === "right") { player.x += currentMoveSpeed * playerSpeedBoost; lastDir = "right"; }
+                else if(id === "pause") {
+                    // Toggle pause state
+                    gameState = (gameState === "paused") ? "playing" : "paused";
+                }
+            });
+        });
+
+        // Add event listeners for upgrade menu buttons
+        upgradeMenuButtonsDiv.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', () => {
+                const upgradeChoice = button.dataset.upgrade;
+                if (upgradeMenuActive) {
+                    processUpgrade(upgradeChoice);
+                }
+            });
+        });
+
+        // -------------------- TOUCH INPUT HANDLERS --------------------
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Prevent scrolling/zooming
+            if (gameState === "playing" && !upgradeMenuActive) {
+                isTouching = true;
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                touchMoveX = touchStartX; // Initialize current touch position
+                touchMoveY = touchStartY;
+            } else if (gameState === "start") {
+                gameState = "playing";
+            } else if (gameState === "gameover") {
+                initGame();
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault(); // Prevent scrolling/zooming
+            if (isTouching && gameState === "playing" && !upgradeMenuActive) {
+                touchMoveX = e.touches[0].clientX;
+                touchMoveY = e.touches[0].clientY;
+            }
+        });
+
+        canvas.addEventListener('touchend', () => {
+            isTouching = false;
+            touchStartX = 0;
+            touchStartY = 0;
+            touchMoveX = 0;
+            touchMoveY = 0;
+        });
+
+        /**
+         * Applies player movement based on touch input.
+         */
+        function applyTouchMovement() {
+            if (isTouching && gameState === "playing" && !upgradeMenuActive) {
+                let dx = touchMoveX - touchStartX;
+                let dy = touchMoveY - touchStartY;
+
+                // Only move if swipe exceeds a threshold
+                if (Math.abs(dx) > SWIPE_THRESHOLD || Math.abs(dy) > SWIPE_THRESHOLD) {
+                    // Determine dominant direction and move
+                    if (Math.abs(dx) > Math.abs(dy)) {
+                        if (dx > 0) { player.x += currentMoveSpeed * playerSpeedBoost; lastDir = "right"; }
+                        else { player.x -= currentMoveSpeed * playerSpeedBoost; lastDir = "left"; }
+                    } else {
+                        if (dy > 0) { player.y += currentMoveSpeed * playerSpeedBoost; lastDir = "down"; }
+                        else { player.y -= currentMoveSpeed * playerSpeedBoost; lastDir = "up"; }
+                    }
+                    // Reset start position to current position to make continuous movement feel more natural
+                    touchStartX = touchMoveX;
+                    touchStartY = touchMoveY;
+                }
+            }
+        }
+
+
+        // -------------------- SOUND TOGGLE BUTTON HANDLER --------------------
+        document.getElementById("soundToggle").addEventListener("click", () => {
+            soundEnabled = !soundEnabled;
+            document.getElementById("soundToggle").innerText = soundEnabled ? "Sound: On" : "Sound: Off";
+        });
+
+        // -------------------- PARTICLE EXPLOSIONS --------------------
+        /**
+         * Spawns a burst of particles at a given location.
+         * @param {number} x - X coordinate for the explosion.
+         * @param {number} y - Y coordinate for the explosion.
+         */
+        function spawnExplosion(x, y) {
+            for(let i = 0; i < PARTICLE_COUNT; i++){
+                particles.push({
+                    x: x,
+                    y: y,
+                    dx: (Math.random()-0.5)*4, // Increased particle speed
+                    dy: (Math.random()-0.5)*4,
+                    life: PARTICLE_MAX_LIFE + Math.random()*20,
+                    color: `hsl(${Math.random() * 360}, 100%, 70%)` // Random bright colors
+                });
+            }
+        }
+
+        /**
+         * Updates the position and lifespan of particles.
+         */
+        function updateParticles() {
+            for(let i = particles.length - 1; i >= 0; i--){
+                let p = particles[i];
+                p.x += p.dx;
+                p.y += p.dy;
+                p.life--;
+                if(p.life <= 0) particles.splice(i,1); // Remove dead particles
+            }
+        }
+
+        /**
+         * Draws all active particles on the canvas.
+         */
+        function drawParticles() {
+            particles.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life / PARTICLE_MAX_LIFE; // Fade out particles
+                ctx.fillRect(p.x, p.y, 3, 3); // Slightly larger particles
+            });
+            ctx.globalAlpha = 1; // Reset alpha
+        }
+
+        // -------------------- DASH PARTICLES --------------------
+        /**
+         * Spawns particles to create a dash trail effect.
+         * @param {number} x - X coordinate of the player.
+         * @param {number} y - Y coordinate of the player.
+         * @param {number} dx - Player's dash direction X.
+         * @param {number} dy - Player's dash direction Y.
+         */
+        function spawnDashParticles(x, y, dx, dy) {
+            for (let i = 0; i < 5; i++) {
+                dashParticles.push({
+                    x: x - dx * (i * 2), // Spawn slightly behind dash direction
+                    y: y - dy * (i * 2),
+                    life: 20, // Short lifespan
+                    size: PLAYER_SIZE * (1 - i * 0.1), // Fade out size
+                    color: `rgba(0, 255, 0, ${0.5 - i * 0.1})` // Green fading trail
+                });
+            }
+        }
+
+        /**
+         * Updates and draws dash particles.
+         */
+        function updateAndDrawDashParticles() {
+            for (let i = dashParticles.length - 1; i >= 0; i--) {
+                let p = dashParticles[i];
+                p.life--;
+                p.size *= 0.9; // Shrink
+                if (p.life <= 0 || p.size < 0.5) {
+                    dashParticles.splice(i, 1);
+                } else {
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        // -------------------- SCORE POP-UPS --------------------
+        /**
+         * Spawns a floating score text at a given location.
+         * @param {number} x - X coordinate for the popup.
+         * @param {number} y - Y coordinate for the popup.
+         * @param {string} text - The text to display (e.g., "+10").
+         * @param {string} color - Color of the text.
+         */
+        function spawnScorePopup(x, y, text, color = "#fff") {
+            scorePopups.push({
+                x: x,
+                y: y,
+                text: text,
+                color: color,
+                life: 60, // frames
+                vy: -0.5 // float upwards
+            });
+        }
+
+        /**
+         * Updates the position and lifespan of score pop-ups.
+         */
+        function updateScorePopups() {
+            for (let i = scorePopups.length - 1; i >= 0; i--) {
+                let popup = scorePopups[i];
+                popup.y += popup.vy;
+                popup.life--;
+                if (popup.life <= 0) {
+                    scorePopups.splice(i, 1);
+                }
+            }
+        }
+
+        /**
+         * Draws all active score pop-ups.
+         */
+        function drawScorePopups() {
+            scorePopups.forEach(popup => {
+                ctx.globalAlpha = popup.life / 60; // Fade out
+                ctx.fillStyle = popup.color;
+                ctx.font = "bold 14px Arial";
+                ctx.fillText(popup.text, popup.x, popup.y);
+                ctx.globalAlpha = 1; // Reset alpha
+            });
+        }
+
+        // -------------------- INDICATOR OVERLAY FUNCTIONS --------------------
+        /**
+         * Checks if a target object is currently visible on the canvas screen.
+         * @param {object} target - The object to check (with x, y coordinates).
+         * @returns {boolean} True if the object is on screen, false otherwise.
+         */
+        function isOnScreen(target) {
+            let screenX = target.x - player.x + CANVAS_WIDTH/2;
+            let screenY = target.y - player.y + CANVAS_HEIGHT/2;
+            return (screenX >= -50 && screenX <= CANVAS_WIDTH + 50 && screenY >= -50 && screenY <= CANVAS_HEIGHT + 50);
+        }
+
+        /**
+         * Draws an off-screen indicator pointing towards a target object.
+         * @param {object} target - The object to point to (with x, y coordinates).
+         * @param {string} color - Color of the indicator.
+         * @param {string} label - Text label for the indicator.
+         */
+        function drawIndicator(target, color, label) {
+            if (isOnScreen(target)) return; // Don't draw indicator if target is on screen
+
+            let dx = target.x - player.x;
+            let dy = target.y - player.y;
+            let angle = Math.atan2(dy, dx); // Angle from player to target
+
+            let centerX = CANVAS_WIDTH/2, centerY = CANVAS_HEIGHT/2;
+            let margin = 20; // Margin from canvas edge
+            let halfWidth = CANVAS_WIDTH/2 - margin;
+            let halfHeight = CANVAS_HEIGHT/2 - margin;
+
+            // Calculate intersection point with canvas boundary
+            let scale = Math.min(
+                halfWidth / Math.abs(Math.cos(angle)),
+                halfHeight / Math.abs(Math.sin(angle))
+            );
+
+            let arrowX = centerX + Math.cos(angle) * scale;
+            let arrowY = centerY + Math.sin(angle) * scale;
+
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            let arrowSize = 10;
+            let tipX = arrowX, tipY = arrowY;
+            let perpAngle = angle + Math.PI/2; // Perpendicular angle for arrow base
+
+            // Calculate base points of the arrow triangle
+            let baseX1 = arrowX - Math.cos(angle)*arrowSize + Math.cos(perpAngle)*(arrowSize/2);
+            let baseY1 = arrowY - Math.sin(angle)*arrowSize + Math.sin(perpAngle)*(arrowSize/2);
+            let baseX2 = arrowX - Math.cos(angle)*arrowSize - Math.cos(perpAngle)*(arrowSize/2);
+            let baseY2 = arrowY - Math.sin(angle)*arrowSize - Math.sin(perpAngle)*(arrowSize/2);
+
+            ctx.moveTo(tipX, tipY);
+            ctx.lineTo(baseX1, baseY1);
+            ctx.lineTo(baseX2, baseY2);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.font = "10px sans-serif";
+            ctx.fillText(label, arrowX - arrowSize, arrowY - arrowSize);
+        }
+
+
+        // -------------------- MAIN GAME LOOP --------------------
+        /**
+         * The main game loop, responsible for updating game state and drawing.
+         */
+        function loop() {
+            // Update timers regardless of game state (except upgrade menu)
+            if(!upgradeMenuActive) {
+                if(specialTimer > 0) specialTimer--;
+                if(shootTimer > 0) shootTimer--;
+                if(dashTimer > 0) dashTimer--;
+                if(levelTransitionTimer > 0) levelTransitionTimer--;
+                if(comboTimer > 0) comboTimer--; else { comboCount = 0; } // Reset combo if timer runs out
+                if(invincible) {
+                    invTimer--;
+                    if(invTimer <= 0) invincible = false;
+                }
+                if(speedBoostTimer > 0) { speedBoostTimer--; } else { playerSpeedBoost = 1; } // Reset speed boost
+                if(shieldTimer > 0) { shieldTimer--; } else { shieldActive = false; } // Deactivate shield
+                if(freezeTimer > 0) freezeTimer--;
+                if(player.hitTimer > 0) player.hitTimer--; // Decrement player hit flash timer
+            }
+
+            // Update day/night cycle and set background color
+            let bgColor = updateDayNightCycle();
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); // Fill entire canvas with background
+
+            // Draw scrolling background stars
+            drawScrollingBackground();
+
+            // Update energy and double score timer
+            updateEnergy();
+            if(doubleScoreActive) {
+                doubleScoreTimer--;
+                if(doubleScoreTimer <= 0) { doubleScoreActive = false; }
+            }
+
+            // -------------------- SAFE ZONE SPAWN & UPDATE --------------------
+            // Spawn new safe zone if none exists and chance allows
+            if(safeZone === null && Math.random() < SAFEZONE_CHANCE) {
+                let angle = Math.random() * Math.PI * 2;
+                let dist = Math.random() * 100; // Spawn within 100 units of player
+                safeZone = {
+                    x: player.x + Math.cos(angle) * dist,
+                    y: player.y + Math.sin(angle) * dist,
+                    radius: SAFEZONE_RADIUS,
+                    duration: SAFEZONE_DURATION
+                };
+            }
+            // Update safe zone duration
+            if(safeZone) {
+                safeZone.duration--;
+                if(safeZone.duration <= 0) safeZone = null; // Remove safe zone when duration ends
+            }
+            // Check if player is currently in a safe zone
+            playerSafe = (safeZone && collides(player, safeZone, safeZone.radius));
+
+            // -------------------- DEBRIS SPAWN & UPDATE --------------------
+            if(Math.random() < DEBRIS_SPAWN_CHANCE) { spawnDebris(); }
+            updateDebris();
+
+            // Spawn powerup if less than 1 exists and chance allows
+            if(Math.random() < 0.001 && powerups.length < 1) { spawnPowerup(); }
+
+            // Update bullets, particles, score popups (only if not in upgrade menu)
+            if(!upgradeMenuActive) {
+                updateBullets();
+                updateBossBullets();
+                updateParticles();
+                updateScorePopups(); // Update score popups
+            }
+
+
+            // -------------------- GAME LOGIC (ONLY IN PLAYING STATE) --------------------
+            if(gameState === "playing" && !upgradeMenuActive) {
+                autoPowers(); // Run automated player abilities
+                applyTouchMovement(); // Apply touch-based movement
+
+                // Update enemy and boss positions (if not frozen)
+                if(freezeTimer <= 0) {
+                    enemies.forEach(updateEnemy);
+                    if(boss) { updateBoss(); }
+                }
+
+                // Player-enemy collision
+                enemies.forEach(en => {
+                    if(collides(player, en, PLAYER_SIZE/2 + en.size/2) && !invincible && !playerSafe) {
+                        if(shieldActive) { shieldActive = false; shieldTimer = 0; }
+                        else { player.h--; player.hitTimer = PLAYER_HIT_FLASH_DURATION; } // Player takes damage & flashes
+                        // Only respawn enemies if player takes damage and is not dead
+                        if (player.h > 0) {
+                            spawnEnemies(); // Respawn enemies on hit
+                            spawnBoss(); // Respawn boss on hit (if applicable)
+                        }
+                        shakeTimer = 10;
+                        soundPlayerHit();
+                    }
+                });
+                // Player-boss collision
+                if(boss && collides(player, boss, PLAYER_SIZE/2 + boss.size/2) && !invincible && !playerSafe) {
+                    if(shieldActive) { shieldActive = false; shieldTimer = 0; }
+                    else { player.h--; player.hitTimer = PLAYER_HIT_FLASH_DURATION; } // Player takes damage & flashes
+                    if (player.h > 0) {
+                        spawnEnemies(); // Respawn enemies on hit
+                        spawnBoss(); // Respawn boss on hit (if applicable)
+                    }
+                    shakeTimer = 10;
+                    soundPlayerHit();
+                }
+                // Player-obstacle collision
+                obstacles.forEach(ob => {
+                    if(collides(player, ob, PLAYER_SIZE/2 + ob.size/2) && !invincible && !playerSafe) {
+                        if(shieldActive) { shieldActive = false; shieldTimer = 0; }
+                        else { player.h--; player.hitTimer = PLAYER_HIT_FLASH_DURATION; } // Player takes damage & flashes
+                        shakeTimer = 10;
+                        soundPlayerHit();
+                    }
+                });
+
+                // Player-powerup collision
+                powerups.forEach((pw, i) => {
+                    if(collides(player, pw, 10)) {
+                        if(pw.type === "inv") { invincible = true; invTimer = INVINCIBILITY_DURATION; }
+                        else if(pw.type === "speed") { playerSpeedBoost = 2; speedBoostTimer = SPEED_BOOST_DURATION; }
+                        else if(pw.type === "shield") { shieldActive = true; shieldTimer = currentShieldDuration; }
+                        else if(pw.type === "freeze") { freezeTimer = currentFreezeDuration; }
+                        else if(pw.type === "double") { doubleScoreActive = true; doubleScoreTimer = 600; }
+                        else if(pw.type === "health") { player.h = Math.min(player.maxH, player.h + 3); } // Restore 3 health
+                        else if(pw.type === "bomb") {
+                            enemies.forEach(en => { spawnExplosion(en.x, en.y); });
+                            if(boss) { spawnExplosion(boss.x, boss.y); }
+                            let bombScore = enemies.length + (boss ? 1 : 0);
+                            score += bombScore * 2; // Bonus score for bomb clear
+                            spawnScorePopup(player.x, player.y, `+${bombScore * 2} (Bomb!)`, "#ff00ff"); // Score popup for bomb
+                            enemies = [];
+                            boss = null;
+                            soundBombExplode();
+                        }
+                        powerups.splice(i, 1); // Remove powerup after collection
+                        soundPowerupCollect(); // Play powerup sound
+                    }
+                });
+
+                // Player-coin collision
+                if(collides(player, coin)) {
+                    let coinScore = (comboCount > 1 ? comboCount : 1);
+                    if(doubleScoreActive) { coinScore *= 2; }
+                    score += coinScore;
+                    energy = Math.min(MAX_ENERGY, energy + 10); // Gain energy from coins
+                    spawnScorePopup(coin.x, coin.y, `+${coinScore}`, "#ffff00"); // Score popup for coin
+                    spawnCoin(); // Spawn new coin
+                    soundCoinCollect(); // Play coin sound
+                    if(score % 5 === 0) { // Level up every 5 score points
+                        level++;
+                        baseSpeed += 0.005; // Increase enemy speed
+                        spawnEnemies();
+                        spawnBoss();
+                        spawnObstacles();
+                        upgradeMenuActive = true; // Activate upgrade menu
+                        upgradeMenuTimer = 0; // Reset timer for upgrade menu display duration
+                        soundLevelUp();
+                        updateUpgradeMenuButtons(); // Update button text with current values
+                        upgradeMenuButtonsDiv.style.display = 'flex'; // Show upgrade buttons
+                    }
+                    levelTransitionTimer = 60; // Brief "Level Up!" display
+                }
+            }
+
+            // Check for game over
+            if(player.h <= 0) { // Game over if player health drops to 0
+                gameState = "gameover";
+                if(score > highScore) {
+                    highScore = score;
+                    localStorage.setItem("highScore", highScore); // Save high score
+                }
+            }
+
+            // -------------------- DRAWING --------------------
+            ctx.save(); // Save the current canvas state
+
+            // Apply screen shake translation
+            ctx.translate(CANVAS_WIDTH/2 - player.x, CANVAS_HEIGHT/2 - player.y);
+            applyShake();
+
+            // Draw Safe Zone
+            if(safeZone) {
+                ctx.fillStyle = "rgba(0,255,0,0.2)";
+                ctx.beginPath();
+                ctx.arc(safeZone.x, safeZone.y, safeZone.radius, 0, Math.PI*2);
+                ctx.fill();
+                ctx.strokeStyle = "rgba(0,255,0,0.8)";
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                ctx.font = "14px sans-serif";
+                ctx.fillStyle = "rgba(0,255,0,0.9)";
+                ctx.fillText("Safe Zone", safeZone.x - ctx.measureText("Safe Zone").width/2, safeZone.y);
+            }
+
+            // Draw Town
+            ctx.fillStyle = "#444";
+            ctx.fillRect(town.x, town.y, town.width, town.height);
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(town.x, town.y, town.width, town.height);
+            ctx.font = "14px sans-serif";
+            ctx.fillStyle = "#fff";
+            ctx.fillText("Town", town.x + 10, town.y + town.height/2);
+
+            // Draw Coin
+            ctx.fillStyle = "#ff0";
+            ctx.beginPath();
+            ctx.arc(coin.x, coin.y, COIN_SIZE/2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw Obstacles
+            ctx.fillStyle = "#888";
+            obstacles.forEach(ob => {
+                ctx.beginPath();
+                ctx.arc(ob.x, ob.y, ob.size/2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw Enemies
+            enemies.forEach(en => {
+                ctx.fillStyle = (en.hitTimer > 0) ? enemyTypes[en.type].hitColor : enemyTypes[en.type].color;
+                ctx.beginPath();
+                ctx.arc(en.x, en.y, en.size/2, 0, Math.PI * 2);
+                ctx.fill();
+                // Draw enemy health bar
+                drawHealthBar(en.x - 10, en.y - en.size/2 - 5, 20, 3, en.h, en.maxH, "#f00");
+            });
+
+            // Draw Boss
+            if(boss) {
+                ctx.fillStyle = (boss.hitTimer > 0) ? "#fff" : "#f0f"; // Boss flashes white
+                ctx.beginPath();
+                ctx.arc(boss.x, boss.y, boss.size/2, 0, Math.PI * 2);
+                ctx.fill();
+                // Draw boss health bar
+                drawHealthBar(boss.x - 20, boss.y - boss.size/2 - 10, 40, 5, boss.h, boss.maxH, "#f0f");
+            }
+
+            // Draw Powerups
+            powerups.forEach(pw => {
+                ctx.fillStyle = "#00f"; // Default blue
+                if (pw.type === "inv") ctx.fillStyle = "#0ff"; // Cyan
+                else if (pw.type === "speed") ctx.fillStyle = "#f00"; // Red
+                else if (pw.type === "shield") ctx.fillStyle = "#ff0"; // Yellow
+                else if (pw.type === "freeze") ctx.fillStyle = "#00ffff"; // Aqua
+                else if (pw.type === "double") ctx.fillStyle = "#ff8c00"; // Dark Orange
+                else if (pw.type === "health") ctx.fillStyle = "#0f0"; // Green for health pack
+                else if (pw.type === "bomb") ctx.fillStyle = "#800080"; // Purple for bomb
+                ctx.beginPath();
+                ctx.arc(pw.x, pw.y, 8, 0, Math.PI * 2);
+                ctx.fill();
+                // Add a small icon/text for powerups
+                ctx.fillStyle = "#fff";
+                ctx.font = "bold 10px Arial";
+                if (pw.type === "health") ctx.fillText("H", pw.x - 3, pw.y + 4);
+                else if (pw.type === "bomb") ctx.fillText("B", pw.x - 3, pw.y + 4);
+            });
+
+            // Draw Player Bullets
+            ctx.fillStyle = "#fff"; // White for player bullets
+            bullets.forEach(b => { ctx.fillRect(b.x, b.y, BULLET_SIZE, BULLET_SIZE); });
+
+            // Draw Boss Bullets
+            ctx.fillStyle = "#ff8800"; // Orange for boss bullets
+            bossBullets.forEach(b => { ctx.fillRect(b.x, b.y, 4, 4); });
+
+            // Draw falling debris
+            drawDebris();
+
+            // Draw Player
+            ctx.fillStyle = (player.hitTimer > 0) ? "#f00" : (invincible ? "#0ff" : "#0f0"); // Red if hit, Cyan if invincible, green otherwise
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, PLAYER_SIZE/2, 0, Math.PI * 2);
+            ctx.fill();
+            // Draw shield effect
+            if(shieldActive) {
+                ctx.strokeStyle = "#ff0"; // Yellow shield outline
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, PLAYER_SIZE/2 + 4, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Draw Particles (explosions)
+            drawParticles();
+            // Draw Dash Particles
+            updateAndDrawDashParticles();
+
+            ctx.restore(); // Restore canvas state (undoes translation/shake)
+
+            // -------------------- DRAW HUD (Heads-Up Display) --------------------
+            ctx.fillStyle = "#fff"; // White text for HUD
+            ctx.font = "12px sans-serif";
+            ctx.fillText("Score: " + score, 5, 12);
+            ctx.fillText("Lives: " + lives, 5, 24);
+            ctx.fillText("Level: " + level, 5, 36);
+
+            // Player Health Bar
+            ctx.fillText("Health:", 5, 50);
+            drawHealthBar(50, 42, 100, 10, player.h, player.maxH, "#0f0");
+
+            ctx.fillText("Shoot CD: " + (shootTimer/60).toFixed(1), 5, 68); // Display in seconds
+            ctx.fillText("Special CD: " + (specialTimer/60).toFixed(1), 5, 80);
+            ctx.fillText("Dash CD: " + (dashTimer/60).toFixed(1), 5, 92);
+            ctx.fillText("High Score: " + highScore, 5, 104); // Display high score
+
+            let hudYOffset = 116; // Starting Y for power-up/status indicators
+            if(invincible) { ctx.fillText("Invincible: " + (invTimer/60).toFixed(1) + "s", 5, hudYOffset); hudYOffset += 12; }
+            if(speedBoostTimer > 0) { ctx.fillText("Speed: x" + playerSpeedBoost + " (" + (speedBoostTimer/60).toFixed(1) + "s)", 5, hudYOffset); hudYOffset += 12; }
+            if(shieldActive) { ctx.fillText("Shield: " + (shieldTimer/60).toFixed(1) + "s", 5, hudYOffset); hudYOffset += 12; }
+            if(freezeTimer > 0) { ctx.fillText("Freeze: " + (freezeTimer/60).toFixed(1) + "s", 5, hudYOffset); hudYOffset += 12; }
+            if(doubleScoreActive) { ctx.fillText("Double Score: " + (doubleScoreTimer/60).toFixed(1) + "s", 5, hudYOffset); hudYOffset += 12; }
+            if(comboCount > 1) { ctx.fillText("Combo: x" + comboCount, 5, hudYOffset); hudYOffset += 12; }
+
+            // Energy bar
+            ctx.fillStyle = "#0f0"; // Green for energy bar
+            ctx.fillRect(5, hudYOffset + 5, (energy/MAX_ENERGY)*100, 8);
+            ctx.strokeStyle = "#fff";
+            ctx.strokeRect(5, hudYOffset + 5, 100, 8);
+            ctx.fillText("Energy", 110, hudYOffset + 13);
+
+            // Game state messages
+            if(levelTransitionTimer > 0 && !upgradeMenuActive) { // Only show if upgrade menu is not active
+                ctx.font = "20px sans-serif";
+                ctx.fillText("Level Up!", CANVAS_WIDTH/2 - ctx.measureText("Level Up!").width/2, CANVAS_HEIGHT/2 - 50);
+            }
+
+            if(gameState === "paused") {
+                ctx.font = "24px sans-serif";
+                ctx.fillStyle = "#fff";
+                ctx.fillText("PAUSED", CANVAS_WIDTH/2 - ctx.measureText("PAUSED").width/2, CANVAS_HEIGHT/2);
+                ctx.font = "16px sans-serif";
+                ctx.fillText("Press 'P' or Pause button to Resume", CANVAS_WIDTH/2 - ctx.measureText("Press 'P' or Pause button to Resume").width/2, CANVAS_HEIGHT/2 + 30);
+            }
+            // Upgrade menu text is now handled by HTML overlay
+            if(upgradeMenuActive) {
+                upgradeMenuButtonsDiv.style.display = 'flex'; // Ensure buttons are visible if menu is active
+            } else {
+                upgradeMenuButtonsDiv.style.display = 'none'; // Hide buttons if menu is not active
+            }
+
+
+            if(gameState === "gameover") {
+                ctx.font = "30px sans-serif";
+                ctx.fillStyle = "#f00";
+                ctx.fillText("GAME OVER", CANVAS_WIDTH/2 - ctx.measureText("GAME OVER").width/2, CANVAS_HEIGHT/2 - 20);
+                ctx.font = "18px sans-serif";
+                ctx.fillStyle = "#fff";
+                ctx.fillText("Score: " + score, CANVAS_WIDTH/2 - ctx.measureText("Score: " + score).width/2, CANVAS_HEIGHT/2 + 20);
+                ctx.fillText("High Score: " + highScore, CANVAS_WIDTH/2 - ctx.measureText("High Score: " + highScore).width/2, CANVAS_HEIGHT/2 + 40);
+                ctx.fillText("Press 'R' or Tap to Restart", CANVAS_WIDTH/2 - ctx.measureText("Press 'R' or Tap to Restart").width/2, CANVAS_HEIGHT/2 + 70);
+            }
+            if(gameState === "start") {
+                ctx.font = "24px sans-serif";
+                ctx.fillStyle = "#fff";
+                ctx.fillText("Press 'Enter' or Tap to Start", CANVAS_WIDTH/2 - ctx.measureText("Press 'Enter' or Tap to Start").width/2, CANVAS_HEIGHT/2);
+                ctx.font = "16px sans-serif";
+                ctx.fillText("Move with Arrow keys, Buttons, or Swipe on Canvas", CANVAS_WIDTH/2 - ctx.measureText("Move with Arrow keys, Buttons, or Swipe on Canvas").width/2, CANVAS_HEIGHT/2 + 30);
+                ctx.fillText("Collect coins, defeat enemies, survive!", CANVAS_WIDTH/2 - ctx.measureText("Collect coins, defeat enemies, survive!").width/2, CANVAS_HEIGHT/2 + 50);
+            }
+
+            // -------------------- DRAW MINIMAP --------------------
+            drawMinimap();
+
+            // Draw indicators for off-screen coin and boss
+            drawIndicator(coin, "#ff0", "Coin");
+            if (boss) {
+                drawIndicator(boss, "#f0f", "Boss");
+            }
+
+            // Draw Score Popups
+            drawScorePopups();
+
+
+            requestAnimationFrame(loop); // Request the next frame
+        }
+
+        // Start the game loop when the window loads
+        window.onload = function() {
+            loop();
+        };
+
+        // Handle window resizing to make canvas responsive
+        window.addEventListener('resize', () => {
+            // This example keeps the canvas fixed size, but adjusts its display via CSS.
+            // For a truly dynamic canvas, you would update canvas.width and canvas.height here
+            // and then re-render all elements proportionally.
+        });
+    </script>
+</body>
+</html>
