@@ -1,11 +1,7 @@
 services:
   - type: web
-    name: magekt-profile
-    env: static
-    staticPublishPath: .
+    name: magekt-dynamic
+    env: python
     buildCommand: ""
-    startCommand: ""
-    routes:
-      - type: rewrite
-        source: /
-        destination: /Index.html
+    startCommand: "python app.py"
+    plan: free
