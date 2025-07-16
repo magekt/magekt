@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>magekt's Site Index</title>
+    <title>magekt's HTML Index</title>
     <style>
         :root {
             --primary-color: #0366d6;
@@ -64,16 +64,6 @@
             text-align: left;
         }
 
-        #searchInput {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            font-size: 16px;
-            margin-bottom: 20px;
-            box-sizing: border-box;
-        }
-
         #fileList {
             list-style: none;
             padding: 0;
@@ -104,16 +94,30 @@
             font-weight: 500;
         }
 
+        .file-link:hover {
+            text-decoration: underline;
+        }
+
         .file-meta {
             font-size: 0.9em;
             color: var(--secondary-color);
         }
 
-        .empty-message {
-            text-align: center;
-            color: var(--secondary-color);
-            padding: 20px;
-            font-style: italic;
+        .stats {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border: 1px solid var(--border-color);
+        }
+
+        .language-stat {
+            display: inline-block;
+            margin-right: 15px;
+            padding: 5px 10px;
+            background: #fff;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
         }
 
         @media (max-width: 600px) {
@@ -135,19 +139,40 @@
 <body>
     <div class="container">
         <header>
-            <h1>Site Index</h1>
-            <div class="time-display" id="utcTime">
-                2025-07-16 06:36:58
-            </div>
+            <h1>magekt's HTML Index</h1>
+            <div class="time-display" id="utcTime">2025-07-16 06:40:14</div>
             <div class="meta-info">
                 <div>👤 Current User: magekt</div>
                 <div>📁 Repository: magekt/magekt</div>
-                <div>🌐 Environment: Production</div>
+                <div>📊 Repository ID: 570880728</div>
+            </div>
+            <div class="stats">
+                <div class="language-stat">HTML: 95.1%</div>
+                <div class="language-stat">Python: 4.9%</div>
             </div>
         </header>
 
-        <input type="text" id="searchInput" placeholder="Search HTML files...">
-        <ul id="fileList"></ul>
+        <ul id="fileList">
+            <!-- Static list of known HTML files -->
+            <li class="file-item">
+                <a href="./index.html" class="file-link">
+                    <span class="file-name">index.html</span>
+                    <span class="file-meta">Current Page →</span>
+                </a>
+            </li>
+            <li class="file-item">
+                <a href="./README.html" class="file-link">
+                    <span class="file-name">README.html</span>
+                    <span class="file-meta">View Page →</span>
+                </a>
+            </li>
+            <li class="file-item">
+                <a href="./about.html" class="file-link">
+                    <span class="file-name">about.html</span>
+                    <span class="file-meta">View Page →</span>
+                </a>
+            </li>
+        </ul>
     </div>
 
     <script>
@@ -171,87 +196,12 @@
             document.getElementById('utcTime').textContent = formatDate(now);
         }
 
-        // Initialize files array
-        let files = [];
-        
-        // Function to get all HTML files from current directory
-        async function getHtmlFiles() {
-            try {
-                const response = await fetch('.');
-                const text = await response.text();
-                
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(text, 'text/html');
-                
-                // Find all links that end with .html
-                const links = Array.from(doc.getElementsByTagName('a'));
-                files = links
-                    .filter(link => {
-                        const href = link.href.toLowerCase();
-                        return href.endsWith('.html') || href.endsWith('.htm');
-                    })
-                    .map(link => {
-                        const fileName = link.href.split('/').pop();
-                        return {
-                            name: fileName,
-                            path: fileName,
-                            isIndex: fileName.toLowerCase() === 'index.html'
-                        };
-                    })
-                    .filter(file => !file.isIndex) // Remove index.html from the list
-                    .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
-
-                renderFiles(files);
-            } catch (error) {
-                console.error('Error fetching files:', error);
-                document.getElementById('fileList').innerHTML = `
-                    <li class="empty-message">Error loading files. Please refresh the page.</li>
-                `;
-            }
-        }
-
-        // Render the file list
-        function renderFiles(filesToShow) {
-            const fileList = document.getElementById('fileList');
-            
-            if (filesToShow.length === 0) {
-                fileList.innerHTML = `
-                    <li class="empty-message">No HTML files found in directory</li>
-                `;
-                return;
-            }
-
-            fileList.innerHTML = filesToShow
-                .map(file => `
-                    <li class="file-item">
-                        <a href="${file.path}" class="file-link">
-                            <span class="file-name">${file.name}</span>
-                            <span class="file-meta">View Page →</span>
-                        </a>
-                    </li>
-                `)
-                .join('');
-        }
-
-        // Search functionality
-        document.getElementById('searchInput').addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            const filteredFiles = files.filter(file => 
-                file.name.toLowerCase().includes(searchTerm)
-            );
-            renderFiles(filteredFiles);
-        });
-
         // Initial load
         document.addEventListener('DOMContentLoaded', () => {
-            getHtmlFiles();
             updateTime();
             // Update time every second
             setInterval(updateTime, 1000);
         });
-
-        // Refresh file list every 5 minutes
-        setInterval(getHtmlFiles, 300000);
     </script>
 </body>
 </html>
