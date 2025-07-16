@@ -940,8 +940,9 @@
             let lastSynthDirection = Math.random() < 0.5 ? 1 : -1;
 
             // Ensure scale has enough elements for Vadi/Samvadi
-            const vadiNote = scale[0]; // Tonic is often Vadi
-            const samvadiNote = scale.length > 4 ? scale[4] : scale[scale.length - 1]; // Fifth or last note as Samvadi
+            // Safely get vadiNote and samvadiNote, ensuring they are strings
+            const vadiNote = scale[0] || scale[0]; 
+            const samvadiNote = scale.length > 4 ? (scale[4] || scale[scale.length - 1]) : (scale[scale.length - 1] || scale[0]); 
 
             for (let i = 0; i < phraseLength; i++) {
                 const step = {
@@ -964,7 +965,11 @@
                         if (scale.length > 2) { // Third
                             bassOptions.push(scale[2].replace('4', '2'));
                         }
-                        step.bass.push(bassOptions[Math.floor(Math.random() * bassOptions.length)]);
+                        // Ensure bass note is not undefined before pushing
+                        const selectedBassNote = bassOptions[Math.floor(Math.random() * bassOptions.length)];
+                        if (selectedBassNote) {
+                            step.bass.push(selectedBassNote);
+                        }
                     }
                 }
                 if (step.bass.length === 0) { // Ensure at least one bass note per main beat
@@ -991,13 +996,34 @@
                     }
 
                     // Emphasize Vadi/Samvadi
-                    if (Math.random() < 0.3) { // 30% chance to gravitate towards Vadi
-                        nextSynthNoteIndex = scale.indexOf(vadiNote.slice(0, -1) + '4'); // Ensure correct octave for lookup
+                    if (vadiNote && Math.random() < 0.3) { // 30% chance to gravitate towards Vadi
+                        const targetVadiNote = vadiNote.slice(0, -1) + '4'; // Ensure correct octave for lookup
+                        let vadiIndex = scale.indexOf(targetVadiNote);
+                        if (vadiIndex !== -1) {
+                            nextSynthNoteIndex = vadiIndex;
+                        } else {
+                            // Fallback if Vadi note isn't directly in the scale (e.g., due to octave shifts in scale definition)
+                            nextSynthNoteIndex = Math.floor(Math.random() * scale.length);
+                            console.warn(`Vadi note ${targetVadiNote} not found in current scale. Picking random note.`);
+                        }
                     } else if (samvadiNote && Math.random() < 0.15) { // 15% chance for Samvadi
-                        nextSynthNoteIndex = scale.indexOf(samvadiNote.slice(0, -1) + '4');
+                        const targetSamvadiNote = samvadiNote.slice(0, -1) + '4';
+                        let samvadiIndex = scale.indexOf(targetSamvadiNote);
+                        if (samvadiIndex !== -1) {
+                            nextSynthNoteIndex = samvadiIndex;
+                        } else {
+                            nextSynthNoteIndex = Math.floor(Math.random() * scale.length);
+                            console.warn(`Samvadi note ${targetSamvadiNote} not found in current scale. Picking random note.`);
+                        }
                     }
 
                     currentSynthNoteIndex = nextSynthNoteIndex;
+
+                    // Ensure currentSynthNoteIndex is valid and points to a defined note
+                    if (currentSynthNoteIndex < 0 || currentSynthNoteIndex >= scale.length || !scale[currentSynthNoteIndex]) {
+                        console.warn(`Invalid currentSynthNoteIndex (${currentSynthNoteIndex}) or undefined note in scale. Re-selecting random note.`);
+                        currentSynthNoteIndex = Math.floor(Math.random() * scale.length);
+                    }
 
                     let synthNote = scale[currentSynthNoteIndex];
                     const currentOctave = parseInt(synthNote.slice(-1));
