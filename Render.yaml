@@ -1,7 +1,16 @@
+# services:
+#  - type: web
+#    name: magekt-dynamic
+#    env: python
+#    buildCommand: ""
+#    startCommand: "python app.py"
+#    plan: free
+
 services:
-  - type: web
-    name: magekt-dynamic
-    env: python
-    buildCommand: ""
-    startCommand: "python app.py"
-    plan: free
+ - type: static
+    name: magekt-static
+    env: static
+    buildCommand: npm run build       # Adjust if you're using yarn, vite, etc.
+    staticPublishPath: build          # Common folder for React/Vite static output
+    branch: main                      # Change to your correct branch name
+    repo: https://github.com/magekt/magekt/TextBasedGameMain.py
