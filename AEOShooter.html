@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Enhanced Game: Infinite Map</title>
     <!-- Tailwind CSS for modern styling -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -82,7 +82,7 @@
             }
         }
 
-        .controls {
+        .controls { /* Renamed from .game-actions for consistency with previous versions */
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
@@ -152,6 +152,40 @@
         #upgrade-menu-buttons button:active {
             transform: translateY(1px);
         }
+
+        /* Joystick styles */
+        #joystick-container {
+            position: fixed; /* Sticky position */
+            bottom: 20px; /* From bottom */
+            left: 20px; /* From left */
+            width: 100px;
+            height: 100px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            border: 2px solid #63b3ed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50; /* Below upgrade menu, above canvas */
+            touch-action: none; /* Prevent browser touch actions */
+            box-shadow: 0 0 10px rgba(99, 179, 237, 0.3);
+        }
+        #joystick-thumb {
+            width: 40px;
+            height: 40px;
+            background-color: #4299e1;
+            border-radius: 50%;
+            position: absolute; /* Relative to its parent (#joystick-container) */
+            touch-action: none;
+            box-shadow: 0 0 5px rgba(66, 153, 225, 0.7);
+        }
+        /* Hide joystick on larger screens if desired, or adjust its size */
+        @media (min-width: 768px) {
+            #joystick-container {
+                /* You might want to hide or reposition the joystick on desktop */
+                /* display: none; */
+            }
+        }
     </style>
 </head>
 <body>
@@ -162,13 +196,14 @@
         <canvas id="gameCanvas"></canvas>
 
         <div id="controls" class="controls">
-            <button id="up" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">↑</button>
-            <button id="left" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">←</button>
-            <button id="down" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">↓</button>
-            <button id="right" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">→</button>
             <button id="pause" class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">Pause</button>
             <button id="soundToggle" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">Sound: Off</button>
         </div>
+    </div>
+
+    <!-- Joystick Container -->
+    <div id="joystick-container">
+        <div id="joystick-thumb"></div>
     </div>
 
     <!-- Upgrade Menu Buttons Container (initially hidden) -->
@@ -431,20 +466,25 @@
             ArrowUp: false,
             ArrowDown: false,
             ArrowLeft: false,
-            ArrowRight: false
+            ArrowRight: false,
+            KeyW: false, // WASD support
+            KeyS: false,
+            KeyA: false,
+            KeyD: false
         };
 
         // Safe zone variables
         let safeZone = null;
         let playerSafe = false;
 
-        // Touch input variables
-        let touchStartX = 0;
-        let touchStartY = 0;
-        let touchMoveX = 0;
-        let touchMoveY = 0;
-        let isTouching = false;
-        const SWIPE_THRESHOLD = 20; // Minimum pixel distance for a swipe to register
+        // Joystick variables
+        const joystickContainer = document.getElementById('joystick-container');
+        const joystickThumb = document.getElementById('joystick-thumb');
+        let joystickActive = false;
+        let joystickCenterX = 0;
+        let joystickCenterY = 0;
+        const joystickRadius = joystickContainer.clientWidth / 2;
+        const thumbRadius = joystickThumb.clientWidth / 2;
 
         // -------------------- COLLISION FUNCTION (Squared Distance) --------------------
         /**
@@ -637,11 +677,12 @@
 
             // Reset keys state
             keys = {
-                ArrowUp: false,
-                ArrowDown: false,
-                ArrowLeft: false,
-                ArrowRight: false
+                ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false,
+                KeyW: false, KeyS: false, KeyA: false, KeyD: false
             };
+
+            // Reset joystick position
+            joystickThumb.style.transform = `translate(-50%, -50%)`;
         }
         initGame(); // Call initGame once to set up the initial state
 
@@ -1198,48 +1239,49 @@
 
             if(gameState === "playing") {
                 if(e.key === "p") { gameState = "paused"; return; }
-                if (keys.hasOwnProperty(e.key)) {
-                    keys[e.key] = true;
-                    if (e.key === "ArrowUp") lastDir = "up";
-                    else if (e.key === "ArrowDown") lastDir = "down";
-                    else if (e.key === "ArrowLeft") lastDir = "left";
-                    else if (e.key === "ArrowRight") lastDir = "right";
-                }
+                // Keyboard arrow keys
+                if (e.key === "ArrowUp") keys.ArrowUp = true;
+                else if (e.key === "ArrowDown") keys.ArrowDown = true;
+                else if (e.key === "ArrowLeft") keys.ArrowLeft = true;
+                else if (e.key === "ArrowRight") keys.ArrowRight = true;
+                // WASD keys
+                else if (e.key === "w" || e.key === "W") keys.KeyW = true;
+                else if (e.key === "s" || e.key === "S") keys.KeyS = true;
+                else if (e.key === "a" || e.key === "A") keys.KeyA = true;
+                else if (e.key === "d" || e.key === "D") keys.KeyD = true;
+
+                // Update lastDir based on current key presses
+                if (keys.ArrowUp || keys.KeyW) lastDir = "up";
+                else if (keys.ArrowDown || keys.KeyS) lastDir = "down";
+                else if (keys.ArrowLeft || keys.KeyA) lastDir = "left";
+                else if (keys.ArrowRight || keys.KeyD) lastDir = "right";
             } else if(gameState === "paused") {
                 if(e.key === "p") { gameState = "playing"; } // Resume game
             }
         };
 
         document.onkeyup = e => {
-            if (keys.hasOwnProperty(e.key)) {
-                keys[e.key] = false;
-            }
+            // Keyboard arrow keys
+            if (e.key === "ArrowUp") keys.ArrowUp = false;
+            else if (e.key === "ArrowDown") keys.ArrowDown = false;
+            else if (e.key === "ArrowLeft") keys.ArrowLeft = false;
+            else if (e.key === "ArrowRight") keys.ArrowRight = false;
+            // WASD keys
+            else if (e.key === "w" || e.key === "W") keys.KeyW = false;
+            else if (e.key === "s" || e.key === "S") keys.KeyS = false;
+            else if (e.key === "a" || e.key === "A") keys.KeyA = false;
+            else if (e.key === "d" || e.key === "D") keys.KeyD = false;
         };
 
-        // Button event listeners for touch/click controls
-        document.getElementById("up").addEventListener("mousedown", () => { keys.ArrowUp = true; lastDir = "up"; });
-        document.getElementById("up").addEventListener("mouseup", () => { keys.ArrowUp = false; });
-        document.getElementById("up").addEventListener("touchstart", (e) => { e.preventDefault(); keys.ArrowUp = true; lastDir = "up"; });
-        document.getElementById("up").addEventListener("touchend", () => { keys.ArrowUp = false; });
-
-        document.getElementById("down").addEventListener("mousedown", () => { keys.ArrowDown = true; lastDir = "down"; });
-        document.getElementById("down").addEventListener("mouseup", () => { keys.ArrowDown = false; });
-        document.getElementById("down").addEventListener("touchstart", (e) => { e.preventDefault(); keys.ArrowDown = true; lastDir = "down"; });
-        document.getElementById("down").addEventListener("touchend", () => { keys.ArrowDown = false; });
-
-        document.getElementById("left").addEventListener("mousedown", () => { keys.ArrowLeft = true; lastDir = "left"; });
-        document.getElementById("left").addEventListener("mouseup", () => { keys.ArrowLeft = false; });
-        document.getElementById("left").addEventListener("touchstart", (e) => { e.preventDefault(); keys.ArrowLeft = true; lastDir = "left"; });
-        document.getElementById("left").addEventListener("touchend", () => { keys.ArrowLeft = false; });
-
-        document.getElementById("right").addEventListener("mousedown", () => { keys.ArrowRight = true; lastDir = "right"; });
-        document.getElementById("right").addEventListener("mouseup", () => { keys.ArrowRight = false; });
-        document.getElementById("right").addEventListener("touchstart", (e) => { e.preventDefault(); keys.ArrowRight = true; lastDir = "right"; });
-        document.getElementById("right").addEventListener("touchend", () => { keys.ArrowRight = false; });
-
+        // Button event listeners for Pause and SoundToggle
         document.getElementById("pause").addEventListener("click", () => {
             if(upgradeMenuActive) return;
             gameState = (gameState === "paused") ? "playing" : "paused";
+        });
+
+        document.getElementById("soundToggle").addEventListener("click", () => {
+            soundEnabled = !soundEnabled;
+            document.getElementById("soundToggle").innerText = soundEnabled ? "Sound: On" : "Sound: Off";
         });
 
         // Add event listeners for upgrade menu buttons
@@ -1252,81 +1294,100 @@
             });
         });
 
-        // -------------------- TOUCH INPUT HANDLERS (for canvas swipe) --------------------
-        canvas.addEventListener('touchstart', (e) => {
+        // -------------------- JOYSTICK INPUT HANDLERS --------------------
+        joystickContainer.addEventListener('touchstart', handleJoystickStart, { passive: false });
+        joystickContainer.addEventListener('touchmove', handleJoystickMove, { passive: false });
+        joystickContainer.addEventListener('touchend', handleJoystickEnd);
+        joystickContainer.addEventListener('touchcancel', handleJoystickEnd); // Handle touch leaving the element
+
+        // For mouse input (desktop testing of joystick)
+        joystickContainer.addEventListener('mousedown', handleJoystickStart, { passive: false });
+        joystickContainer.addEventListener('mousemove', handleJoystickMove, { passive: false });
+        joystickContainer.addEventListener('mouseup', handleJoystickEnd);
+        joystickContainer.addEventListener('mouseleave', handleJoystickEnd);
+
+        function handleJoystickStart(e) {
             e.preventDefault(); // Prevent scrolling/zooming
             if (gameState === "playing" && !upgradeMenuActive) {
-                isTouching = true;
-                // Get touch coordinates relative to the canvas
-                const rect = canvas.getBoundingClientRect();
-                touchStartX = e.touches[0].clientX - rect.left;
-                touchStartY = e.touches[0].clientY - rect.top;
-                touchMoveX = touchStartX; // Initialize current touch position
-                touchMoveY = touchStartY;
+                joystickActive = true;
+                const rect = joystickContainer.getBoundingClientRect();
+                joystickCenterX = rect.left + joystickRadius;
+                joystickCenterY = rect.top + joystickRadius;
+
+                // Initial position of the thumb
+                let clientX, clientY;
+                if (e.touches && e.touches.length > 0) {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+                updateJoystickThumb(clientX, clientY);
             } else if (gameState === "start") {
                 gameState = "playing";
             } else if (gameState === "gameover") {
                 initGame();
             }
-        });
+        }
 
-        canvas.addEventListener('touchmove', (e) => {
+        function handleJoystickMove(e) {
             e.preventDefault(); // Prevent scrolling/zooming
-            if (isTouching && gameState === "playing" && !upgradeMenuActive) {
-                const rect = canvas.getBoundingClientRect();
-                touchMoveX = e.touches[0].clientX - rect.left;
-                touchMoveY = e.touches[0].clientY - rect.top;
-            }
-        });
-
-        canvas.addEventListener('touchend', () => {
-            isTouching = false;
-            // When touch ends, release all movement keys to stop player
-            keys.ArrowUp = false;
-            keys.ArrowDown = false;
-            keys.ArrowLeft = false;
-            keys.ArrowRight = false;
-            touchStartX = 0;
-            touchStartY = 0;
-            touchMoveX = 0;
-            touchMoveY = 0;
-        });
-
-        /**
-         * Applies player movement based on touch input.
-         * This function now sets the 'keys' state, which is then processed by the main loop's velocity system.
-         */
-        function applyTouchMovement() {
-            // Reset keys based on touch input, only if currently touching
-            keys.ArrowUp = false;
-            keys.ArrowDown = false;
-            keys.ArrowLeft = false;
-            keys.ArrowRight = false;
-
-            if (isTouching && gameState === "playing" && !upgradeMenuActive) {
-                // Scale touch movement to the internal game viewport coordinates
-                const scaledTouchStartX = (touchStartX - GAME_VIEWPORT_X_OFFSET) * (GAME_VIEWPORT_WIDTH / canvas.clientWidth);
-                const scaledTouchStartY = (touchStartY - GAME_VIEWPORT_Y_OFFSET) * (GAME_VIEWPORT_HEIGHT / canvas.clientHeight);
-                const scaledTouchMoveX = (touchMoveX - GAME_VIEWPORT_X_OFFSET) * (GAME_VIEWPORT_WIDTH / canvas.clientWidth);
-                const scaledTouchMoveY = (touchMoveY - GAME_VIEWPORT_Y_OFFSET) * (GAME_VIEWPORT_HEIGHT / canvas.clientHeight);
-
-                let dx = scaledTouchMoveX - scaledTouchStartX;
-                let dy = scaledTouchMoveY - scaledTouchStartY;
-
-                if (Math.abs(dx) > SWIPE_THRESHOLD || Math.abs(dy) > SWIPE_THRESHOLD) {
-                    if (Math.abs(dx) > Math.abs(dy)) {
-                        if (dx > 0) { keys.ArrowRight = true; lastDir = "right"; }
-                        else { keys.ArrowLeft = true; lastDir = "left"; }
-                    } else {
-                        if (dy > 0) { keys.ArrowDown = true; lastDir = "down"; }
-                        else { keys.ArrowUp = true; lastDir = "up"; }
-                    }
-                    // For continuous touch movement, update start position to current touch position
-                    // This makes the player continue moving as long as finger is moving
-                    touchStartX = touchMoveX;
-                    touchStartY = touchMoveY;
+            if (joystickActive && gameState === "playing" && !upgradeMenuActive) {
+                let clientX, clientY;
+                if (e.touches && e.touches.length > 0) {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
                 }
+                updateJoystickThumb(clientX, clientY);
             }
+        }
+
+        function handleJoystickEnd() {
+            joystickActive = false;
+            // Reset thumb to center
+            joystickThumb.style.transform = `translate(-50%, -50%)`;
+            // Reset player movement keys
+            keys.ArrowUp = false;
+            keys.ArrowDown = false;
+            keys.ArrowLeft = false;
+            keys.ArrowRight = false;
+            keys.KeyW = false;
+            keys.KeyS = false;
+            keys.KeyA = false;
+            keys.KeyD = false;
+        }
+
+        function updateJoystickThumb(clientX, clientY) {
+            let dx = clientX - joystickCenterX;
+            let dy = clientY - joystickCenterY;
+            let distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance > joystickRadius - thumbRadius) {
+                let angle = Math.atan2(dy, dx);
+                dx = (joystickRadius - thumbRadius) * Math.cos(angle);
+                dy = (joystickRadius - thumbRadius) * Math.sin(angle);
+            }
+
+            joystickThumb.style.transform = `translate(${dx - thumbRadius}px, ${dy - thumbRadius}px)`;
+
+            // Convert joystick position to directional input for the player
+            // Use a deadzone to prevent accidental input
+            const deadzone = joystickRadius * 0.2;
+            keys.ArrowUp = dy < -deadzone;
+            keys.ArrowDown = dy > deadzone;
+            keys.ArrowLeft = dx < -deadzone;
+            keys.ArrowRight = dx > deadzone;
+
+            // Update lastDir for bullet firing
+            if (keys.ArrowUp) lastDir = "up";
+            else if (keys.ArrowDown) lastDir = "down";
+            else if (keys.ArrowLeft) lastDir = "left";
+            else if (keys.ArrowRight) lastDir = "right";
+            // Diagonal directions for lastDir are not explicitly handled by joystick, keeping as is.
         }
 
 
@@ -1608,17 +1669,17 @@
             // -------------------- GAME LOGIC (ONLY IN PLAYING STATE) --------------------
             if(gameState === "playing" && !upgradeMenuActive) {
                 autoPowers(); // Run automated player abilities
-                applyTouchMovement(); // Apply touch-based movement
 
                 // Player movement logic (velocity-based for smoother movement)
                 let targetVx = 0;
                 let targetVy = 0;
                 let currentSpeed = currentMoveSpeed * playerSpeedBoost;
 
-                if (keys.ArrowUp) targetVy = -currentSpeed;
-                if (keys.ArrowDown) targetVy = currentSpeed;
-                if (keys.ArrowLeft) targetVx = -currentSpeed;
-                if (keys.ArrowRight) targetVx = currentSpeed;
+                // Combine keyboard and joystick inputs
+                if (keys.ArrowUp || keys.KeyW) targetVy = -currentSpeed;
+                if (keys.ArrowDown || keys.KeyS) targetVy = currentSpeed;
+                if (keys.ArrowLeft || keys.KeyA) targetVx = -currentSpeed;
+                if (keys.ArrowRight || keys.KeyD) targetVx = currentSpeed;
 
                 // Normalize diagonal movement speed
                 if (targetVx !== 0 && targetVy !== 0) {
@@ -1750,12 +1811,6 @@
             // Translate to the game viewport position
             ctx.translate(GAME_VIEWPORT_X_OFFSET, GAME_VIEWPORT_Y_OFFSET);
             applyShake(); // Apply screen shake relative to the viewport
-
-            // Draw the game area border
-            ctx.strokeStyle = "#63b3ed"; // Blue border
-            ctx.lineWidth = 2;
-            ctx.strokeRect(0, 0, GAME_VIEWPORT_WIDTH, GAME_VIEWPORT_HEIGHT);
-
 
             // Draw Safe Zone
             if(safeZone) {
@@ -1936,7 +1991,7 @@
                 ctx.fillStyle = "#fff";
                 ctx.fillText("Press 'Enter' or Tap to Start", CANVAS_WIDTH/2 - ctx.measureText("Press 'Enter' or Tap to Start").width/2, CANVAS_HEIGHT/2);
                 ctx.font = "16px sans-serif";
-                ctx.fillText("Move with Arrow keys, Buttons, or Swipe on Canvas", CANVAS_WIDTH/2 - ctx.measureText("Move with Arrow keys, Buttons, or Swipe on Canvas").width/2, CANVAS_HEIGHT/2 + 30);
+                ctx.fillText("Move with Joystick (Left) or WASD/Arrow Keys", CANVAS_WIDTH/2 - ctx.measureText("Move with Joystick (Left) or WASD/Arrow Keys").width/2, CANVAS_HEIGHT/2 + 30);
                 ctx.fillText("Collect coins, defeat enemies, survive!", CANVAS_WIDTH/2 - ctx.measureText("Collect coins, defeat enemies, survive!").width/2, CANVAS_HEIGHT/2 + 50);
             }
 
