@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simple Relax Looper</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         /* Apply Inter font and basic styling to the body */
         body {
@@ -13,7 +15,7 @@
             justify-content: center; /* Center content horizontally */
             align-items: flex-start; /* Align items to the top */
             min-height: 100vh; /* Ensure it takes full viewport height */
-            background-color: #1a1a1a; /* Dark background for ambient feel */
+            background: radial-gradient(circle at top left, #2a2a2a, #1a1a1a 70%); /* Subtle radial gradient */
             color: #e0e0e0; /* Light text color */
             margin: 0;
             padding: 20px;
@@ -39,10 +41,11 @@
             background-color: #2a2a2a;
             padding: 25px; /* Increased padding */
             border-radius: 15px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4), inset 0 0 10px rgba(0, 0, 0, 0.2); /* Added inner shadow */
             display: flex;
             flex-direction: column;
             gap: 25px; /* Increased gap between sections */
+            border: 1px solid rgba(144, 238, 144, 0.1); /* Subtle green border */
         }
 
         /* Central content container (formerly 'container') */
@@ -52,11 +55,12 @@
             background-color: #2a2a2a;
             padding: 30px;
             border-radius: 15px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4), inset 0 0 10px rgba(0, 0, 0, 0.2); /* Added inner shadow */
             text-align: center;
             display: flex;
             flex-direction: column;
             gap: 25px; /* Increased gap between sections */
+            border: 1px solid rgba(144, 238, 144, 0.1); /* Subtle green border */
         }
 
         /* Styling for the main heading */
@@ -78,10 +82,12 @@
             padding-bottom: 10px;
         }
 
-        /* Styling for buttons */
+        /* Base button styling */
         button {
-            background-color: #4CAF50; /* Green */
-            color: white;
+            display: flex; /* Enable flexbox for icon and text alignment */
+            align-items: center;
+            justify-content: center;
+            gap: 8px; /* Space between icon and text */
             padding: 15px 30px;
             border: none;
             border-radius: 10px; /* Rounded corners for buttons */
@@ -91,19 +97,39 @@
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* More prominent button shadow */
             outline: none; /* Remove outline on focus */
             font-weight: 600;
+            color: white; /* Default text color */
         }
-        /* Hover effects for buttons */
-        button:hover {
+        /* Primary button style (Start/Stop) */
+        button.primary {
+            background-color: #4CAF50; /* Green */
+        }
+        button.primary:hover {
             background-color: #45a049;
-            transform: translateY(-3px); /* Slight lift effect */
+            transform: translateY(-3px);
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
         }
-        /* Active (click) effects for buttons */
-        button:active {
+        button.primary:active {
             background-color: #3e8e41;
-            transform: translateY(0); /* Return to original position */
+            transform: translateY(0);
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
+
+        /* Secondary button style (Presets, Record, Vis Modes) */
+        button.secondary {
+            background-color: #555; /* Darker grey */
+            border: 1px solid #777; /* Subtle border */
+        }
+        button.secondary:hover {
+            background-color: #666;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        button.secondary:active {
+            background-color: #444;
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
         /* Styling for disabled buttons */
         button:disabled {
             background-color: #666;
@@ -111,25 +137,33 @@
             box-shadow: none;
             transform: none;
         }
-        /* Styling for the custom message box */
+        
+        /* Custom message box (Toast Notification Style) */
         .message-box {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             background-color: #3a3a3a;
             color: #fff;
-            padding: 15px;
-            border-radius: 8px; /* Rounded corners */
-            margin-top: 20px;
-            font-size: 0.9em;
-            display: none; /* Hidden by default */
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            border: 1px solid #4CAF50;
+            font-size: 1em;
             opacity: 0;
-            transition: opacity 0.3s ease;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            border: 1px solid #4CAF50; /* Green border for message box */
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out, transform 0.3s ease-in-out;
+            z-index: 1000;
+            min-width: 200px;
+            text-align: center;
         }
-        /* Class to show the message box */
         .message-box.show {
-            display: block;
             opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(-10px); /* Slight lift animation */
         }
+
         /* Styling for paragraph text */
         p {
             font-size: 1.1em;
@@ -167,6 +201,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Responsive grid for knobs, slightly wider min */
             gap: 20px; /* Increased gap */
+            border: 1px solid rgba(144, 238, 144, 0.05); /* Very subtle border */
         }
         .knob-group {
             display: flex;
@@ -191,10 +226,14 @@
             -webkit-appearance: none;
             appearance: none;
             height: 10px; /* Slightly thicker slider track */
-            background: #555;
+            background: #555; /* Default track background */
             outline: none;
             border-radius: 5px;
             transition: background 0.2s;
+            /* New: Track fill */
+            background-image: linear-gradient(#90ee90, #90ee90);
+            background-size: var(--fill-percentage, 0%) 100%;
+            background-repeat: no-repeat;
         }
         .knob-group input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
@@ -206,6 +245,7 @@
             cursor: pointer;
             box-shadow: 0 0 8px rgba(144, 238, 144, 0.7); /* Stronger glow */
             border: 2px solid #1a1a1a; /* Dark border for contrast */
+            transition: background 0.2s, box-shadow 0.2s;
         }
         .knob-group input[type="range"]::-moz-range-thumb {
             width: 22px;
@@ -215,10 +255,16 @@
             cursor: pointer;
             box-shadow: 0 0 8px rgba(144, 238, 144, 0.7);
             border: 2px solid #1a1a1a;
+            transition: background 0.2s, box-shadow 0.2s;
         }
         /* Enhanced focus styles for range inputs */
         .knob-group input[type="range"]:focus {
             box-shadow: 0 0 0 3px rgba(144, 238, 144, 0.5); /* Green glow on focus */
+        }
+        .knob-group input[type="range"]:active::-webkit-slider-thumb,
+        .knob-group input[type="range"]:active::-moz-range-thumb {
+            background: #a0ffa0; /* Brighter when active */
+            box-shadow: 0 0 12px rgba(160, 255, 160, 0.9);
         }
 
         .knob-value {
@@ -241,6 +287,7 @@
             background-repeat: no-repeat;
             background-position: right 8px top 50%;
             background-size: 12px auto;
+            transition: box-shadow 0.2s;
         }
         /* Enhanced focus styles for select inputs */
         .knob-group select:focus {
@@ -270,6 +317,7 @@
             padding: 15px;
             border-radius: 10px;
             box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(144, 238, 144, 0.05);
         }
         .volume-meter-label {
             font-size: 1em;
@@ -314,6 +362,7 @@
             padding: 20px;
             border-radius: 12px;
             box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(144, 238, 144, 0.05);
         }
         .preset-controls input[type="text"] {
             padding: 10px; /* Increased padding */
@@ -325,24 +374,11 @@
             max-width: 250px; /* Increased max-width */
             font-size: 1em;
             box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+            transition: box-shadow 0.2s;
         }
-        .preset-controls button {
-            padding: 12px 25px; /* Adjusted padding */
-            font-size: 1.1em; /* Slightly smaller than main buttons */
-            width: 90%;
-            max-width: 250px;
-            background-color: #555; /* Different color for preset buttons */
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-        .preset-controls button:hover {
-            background-color: #666;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-        }
-        .preset-controls button:active {
-            background-color: #444;
-            transform: translateY(0);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        .preset-controls input[type="text"]:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(144, 238, 144, 0.5);
         }
 
         .checkbox-group {
@@ -434,36 +470,98 @@
             background-size: 12px auto;
         }
 
-        /* Responsive adjustments */
+        /* Responsive adjustments for mobile */
         @media (max-width: 768px) {
+            body {
+                padding: 10px; /* Reduce overall padding */
+            }
             .main-layout-container {
                 flex-direction: column; /* Stack panels vertically on small screens */
                 align-items: center;
-                padding: 10px; /* Reduced padding */
+                gap: 15px; /* Reduce gap between stacked panels */
             }
             .left-panel, .central-content {
-                width: 98%; /* Make panels take more width */
+                width: 100%; /* Make panels take full width */
                 flex: none; /* Remove flex grow/shrink */
-                padding: 20px; /* Adjusted padding */
+                padding: 15px; /* Adjusted padding for mobile panels */
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), inset 0 0 5px rgba(0, 0, 0, 0.1); /* Lighter shadows */
             }
             h1 {
-                font-size: 2.2em; /* Smaller on mobile */
+                font-size: 2em; /* Smaller heading on mobile */
+                margin-bottom: 5px;
+            }
+            h3 {
+                font-size: 1.2em; /* Smaller subheadings */
+                margin-bottom: 10px;
+                padding-bottom: 8px;
+            }
+            p {
+                font-size: 1em; /* Slightly smaller paragraph text */
+                margin-bottom: 10px;
             }
             button {
                 padding: 12px 20px; /* Smaller button padding */
-                font-size: 1.1em;
+                font-size: 1em; /* Smaller button font size */
+                gap: 6px; /* Smaller gap for icons */
+            }
+            .controls {
+                gap: 10px; /* Smaller gap between buttons */
             }
             .knob-section {
                 grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Adjust grid for smaller screens */
-                gap: 15px;
+                gap: 10px; /* Smaller gap within knob sections */
+                padding: 15px;
+            }
+            .knob-group {
+                padding: 8px;
+                gap: 5px;
+            }
+            .knob-group label {
+                font-size: 0.9em;
+            }
+            .knob-value {
+                font-size: 1em;
+            }
+            .knob-group input[type="range"],
+            .knob-group select {
+                max-width: 100%; /* Allow sliders/selects to take full width of their group */
             }
             #audioVisualizer {
-                width: 98%; /* Make visualizer wider on small screens */
+                width: 100%; /* Make visualizer wider on small screens */
                 max-width: none; /* No max-width on mobile */
+                height: 100px; /* Slightly shorter visualizer */
+                margin-top: 15px;
+            }
+            .volume-meter-container {
+                padding: 10px;
+                gap: 8px;
+            }
+            #volumeMeter {
+                width: 150px; /* Adjust meter width */
+                height: 15px; /* Adjust meter height */
+            }
+            .preset-controls {
+                padding: 15px;
+                gap: 10px;
             }
             .preset-controls input[type="text"],
             .preset-controls button {
-                max-width: 90%; /* Wider on mobile */
+                width: 95%; /* Wider on mobile */
+                max-width: none; /* No max-width on mobile */
+            }
+            .recording-format-control select {
+                width: 100%; /* Full width for format select */
+            }
+            .message-box {
+                width: 90%; /* Take more width on mobile */
+                left: 5%; /* Adjust left to center */
+                transform: translateX(0); /* Remove translateX for centering */
+                padding: 12px 20px;
+                font-size: 0.9em;
+                bottom: 15px; /* Slightly higher from bottom */
+            }
+            .message-box.show {
+                transform: translateX(0) translateY(-10px); /* Adjust animation for new positioning */
             }
         }
     </style>
@@ -637,8 +735,8 @@
             <h1>Simple Relax Looper</h1>
             <p>Experience a subtly evolving ambient track designed for relaxation.</p>
             <div class="controls">
-                <button id="startButton" title="Start the music loop (Hotkey: Space/Enter)">Start Looping</button>
-                <button id="stopButton" disabled title="Stop the music loop (Hotkey: Space/Enter)">Stop Looping</button>
+                <button id="startButton" class="primary" title="Start the music loop (Hotkey: Space/Enter)"><i class="fas fa-play"></i> Start Looping</button>
+                <button id="stopButton" class="primary" disabled title="Stop the music loop (Hotkey: Space/Enter)"><i class="fas fa-stop"></i> Stop Looping</button>
             </div>
             <div id="currentSectionDisplay">Current Section: --</div>
             <div id="songIterationDisplay">Song Iteration: 0</div> <!-- New element for iteration count -->
@@ -649,10 +747,10 @@
 
             <!-- Visualization Mode Controls -->
             <div class="visualization-controls">
-                <button id="visModeSpectrum" class="active" title="Show frequency spectrum visualization">Spectrum</button>
-                <button id="visModeWaveform" title="Show waveform visualization">Waveform</button>
-                <button id="visModeBoth" title="Show both spectrum and waveform visualization">Both</button>
-                <button id="visModeBands" title="Show bass, mid, and treble frequency bands">Bands</button>
+                <button id="visModeSpectrum" class="secondary active" title="Show frequency spectrum visualization">Spectrum</button>
+                <button id="visModeWaveform" class="secondary" title="Show waveform visualization">Waveform</button>
+                <button id="visModeBoth" class="secondary" title="Show both spectrum and waveform visualization">Both</button>
+                <button id="visModeBands" class="secondary" title="Show bass, mid, and treble frequency bands">Bands</button>
             </div>
 
             <!-- Master Volume Meter -->
@@ -668,17 +766,17 @@
             <div class="preset-controls">
                 <h3>Presets</h3>
                 <input type="text" id="presetNameInput" placeholder="Enter preset name" title="Enter a name for your preset">
-                <button id="savePresetButton" title="Save current settings as a preset">Save Preset</button>
-                <button id="loadPresetButton" title="Load a saved preset">Load Preset</button>
-                <button id="exportPresetsButton" title="Export all saved presets to a JSON file">Export All Presets</button>
+                <button id="savePresetButton" class="secondary" title="Save current settings as a preset"><i class="fas fa-save"></i> Save Preset</button>
+                <button id="loadPresetButton" class="secondary" title="Load a saved preset"><i class="fas fa-folder-open"></i> Load Preset</button>
+                <button id="exportPresetsButton" class="secondary" title="Export all saved presets to a JSON file"><i class="fas fa-file-export"></i> Export All Presets</button>
                 <input type="file" id="importPresetsInput" accept=".json" style="display: none;" title="Select a JSON file to import presets">
-                <button id="importPresetsButton" title="Import Presets">Import Presets</button> <!-- Added text here -->
+                <button id="importPresetsButton" class="secondary" title="Import Presets"><i class="fas fa-file-import"></i> Import Presets</button>
                 <p>Quick Load: Press 1-9 to load "Preset 1" to "Preset 9"</p>
             </div>
 
             <!-- Recording Controls -->
             <div class="controls recording-controls">
-                <button id="recordButton" title="Start/Stop recording audio (Hotkey: Ctrl+R)">Start Recording</button>
+                <button id="recordButton" class="secondary" title="Start/Stop recording audio (Hotkey: Ctrl+R)"><i class="fas fa-microphone"></i> Start Recording</button>
                 <div class="recording-format-control">
                     <label for="recordingFormat">Format:</label>
                     <select id="recordingFormat" title="Select recording output format">
@@ -710,6 +808,15 @@
         let currentTempo = 420;
         let targetTempo = 420; // New: For dynamic tempo changes
         let tempoDriftDirection = 1; // New: For tempo drift
+
+        // New target variables for smoother humanization
+        let targetDetune = 0;
+        let targetFilterFrequency = 1000;
+        let targetFilterQ = 1;
+        let targetBaseNoteDuration = 0.5;
+        let targetHumanizationFactor = 0.5;
+        let targetDelayTimeValue = 0.3;
+        let targetDelayFeedbackValue = 0.4;
 
         let currentDetune = 0;
         let currentFilterFrequency = 1000;
@@ -977,26 +1084,27 @@
                 }
 
                 // --- Synth Melody Generation ---
+                // Number of synth notes influenced by humanizationFactor
                 const numSynthNotes = 1 + Math.floor(Math.random() * (humanizationFactor * 2));
                 let synthNotesForStep = [];
 
                 for (let j = 0; j < numSynthNotes; j++) {
                     let nextSynthNoteIndex = currentSynthNoteIndex;
 
-                    // Tendency towards stepwise motion
-                    if (Math.random() < 0.7) { // 70% chance of stepwise motion
+                    // Stronger tendency towards stepwise motion (increased from 0.7 to 0.8)
+                    if (Math.random() < 0.8) { 
                         nextSynthNoteIndex = (currentSynthNoteIndex + lastSynthDirection + scale.length * 2) % scale.length;
-                    } else if (Math.random() < 0.9) { // 20% chance of small leap (3rd or 4th)
+                    } else if (Math.random() < 0.95) { // 15% chance of small leap (2nd or 3rd within scale)
                         const leapAmount = Math.random() < 0.5 ? 2 : 3; // 2 or 3 steps in scale
                         nextSynthNoteIndex = (currentSynthNoteIndex + lastSynthDirection * leapAmount + scale.length * 2) % scale.length;
-                    } else { // 10% chance of larger leap or change direction
+                    } else { // 5% chance of larger leap or change direction
                         lastSynthDirection *= -1; // Change direction
-                        const leapAmount = Math.floor(Math.random() * (scale.length / 2)) + 1; // Random leap
+                        const leapAmount = Math.floor(Math.random() * (scale.length / 2)) + 1; // Random leap, still within reasonable bounds
                         nextSynthNoteIndex = (currentSynthNoteIndex + lastSynthDirection * leapAmount + scale.length * 2) % scale.length;
                     }
 
-                    // Emphasize Vadi/Samvadi
-                    if (vadiNote && Math.random() < 0.3) { // 30% chance to gravitate towards Vadi
+                    // Emphasize Vadi/Samvadi (increased probability)
+                    if (vadiNote && Math.random() < 0.4) { // 40% chance to gravitate towards Vadi
                         const targetVadiBaseNote = vadiNote.slice(0, -1);
                         let vadiIndex = scale.findIndex(note => note.startsWith(targetVadiBaseNote)); // Find note by base name
                         if (vadiIndex !== -1) {
@@ -1005,7 +1113,7 @@
                             nextSynthNoteIndex = Math.floor(Math.random() * scale.length);
                             console.warn(`Vadi note base ${targetVadiBaseNote} not found in current scale. Picking random note.`);
                         }
-                    } else if (samvadiNote && Math.random() < 0.15) { // 15% chance for Samvadi
+                    } else if (samvadiNote && Math.random() < 0.25) { // 25% chance for Samvadi
                         const targetSamvadiBaseNote = samvadiNote.slice(0, -1);
                         let samvadiIndex = scale.findIndex(note => note.startsWith(targetSamvadiBaseNote));
                         if (samvadiIndex !== -1) {
@@ -1027,8 +1135,8 @@
                     let synthNote = scale[currentSynthNoteIndex];
                     const currentOctave = parseInt(synthNote.slice(-1));
                     
-                    // Octave variation for synth notes
-                    if (Math.random() < 0.3 * humanizationFactor) {
+                    // Octave variation for synth notes (reduced frequency of jumps)
+                    if (Math.random() < 0.2 * humanizationFactor) { // Less frequent octave jumps
                         if (Math.random() < 0.5 && currentOctave < 5) {
                             synthNote = synthNote.slice(0, -1) + (currentOctave + 1);
                         } else if (currentOctave > 3) {
@@ -1039,7 +1147,7 @@
                 }
                 
                 // Add an arpeggiated chord if humanizationFactor is high and random chance
-                if (humanizationFactor > 0.7 && Math.random() < 0.2) {
+                if (humanizationFactor > 0.7 && Math.random() < 0.25 * humanizationFactor) { // Increased chance with humanization
                     const rootIndex = currentSynthNoteIndex;
                     // Ensure indices are valid before accessing scale elements
                     const thirdNote = getSafeNote(scale, (rootIndex + 2) % scale.length);
@@ -1207,7 +1315,7 @@
                 { bass: ['G2'], synth: ['B3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['D2'], synth: ['D3', 'A3'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['D2'], synth: ['F#3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
-                { bass: ['E2'], synth: ['E3', 'B3'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.3 },
+                { bass: ['E2'], synth: ['B3', 'E4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.3 },
                 { bass: ['E2'], synth: ['G3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['C3'], synth: ['C4', 'G4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['G2'], synth: ['G3', 'B3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
@@ -1248,7 +1356,7 @@
                 { bass: ['C2'], synth: ['C4', 'G4'], percussion: {}, delaySend: 0.8 },
                 { bass: ['G2'], synth: ['E4'], percussion: {}, delaySend: 0.7 },
                 { bass: ['A2'], synth: ['C4'], percussion: {}, delaySend: 0.6 },
-                { bass: ['F2'], synth: ['A3'], percussion: {}, delaySend: 0.5 },
+                { bass: ['F2'], synth: ['F3'], percussion: {}, delaySend: 0.5 },
                 { bass: ['C2'], synth: ['C4'], percussion: {}, delaySend: 0.4 },
                 { bass: ['G2'], synth: ['G3'], percussion: {}, delaySend: 0.3 },
                 { bass: ['A2'], synth: ['A3'], percussion: {}, delaySend: 0.2 },
@@ -1353,7 +1461,9 @@
             const messageBox = document.getElementById('messageBox');
             messageBox.textContent = message;
             messageBox.classList.add('show');
-            setTimeout(() => {
+            // Clear any existing timeout to prevent premature hiding
+            clearTimeout(messageBox.hideTimeout);
+            messageBox.hideTimeout = setTimeout(() => {
                 messageBox.classList.remove('show');
             }, duration);
         }
@@ -1581,6 +1691,14 @@
                         if (phaserLfoGain) phaserLfoGain.gain.setValueAtTime(phaserDepth * 1000, currentTime); // Scale for frequency modulation
                         break;
                 }
+            }
+            // Update the CSS variable for slider fill
+            const knobElement = document.getElementById(id);
+            if (knobElement && knobElement.type === 'range') {
+                const min = parseFloat(knobElement.min);
+                const max = parseFloat(knobElement.max);
+                const percentage = ((parseFloat(value) - min) / (max - min)) * 100;
+                knobElement.style.setProperty('--fill-percentage', `${percentage}%`);
             }
         }
 
@@ -2131,60 +2249,73 @@
          */
         function applySubtleChanges() {
             const driftScale = fibonacciDriftScales[currentFibonacciDriftScaleIndex];
+            const interpolationFactor = 0.05; // How quickly current values approach targets
 
-            // Tempo drift (more noticeable, but still subtle)
-            targetTempo += tempoDriftDirection * (Math.random() * driftScale * 10 + 2); // Larger drift step
-            if (targetTempo > 650) { // Limit tempo range for drift
+            // Tempo drift (already uses target/current)
+            targetTempo += tempoDriftDirection * (Math.random() * driftScale * 10 + 2);
+            if (targetTempo > 650) {
                 tempoDriftDirection = -1;
             } else if (targetTempo < 380) {
                 tempoDriftDirection = 1;
             }
-            targetTempo = Math.max(300, Math.min(900, targetTempo)); // Keep within overall knob limits
+            targetTempo = Math.max(300, Math.min(900, targetTempo));
+            currentTempo += (targetTempo - currentTempo) * interpolationFactor; // Smoother interpolation
 
-            // Smoothly interpolate currentTempo towards targetTempo
-            currentTempo += (targetTempo - currentTempo) * 0.08; // Adjust 0.08 for faster interpolation
-
-            currentDetune += detuneDriftDirection * (Math.random() * driftScale * 2 + 0.5);
-            if (currentDetune > 20) { // Slightly wider detune range
+            // Detune drift
+            targetDetune += detuneDriftDirection * (Math.random() * driftScale * 2 + 0.5);
+            if (targetDetune > 20) {
                 detuneDriftDirection = -1;
-            } else if (currentDetune < -20) {
+            } else if (targetDetune < -20) {
                 detuneDriftDirection = 1;
             }
-            currentDetune = Math.max(-20, Math.min(20, currentDetune));
+            targetDetune = Math.max(-20, Math.min(20, targetDetune));
+            currentDetune += (targetDetune - currentDetune) * interpolationFactor; // Smoother interpolation
 
-            currentFilterFrequency += filterDriftDirection * (Math.random() * driftScale * 100 + 20); // Larger filter drift
-            if (currentFilterFrequency > 4000) { // Wider filter range
+            // Filter Frequency drift
+            targetFilterFrequency += filterDriftDirection * (Math.random() * driftScale * 100 + 20);
+            if (targetFilterFrequency > 4000) {
                 filterDriftDirection = -1;
-            } else if (currentFilterFrequency < 400) {
+            } else if (targetFilterFrequency < 400) {
                 filterDriftDirection = 1;
             }
-            currentFilterFrequency = Math.max(400, Math.min(4000, currentFilterFrequency));
+            targetFilterFrequency = Math.max(400, Math.min(4000, targetFilterFrequency));
+            currentFilterFrequency += (targetFilterFrequency - currentFilterFrequency) * interpolationFactor; // Smoother interpolation
 
-            currentFilterQ += (Math.random() - 0.5) * driftScale * 0.8; // More Q drift
-            currentFilterQ = Math.max(0.3, Math.min(4, currentFilterQ)); // Wider Q range
+            // Filter Q drift
+            targetFilterQ += (Math.random() - 0.5) * driftScale * 0.8;
+            targetFilterQ = Math.max(0.3, Math.min(4, targetFilterQ));
+            currentFilterQ += (targetFilterQ - currentFilterQ) * interpolationFactor; // Smoother interpolation
 
-            baseNoteDuration += (Math.random() - 0.5) * driftScale * 0.08; // More duration drift
-            baseNoteDuration = Math.max(0.2, Math.min(0.8, baseNoteDuration)); // Wider duration range
+            // Base Note Duration drift
+            targetBaseNoteDuration += (Math.random() - 0.5) * driftScale * 0.08;
+            targetBaseNoteDuration = Math.max(0.2, Math.min(0.8, targetBaseNoteDuration));
+            baseNoteDuration += (targetBaseNoteDuration - baseNoteDuration) * interpolationFactor; // Smoother interpolation
 
-            humanizationFactor += (Math.random() - 0.5) * driftScale * 0.15; // More humanization drift
-            humanizationFactor = Math.max(0.1, Math.min(1.0, humanizationFactor));
+            // Humanization Factor drift
+            targetHumanizationFactor += (Math.random() - 0.5) * driftScale * 0.15;
+            targetHumanizationFactor = Math.max(0.1, Math.min(1.0, targetHumanizationFactor));
+            humanizationFactor += (targetHumanizationFactor - humanizationFactor) * interpolationFactor; // Smoother interpolation
 
-            delayTimeValue += delayTimeDriftDirection * (Math.random() - 0.5) * driftScale * 0.05; // More delay time drift
-            if (delayTimeValue > 1.5) {
+            // Delay Time drift
+            targetDelayTimeValue += delayTimeDriftDirection * (Math.random() - 0.5) * driftScale * 0.05;
+            if (targetDelayTimeValue > 1.5) {
                 delayTimeDriftDirection = -1;
-            } else if (delayTimeValue < 0.05) {
+            } else if (targetDelayTimeValue < 0.05) {
                 delayTimeDriftDirection = 1;
             }
-            delayTimeValue = Math.max(0.01, Math.min(2.0, delayTimeValue));
+            targetDelayTimeValue = Math.max(0.01, Math.min(2.0, targetDelayTimeValue));
+            delayTimeValue += (targetDelayTimeValue - delayTimeValue) * interpolationFactor; // Smoother interpolation
             if (audioContext && delayNode) delayNode.delayTime.setValueAtTime(delayTimeValue, audioContext.currentTime);
 
-            delayFeedbackValue += delayFeedbackDriftDirection * (Math.random() - 0.5) * driftScale * 0.03; // More feedback drift
-            if (delayFeedbackValue > 0.9) {
+            // Delay Feedback drift
+            targetDelayFeedbackValue += delayFeedbackDriftDirection * (Math.random() - 0.5) * driftScale * 0.03;
+            if (targetDelayFeedbackValue > 0.9) {
                 delayFeedbackDriftDirection = -1;
-            } else if (delayFeedbackValue < 0.05) {
+            } else if (targetDelayFeedbackValue < 0.05) {
                 delayFeedbackDriftDirection = 1;
             }
-            delayFeedbackValue = Math.max(0, Math.min(0.95, delayFeedbackValue));
+            targetDelayFeedbackValue = Math.max(0, Math.min(0.95, targetDelayFeedbackValue));
+            delayFeedbackValue += (targetDelayFeedbackValue - delayFeedbackValue) * interpolationFactor; // Smoother interpolation
             if (audioContext && delayFeedbackGain) delayFeedbackGain.gain.setValueAtTime(delayFeedbackValue, audioContext.currentTime);
         }
 
@@ -2936,11 +3067,14 @@
                 delaySendLevel: parseFloat(document.getElementById('delaySendLevel').value),
                 chorusDepth: parseFloat(document.getElementById('chorusDepth').value),
                 isChorusBypassed: document.getElementById('chorusBypass').checked,
-                currentDetune: currentDetune,
-                currentFilterFrequency: currentFilterFrequency,
-                currentFilterQ: currentFilterQ,
-                baseNoteDuration: baseNoteDuration,
-                humanizationFactor: humanizationFactor,
+                // Include target values for humanization parameters
+                targetDetune: targetDetune,
+                targetFilterFrequency: targetFilterFrequency,
+                targetFilterQ: targetFilterQ,
+                targetBaseNoteDuration: targetBaseNoteDuration,
+                targetHumanizationFactor: targetHumanizationFactor,
+                targetDelayTimeValue: targetDelayTimeValue,
+                targetDelayFeedbackValue: targetDelayFeedbackValue,
                 // Compressor settings
                 compThreshold: parseFloat(document.getElementById('compThreshold').value),
                 compRatio: parseFloat(document.getElementById('compRatio').value),
@@ -3041,6 +3175,16 @@
             baseNoteDuration = settings.baseNoteDuration;
             humanizationFactor = settings.humanizationFactor;
 
+            // Update target variables for humanization as well
+            targetDetune = settings.targetDetune;
+            targetFilterFrequency = settings.targetFilterFrequency;
+            targetFilterQ = settings.targetFilterQ;
+            targetBaseNoteDuration = settings.targetBaseNoteDuration;
+            targetHumanizationFactor = settings.targetHumanizationFactor;
+            targetDelayTimeValue = settings.targetDelayTimeValue;
+            targetDelayFeedbackValue = settings.targetDelayFeedbackValue;
+
+
             showMessage("Preset loaded successfully!");
             console.log("Settings applied:", settings);
         }
@@ -3069,8 +3213,8 @@
                     `;
                     confirmBox.innerHTML = `
                         <p>Preset "${presetName}" already exists. Do you want to overwrite it?</p>
-                        <button id="confirmOverwriteYes" style="margin-right: 10px;">Yes</button>
-                        <button id="confirmOverwriteNo">No</button>
+                        <button id="confirmOverwriteYes" class="secondary" style="margin-right: 10px;">Yes</button>
+                        <button id="confirmOverwriteNo" class="secondary">No</button>
                     `;
                     document.body.appendChild(confirmBox);
 
@@ -3281,7 +3425,7 @@
 
                     if (looperRecorder.isRecording) {
                         looperRecorder.stopRecording();
-                        recordButton.textContent = 'Start Recording';
+                        recordButton.innerHTML = '<i class="fas fa-microphone"></i> Start Recording'; // Update button text and icon
                         // Re-enable start/stop if needed, or handle based on main loop state
                         if (!isPlaying) {
                             startButton.disabled = false;
@@ -3289,7 +3433,7 @@
                         }
                     } else {
                         looperRecorder.startRecording();
-                        recordButton.textContent = 'Stop Recording';
+                        recordButton.innerHTML = '<i class="fas fa-stop"></i> Stop Recording'; // Update button text and icon
                     }
                 });
             }
@@ -3421,6 +3565,9 @@
             document.getElementById('savePresetButton').addEventListener('click', savePreset);
             document.getElementById('loadPresetButton').addEventListener('click', loadPreset);
             document.getElementById('exportPresetsButton').addEventListener('click', () => presetManager.exportAllPresets());
+            document.getElementById('importPresetsButton').addEventListener('click', () => { // Added click listener for import button
+                document.getElementById('importPresetsInput').click(); // Trigger file input click
+            });
             document.getElementById('importPresetsInput').addEventListener('change', (event) => {
                 if (event.target.files.length > 0) {
                     presetManager.importPresets(event.target.files[0]);
