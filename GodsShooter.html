@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Divine Shooter: GANESH v4.0 – Mobile Ultimate Edition</title>
+    <title>Divine Shooter: GANESH v5.0 – Mobile Ultimate Edition</title>
     <style>
         body {
             margin: 0;
@@ -61,12 +61,6 @@
             transform: translateY(-2px);
         }
         #main-ui-overlay button:active::before {
-            width: 200%;
-            height: 200%;
-            opacity: 1;
-        }
-        /* Bubble effect for buttons */
-        #main-ui-overlay button::before {
             content: '';
             position: absolute;
             top: 50%;
@@ -185,21 +179,48 @@
             cursor: not-allowed;
             opacity: 0.7;
         }
+
+        /* Pause Button */
+        #pauseBtn {
+            position: absolute;
+            top: 20px; /* Adjust as needed */
+            right: 20px; /* Adjust as needed */
+            background-color: #ffc107; /* Yellow color */
+            color: #333;
+            border: none;
+            padding: 8px 12px;
+            font-size: 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            z-index: 10;
+            display: none; /* Hidden by default, shown when game starts */
+        }
+        #pauseBtn:hover {
+            background-color: #e0a800;
+            transform: translateY(-2px);
+        }
+        #pauseBtn:active {
+            transform: translateY(1px);
+        }
     </style>
     <!-- Google Fonts - Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="tutorialOverlay">
-        <h2>Welcome to Divine Shooter: GANESH v4.0!</h2>
+        <h2>Welcome to Divine Shooter: GANESH v5.0!</h2>
         <p>Protect the universe from rogue divinities!</p>
         <p><strong>Desktop Controls:</strong></p>
         <p>Use <strong>WASD</strong> or <strong>Arrow Keys</strong> to move.</p>
-        <p>Click anywhere on the screen or press <strong>Spacebar</strong> to shoot.</p>
+        <p>Your bullets will **auto-fire** towards your **mouse cursor**.</p>
         <p>Press <strong>P</strong> to pause/unpause the game.</p>
         <p><strong>Mobile Controls:</strong></p>
         <p><strong>Drag your finger on the left side of the screen</strong> to move.</p>
-        <p><strong>Tap anywhere on the right side of the screen</strong> to shoot.</p>
+        <p><strong>Drag your finger on the right side of the screen</strong> to control **auto-fire direction**.</p>
+        <p><strong>Two-finger tap anywhere</strong> to activate **Divine Blast**!</p>
+        <p>Tap the **Pause button** on the top-right to pause/unpause.</p>
         <button id="closeTutorialBtn">Got It! Start Game</button>
     </div>
 
@@ -212,6 +233,7 @@
     </div>
 
     <button id="divineBlastBtn">Divine Blast (0)</button> <!-- Divine Blast Button -->
+    <button id="pauseBtn">Pause</button> <!-- Pause Button -->
 
     <script>
         // Consolidated utility functions.
@@ -235,7 +257,7 @@
         const config = {
             canvas: { width: 340, height: 340 }, // Fixed size as requested
             player: { size: 7.5, acceleration: 300, friction: 0.9, maxSpeed: 100, color: "#00ff00", name: "GANESH", level: 1 }, // Adjusted player size/speed for smaller canvas
-            bullet: { size: 1.5, speed: 175, lifetime: 1000, color: "#ffffff" }, // Adjusted bullet size/speed
+            bullet: { size: 1.5, speed: 175, lifetime: 1000, color: "#ffffff", count: 1 }, // Added bullet count
             divine: {
                 types: ["Loki", "Thor", "Buddha", "Sun", "Hermes", "Zeus", "Odin", "Ra", "Anubis", "Shiva"], // Added Shiva
                 boss: "Boss",
@@ -255,7 +277,8 @@
             levelUpScore: 750, // Adjusted level up score
             continueCost: 350, // Adjusted continue cost
             powerUpSpawnInterval: 7000, // Adjusted power-up spawn interval
-            divineBlast: { cooldown: 5000, maxCharges: 3, radius: 75, damage: 2 } // Divine Blast properties
+            divineBlast: { cooldown: 5000, maxCharges: 3, radius: 75, damage: 2 }, // Divine Blast properties
+            autoShoot: { enabled: true, interval: 200 } // Auto-shoot properties - ENABLED BY DEFAULT
         };
 
         // Canvas setup.
@@ -354,9 +377,11 @@
         const backgroundMusic = new Sound(110, 1000, 'sine', 0); // Continuous, very low volume initially
         backgroundMusic.loop = true; // Loop property for continuous sound (handled manually with start/stop)
 
-        // Global joystick for mobile.
-        let joystick = { active: false, touchId: null, startX: 0, startY: 0, currentX: 0, currentY: 0, dx: 0, dy: 0 };
+        // Global joysticks for mobile.
+        let movementJoystick = { active: false, touchId: null, startX: 0, startY: 0, currentX: 0, currentY: 0, dx: 0, dy: 0 };
+        let shootingJoystick = { active: false, touchId: null, startX: 0, startY: 0, currentX: 0, currentY: 0, dx: 0, dy: 0 };
         let tutorialVisible = true; // Set to true to show tutorial on first load
+        let isMobileDevice = /Mobi|Android/i.test(navigator.userAgent); // Detect mobile device
 
         // UI elements.
         const startBtn = document.getElementById("startBtn");
@@ -366,6 +391,17 @@
         const closeTutorialBtn = document.getElementById("closeTutorialBtn");
         const mainUiOverlay = document.getElementById("main-ui-overlay"); // Get the new overlay div
         const divineBlastBtn = document.getElementById("divineBlastBtn"); // Divine Blast button
+        const pauseBtn = document.getElementById("pauseBtn"); // Pause button
+
+        /**
+         * Provides haptic feedback (vibration) if the device supports it.
+         * @param {number} duration The duration of the vibration in milliseconds.
+         */
+        function vibrate(duration) {
+            if (navigator.vibrate) {
+                navigator.vibrate(duration);
+            }
+        }
 
         // Starfield background.
         class Star {
@@ -471,12 +507,12 @@
                 if (keys["ArrowLeft"] || keys["a"]) this.vx -= effectiveAccel * dt;
                 if (keys["ArrowRight"] || keys["d"]) this.vx += effectiveAccel * dt;
 
-                // Joystick input
-                if (joystick.active) {
-                    let mag = Math.hypot(joystick.dx, joystick.dy);
+                // Movement Joystick input
+                if (movementJoystick.active) {
+                    let mag = Math.hypot(movementJoystick.dx, movementJoystick.dy);
                     if (mag > 5) { // Dead zone for joystick, adjusted
-                        let normX = joystick.dx / mag;
-                        let normY = joystick.dy / mag;
+                        let normX = movementJoystick.dx / mag;
+                        let normY = movementJoystick.dy / mag;
                         // Scale joystick input to player acceleration
                         this.vx += normX * effectiveAccel * dt * 0.5;
                         this.vy += normY * effectiveAccel * dt * 0.5;
@@ -661,8 +697,10 @@
                 // for "Sun" type enemies, the scaling factor is config.divine.sunHits.
                 let baseHitFactor = (this.type === "Sun") ? config.divine.sunHits : 1;
                 this.baseHit = Math.ceil(baseHitFactor * (1 + game.level / 5));
-                this.spawn();
+                this.spawn(); // Call spawn method after properties are set
             }
+
+            // Spawn method moved inside the class definition
             spawn() {
                 // Spawn logic for different enemy types
                 if (this.type === "Buddha") {
@@ -804,6 +842,7 @@
                             game.loseLife(this.baseHit);
                             game.player.isHit = true; // Trigger player hit effect
                             game.player.hitEffectEndTime = performance.now() + 200; // 200ms flash
+                            vibrate(50); // Vibrate on player hit
                         }
                         this.state.attacking = false;
                     }, this.state.attackDelay);
@@ -822,6 +861,7 @@
                     game.loseLife(this.baseHit);
                     game.player.isHit = true; // Trigger player hit effect
                     game.player.hitEffectEndTime = performance.now() + 200; // 200ms flash
+                    vibrate(50); // Vibrate on player hit
                     this.state.circleRadius = 0; // Reset circle after hit
                 }
             }
@@ -836,7 +876,6 @@
                 else if (!this.state.attacking && performance.now() - this.state.lastAttack >= this.state.attackInterval) {
                     this.state.attacking = true;
                     this.state.chargeStart = performance.now();
-                    this.state.attackX = game.player.x; // Target player's current X position
                     setTimeout(() => {
                         // Zeus strikes vertically at the targeted X position
                         if (Math.abs(game.player.x - this.state.attackX) < 12.5) { // Adjusted hit radius (50% of 25)
@@ -844,6 +883,7 @@
                             game.loseLife(this.baseHit);
                             game.player.isHit = true; // Trigger player hit effect
                             game.player.hitEffectEndTime = performance.now() + 200; // 200ms flash
+                            vibrate(50); // Vibrate on player hit
                         }
                         this.state.attacking = false;
                         this.state.lastAttack = performance.now();
@@ -883,6 +923,7 @@
                             game.loseLife(this.baseHit);
                             game.player.isHit = true; // Trigger player hit effect
                             game.player.hitEffectEndTime = performance.now() + 200; // 200ms flash
+                            vibrate(50); // Vibrate on player hit
                         }
                     } else {
                         this.state.flareActive = false;
@@ -943,6 +984,7 @@
                             game.loseLife(this.baseHit);
                             game.player.isHit = true; // Trigger player hit effect
                             game.player.hitEffectEndTime = performance.now() + 200; // 200ms flash
+                            vibrate(50); // Vibrate on player hit
                         }
                         this.state.attacking = false;
                     }, 400); // Adjusted boss attack delay
@@ -1112,10 +1154,9 @@
                 this.shopOpen = false;
                 this.upgradeOptions = [];
                 this.slowTimeActive = false;
-                this.slowTimeEnd = 0;
                 this.speedBoostActive = false;
-                this.speedBoostEnd = 0;
                 this.isSoundOn = false; // Track sound state
+                this.lastAutoShootTime = 0; // For auto-shoot cooldown
 
                 // Divine Blast properties
                 this.divineBlastCharges = 0;
@@ -1133,6 +1174,7 @@
                 lastTime = performance.now();
                 // Background music control moved to soundToggleBtn
                 divineBlastBtn.style.display = 'block'; // Show divine blast button
+                pauseBtn.style.display = 'block'; // Show pause button
                 this.updateDivineBlastUI();
                 requestAnimationFrame(this.gameLoop.bind(this));
             }
@@ -1158,36 +1200,145 @@
                 this.speedBoostActive = false;
                 this.divineBlastCharges = 0; // Reset divine blast charges
                 this.lastDivineBlastTime = 0; // Reset divine blast cooldown
+                config.bullet.count = 1; // Reset bullet count on game reset
+                config.autoShoot.enabled = true; // Auto-shoot is now always enabled
+                config.autoShoot.interval = 200; // Reset auto-shoot interval
+                this.lastAutoShootTime = 0;
                 // Do not reset isSoundOn here, it's controlled by the button
             }
-            togglePause() { this.paused = !this.paused; }
+            togglePause() {
+                this.paused = !this.paused;
+                if (this.paused) {
+                    pauseBtn.textContent = "Resume";
+                    backgroundMusic.stopContinuous(); // Pause music
+                } else {
+                    pauseBtn.textContent = "Pause";
+                    if (this.isSoundOn) { // Resume music only if sound is generally on
+                        backgroundMusic.startContinuous();
+                        backgroundMusic.setVolume(0.3);
+                    }
+                    lastTime = performance.now(); // Reset lastTime to prevent large dt jump
+                    requestAnimationFrame(this.gameLoop.bind(this)); // Resume game loop
+                }
+            }
             openShop() {
                 this.shopOpen = true;
                 this.paused = true; // Pause game when shop is open
-                const possibleUpgrades = [
-                    { name: "Increase Bullet Speed", cost: 50, effect: () => { config.bullet.speed *= 1.1; } },
-                    { name: "Increase Player Speed", cost: 50, effect: () => { config.player.maxSpeed += 10; } },
+                backgroundMusic.stopContinuous(); // Pause music when shop is open
+
+                // Define possible upgrades with level-based scaling
+                const allPossibleUpgrades = [
                     {
-                        name: "Improve Shield", cost: 75, effect: () => {
-                            if (this.playerPerks.shield) { this.playerPerks.shieldDurability += 1; }
-                            else { this.playerPerks.shield = true; this.playerPerks.shieldDurability = this.playerPerks.initialShieldDurability; }
+                        name: "Increase Bullet Speed",
+                        cost: 50 + (this.level * 5),
+                        effect: () => { config.bullet.speed *= (1.1 + this.level * 0.005); }
+                    },
+                    {
+                        name: "Increase Player Speed",
+                        cost: 50 + (this.level * 5),
+                        effect: () => { config.player.maxSpeed += (10 + this.level * 0.5); }
+                    },
+                    {
+                        name: "Improve Shield",
+                        cost: 75 + (this.level * 7),
+                        effect: () => {
+                            this.playerPerks.initialShieldDurability += (1 + Math.floor(this.level / 5)); // More durability at higher levels
+                            this.playerPerks.shield = true;
+                            this.playerPerks.shieldDurability = this.playerPerks.initialShieldDurability;
                         }
                     },
-                    { name: "Boost Score Multiplier", cost: 100, effect: () => { this.scoreMultiplier *= 1.1; } },
-                    { name: "Extra Life", cost: 150, effect: () => { this.lives++; } },
-                    { name: "Invisibility Perk", cost: 125, effect: () => { this.playerPerks.invisibility = true; this.playerPerks.invisibilityDuration = 3000; this.playerPerks.invisibilityStart = performance.now(); } },
-                    { name: "Magic Bullets", cost: 200, effect: () => { this.playerPerks.magicBullets = true; } },
-                    { name: "Magnetic Field", cost: 75, effect: () => { this.playerPerks.magnetic = true; } },
-                    { name: "Divine Blast", cost: 250, effect: () => { this.divineBlastCharges = config.divineBlast.maxCharges; this.updateDivineBlastUI(); } } // New Divine Blast upgrade
-                ];
-                this.upgradeOptions = [];
-                // Select 3 random unique upgrades
-                while (this.upgradeOptions.length < 3) {
-                    let upgrade = possibleUpgrades[Math.floor(Math.random() * possibleUpgrades.length)];
-                    // Ensure unique upgrades and don't offer upgrades for already maxed perks (if applicable)
-                    if (!this.upgradeOptions.find(u => u.name === upgrade.name)) {
-                        this.upgradeOptions.push(upgrade);
+                    {
+                        name: "Boost Score Multiplier",
+                        cost: 100 + (this.level * 10),
+                        effect: () => { this.scoreMultiplier += (0.1 + this.level * 0.005); }
+                    },
+                    {
+                        name: "Extra Life",
+                        cost: 150 + (this.level * 15),
+                        effect: () => { this.lives++; }
+                    },
+                    {
+                        name: "Invisibility Perk",
+                        cost: 125 + (this.level * 12),
+                        effect: () => {
+                            this.playerPerks.invisibility = true;
+                            this.playerPerks.invisibilityDuration = 3000 + this.level * 100; // Longer duration
+                            this.playerPerks.invisibilityStart = performance.now();
+                        }
+                    },
+                    {
+                        name: "Magic Bullets",
+                        cost: 200 + (this.level * 20),
+                        effect: () => { this.playerPerks.magicBullets = true; }
+                    },
+                    {
+                        name: "Magnetic Field",
+                        cost: 75 + (this.level * 7),
+                        effect: () => { this.playerPerks.magnetic = true; }
+                    },
+                    {
+                        name: "Divine Blast Charge", // Allows increasing charges if perk exists
+                        cost: 250 + (this.level * 25),
+                        effect: () => {
+                            if (this.divineBlastCharges < config.divineBlast.maxCharges) {
+                                this.divineBlastCharges++;
+                            } else {
+                                config.divineBlast.maxCharges++; // Increase max charges if already full
+                                this.divineBlastCharges++;
+                            }
+                            this.updateDivineBlastUI();
+                        }
+                    },
+                    {
+                        name: "Bullet Barrage", // New upgrade
+                        cost: 175 + (this.level * 15),
+                        effect: () => { config.bullet.count++; } // Increase bullets fired per shot
+                    },
+                    // "Enable Auto Shoot" is removed as it's now default
+                    {
+                        name: "Increase Auto Shoot Rate",
+                        cost: 75 + (this.level * 7),
+                        effect: () => { config.autoShoot.interval = Math.max(50, config.autoShoot.interval - 25); } // Make it faster, min 50ms
                     }
+                ];
+
+                this.upgradeOptions = [];
+                let numberOfOptions = 3;
+                if (this.level >= 6 && this.level <= 10) {
+                    numberOfOptions = 4;
+                } else if (this.level > 10) {
+                    numberOfOptions = 5;
+                }
+
+                // Create a temporary copy to pick from without modifying original
+                let availableUpgrades = [...allPossibleUpgrades];
+
+                // Select unique random upgrades
+                while (this.upgradeOptions.length < numberOfOptions && availableUpgrades.length > 0) {
+                    let randomIndex = Math.floor(Math.random() * availableUpgrades.length);
+                    let upgrade = availableUpgrades[randomIndex];
+
+                    // Special handling for "Increase Auto Shoot Rate": only offer if auto shoot is enabled (which it always is now)
+                    // No need to check config.autoShoot.enabled here as it's always true.
+                    // This check is now effectively just ensuring the upgrade is offered.
+                    if (upgrade.name === "Increase Auto Shoot Rate" && config.autoShoot.interval <= 50) {
+                        // Don't offer if already at max rate
+                        availableUpgrades.splice(randomIndex, 1);
+                        continue;
+                    }
+
+                    // Special handling for Divine Blast Charge: only offer if player has it or if it's the initial purchase
+                    if (upgrade.name === "Divine Blast Charge" && !this.playerPerks.divineBlast && this.divineBlastCharges === 0) {
+                         // This case means Divine Blast is offered as the initial perk purchase
+                         this.playerPerks.divineBlast = true; // Mark that player has the perk
+                    } else if (upgrade.name === "Divine Blast Charge" && !this.playerPerks.divineBlast) {
+                         // If it's a charge upgrade and player doesn't have the perk yet, skip this option
+                         availableUpgrades.splice(randomIndex, 1);
+                         continue;
+                    }
+
+                    this.upgradeOptions.push(upgrade);
+                    availableUpgrades.splice(randomIndex, 1); // Remove selected upgrade to ensure uniqueness
                 }
             }
             processShopClick(x, y) {
@@ -1200,6 +1351,13 @@
                             this.score -= option.cost; // Deduct cost
                             this.shopOpen = false;
                             this.paused = false;
+                            vibrate(100); // Vibrate on successful upgrade purchase
+                            if (this.isSoundOn) { // Resume music only if sound is generally on
+                                backgroundMusic.startContinuous();
+                                backgroundMusic.setVolume(0.3);
+                            }
+                            lastTime = performance.now(); // Reset lastTime after shop close
+                            requestAnimationFrame(this.gameLoop.bind(this)); // Resume game loop
                             break;
                         } else {
                             console.log("Not enough score for this upgrade!"); // Visual feedback could be added here
@@ -1277,6 +1435,35 @@
                         }
                     }
 
+                    // Auto-shoot logic
+                    if (config.autoShoot.enabled && now - this.lastAutoShootTime > config.autoShoot.interval) {
+                        let targetX, targetY;
+                        if (isMobileDevice) {
+                            // Use shooting joystick direction if active, otherwise default to straight up
+                            if (shootingJoystick.active && (shootingJoystick.dx !== 0 || shootingJoystick.dy !== 0)) {
+                                targetX = this.player.x + shootingJoystick.dx;
+                                targetY = this.player.y + shootingJoystick.dy;
+                            } else {
+                                // Default to shooting straight up if no shooting joystick input
+                                targetX = this.player.x;
+                                targetY = this.player.y - 10;
+                            }
+                        } else { // Desktop
+                            targetX = mouseX;
+                            targetY = mouseY;
+                        }
+                        // Fire multiple bullets if config.bullet.count is > 1
+                        for (let i = 0; i < config.bullet.count; i++) {
+                            const spreadAngle = (i - (config.bullet.count - 1) / 2) * (Math.PI / 30); // 6-degree spread per bullet
+                            const angle = Utils.angleBetween(this.player.x, this.player.y, targetX, targetY) + spreadAngle;
+                            this.bullets.push(new Bullet(this.player.x, this.player.y, angle));
+                        }
+                        if (this.isSoundOn) { // Only play sound if sound is enabled
+                            shootSound.play();
+                        }
+                        this.lastAutoShootTime = now;
+                    }
+
                     this.checkCollisions();
                     this.updateLevel();
 
@@ -1305,6 +1492,9 @@
                 this.ctx.clearRect(0, 0, config.canvas.width, config.canvas.height);
                 this.stars.forEach(star => star.draw(ctx));
 
+                // TODO: For more complex games, consider optimizing drawing for mobile by pre-rendering
+                // static elements to off-screen canvases to reduce CPU load during the main game loop.
+
                 // Draw game UI if not in shop or paused
                 if (!this.shopOpen && !this.paused) {
                     let expProgress = (this.score % config.levelUpScore) / config.levelUpScore;
@@ -1314,6 +1504,8 @@
                     ctx.fillRect(0, 0, config.canvas.width * expProgress, 10); // Experience bar fill, adjusted height
 
                     ctx.fillStyle = "#fff";
+                    // TODO: Implement adaptive font sizing for mobile devices based on canvas/viewport dimensions
+                    // For example: ctx.font = `${Math.max(8, config.canvas.width * 0.03)}px 'Inter', sans-serif`;
                     ctx.font = "10px 'Inter', sans-serif"; // Adjusted font size
                     ctx.textAlign = "center";
                     ctx.fillText(`Score: ${this.score}   Level: ${this.level}`, config.canvas.width / 2, 25); // Adjusted Y position
@@ -1343,7 +1535,15 @@
                     }
                     if (this.playerPerks.magicBullets) {
                         ctx.fillStyle = "#ff00ff";
-                        ctx.fillText("Magic Bullets Active! ✨", config.canvas.width / 2, 75); // Adjusted Y position
+                        ctx.fillText("Magic Bullets Active! ✨", config.canvas.width / 2, 75);
+                    }
+                    if (config.bullet.count > 1) { // Display bullet barrage info
+                        ctx.fillStyle = "#ffa500";
+                        ctx.fillText(`Bullets: ${config.bullet.count}`, config.canvas.width / 2, 85);
+                    }
+                    if (config.autoShoot.enabled) { // Display auto-shoot info
+                        ctx.fillStyle = "#00ffff";
+                        ctx.fillText("Auto Shoot Active!", config.canvas.width / 2, 95);
                     }
                 }
 
@@ -1353,25 +1553,45 @@
                 this.powerUps.forEach(pu => pu.draw(this.ctx));
                 this.particles.forEach(p => p.draw(this.ctx));
 
-                // Draw joystick if active.
-                if (joystick.active) {
+                // Draw movement joystick if active.
+                if (movementJoystick.active) {
                     ctx.beginPath();
                     // Joystick drawn relative to bottom-left of canvas
                     const joystickBaseX = config.canvas.width * 0.2;
                     const joystickBaseY = config.canvas.height * 0.8;
-                    ctx.arc(joystickBaseX, joystickBaseY, 10, 0, Math.PI * 2); // Adjusted joystick size (50% of 20)
-                    ctx.fillStyle = "rgba(255,255,255,0.2)";
+                    ctx.arc(joystickBaseX, joystickBaseY, 12, 0, Math.PI * 2); // Slightly larger
+                    ctx.fillStyle = "rgba(255,255,255,0.3)"; // More opaque
                     ctx.fill();
-                    let dx = joystick.currentX - joystick.startX;
-                    let dy = joystick.currentY - joystick.startY;
+                    let dx = movementJoystick.currentX - movementJoystick.startX;
+                    let dy = movementJoystick.currentY - movementJoystick.startY;
                     let dist = Math.hypot(dx, dy);
-                    let maxDist = 10; // Adjusted maxDist (50% of 20)
+                    let maxDist = 12; // Adjusted maxDist
                     if (dist > maxDist) { dx = dx / dist * maxDist; dy = dy / dist * maxDist; }
                     ctx.beginPath();
-                    ctx.arc(joystickBaseX + dx, joystickBaseY + dy, 5, 0, Math.PI * 2); // Adjusted joystick knob size (50% of 10)
-                    ctx.fillStyle = "rgba(255,255,255,0.5)";
+                    ctx.arc(joystickBaseX + dx, joystickBaseY + dy, 6, 0, Math.PI * 2); // Slightly larger knob
+                    ctx.fillStyle = "rgba(255,255,255,0.7)"; // More opaque
                     ctx.fill();
                 }
+
+                // Draw shooting joystick if active.
+                if (shootingJoystick.active) {
+                    ctx.beginPath();
+                    const shootingJoystickBaseX = config.canvas.width * 0.8; // Right side
+                    const shootingJoystickBaseY = config.canvas.height * 0.8;
+                    ctx.arc(shootingJoystickBaseX, shootingJoystickBaseY, 12, 0, Math.PI * 2); // Slightly larger
+                    ctx.fillStyle = "rgba(255,255,255,0.3)"; // More opaque
+                    ctx.fill();
+                    let dx = shootingJoystick.currentX - shootingJoystick.startX;
+                    let dy = shootingJoystick.currentY - shootingJoystick.startY;
+                    let dist = Math.hypot(dx, dy);
+                    let maxDist = 12;
+                    if (dist > maxDist) { dx = dx / dist * maxDist; dy = dy / dist * maxDist; }
+                    ctx.beginPath();
+                    ctx.arc(shootingJoystickBaseX + dx, shootingJoystickBaseY + dy, 6, 0, Math.PI * 2); // Slightly larger knob
+                    ctx.fillStyle = "rgba(255,255,255,0.7)"; // More opaque
+                    ctx.fill();
+                }
+
 
                 // Draw Top 2 High Scores at bottom right
                 let leaderboard = JSON.parse(localStorage.getItem("divineShooterLeaderboard")) || [];
@@ -1508,6 +1728,8 @@
                             for (let i = 0; i < config.particles.count; i++) {
                                 this.particles.push(new Particle(enemy.x, enemy.y));
                             }
+                            // TODO: Implement object pooling for particles and bullets to reduce garbage collection.
+                            // Instead of `new Particle()`, get from pool; instead of `push`, add to pool.
                             hitEnemy = true; // Mark bullet for removal
 
                             if (enemy.hp <= 0) {
@@ -1533,6 +1755,7 @@
                             this.loseLife(enemy.baseHit);
                             game.player.isHit = true; // Trigger player hit effect
                             game.player.hitEffectEndTime = performance.now() + 200; // 200ms flash
+                            vibrate(50); // Vibrate on player hit
                             return false; // Remove enemy on collision
                         }
                     }
@@ -1549,6 +1772,7 @@
                                     this.loseLife(1); // Shiva's projectile deals 1 damage
                                     game.player.isHit = true; // Trigger player hit effect
                                     game.player.hitEffectEndTime = performance.now() + 200; // 200ms flash
+                                    vibrate(50); // Vibrate on player hit
                                 }
                                 return false; // Remove projectile
                             }
@@ -1577,6 +1801,7 @@
                                 this.playerPerks.shieldDurability = this.playerPerks.initialShieldDurability;
                             }
                         }
+                        vibrate(30); // Vibrate on power-up pickup
                         return false; // Remove power-up
                     }
                     return true; // Power-up remains
@@ -1597,8 +1822,10 @@
                 this.running = false;
                 backgroundMusic.stopContinuous(); // Stop background music
                 divineBlastBtn.style.display = 'none'; // Hide divine blast button
+                pauseBtn.style.display = 'none'; // Hide pause button
                 this.updateLeaderboard(config.player.name, this.score);
                 mainUiOverlay.style.display = 'flex'; // Show the overlay for game over
+                vibrate(200); // Vibrate on game over
             }
             updateLevel() {
                 // Level up when score reaches the threshold
@@ -1606,6 +1833,7 @@
                     this.level++;
                     config.player.level = this.level; // Update player level in config for enemy scaling
                     this.openShop(); // Open shop on level up
+                    vibrate(75); // Vibrate on level up
                 }
             }
             spawnEnemy() {
@@ -1624,8 +1852,8 @@
             spawnPowerUp() {
                 const powerUpTypes = ["extraLife", "timeSlow", "speedBoost", "shieldRecharge"]; // Added shieldRecharge
                 const type = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
-                const x = Math.random() * config.canvas.width;
-                const y = Math.random() * config.canvas.height;
+                const x = Math.random() * (config.canvas.width - 2 * 4) + 4; // Ensure power-up spawns fully inside
+                const y = Math.random() * (config.canvas.height - 2 * 4) + 4;
                 this.powerUps.push(new PowerUp(type, x, y));
             }
             updateLeaderboard(name, score) {
@@ -1662,6 +1890,7 @@
                     this.divineBlastCharges--;
                     this.lastDivineBlastTime = performance.now(); // Start cooldown
                     this.updateDivineBlastUI();
+                    vibrate(150); // Vibrate on divine blast activation
 
                     // Create a visual blast effect (e.g., a rapidly expanding circle)
                     let blastRadius = 0;
@@ -1716,14 +1945,6 @@
         // Event Listeners for Keyboard Controls (Desktop)
         window.addEventListener("keydown", (e) => {
             keysPressed[e.key] = true;
-            if (e.key === " ") { // Spacebar for shooting
-                e.preventDefault(); // Prevent scrolling
-                if (!game.paused && !game.shopOpen && game.running) {
-                    const angle = Utils.angleBetween(game.player.x, game.player.y, mouseX, mouseY);
-                    game.bullets.push(new Bullet(game.player.x, game.player.y, angle));
-                    shootSound.play();
-                }
-            }
             if (e.key === "p" || e.key === "P") {
                 game.togglePause();
             }
@@ -1746,7 +1967,7 @@
             mouseY = e.clientY - rect.top;
         });
 
-        // Mouse click for shooting or shop interaction (Desktop)
+        // Mouse click for shop interaction (Desktop)
         canvas.addEventListener("click", (e) => {
             // Adjust click coordinates relative to the canvas
             const rect = canvas.getBoundingClientRect();
@@ -1766,6 +1987,7 @@
                         game.paused = false;
                         mainUiOverlay.style.display = 'none'; // Hide overlay
                         divineBlastBtn.style.display = 'block'; // Show divine blast button
+                        pauseBtn.style.display = 'block'; // Show pause button
                         game.updateDivineBlastUI();
                         if (game.isSoundOn) { // Only start music if sound is enabled
                             backgroundMusic.startContinuous();
@@ -1781,11 +2003,6 @@
                     game.start(); // Restart the game
                     mainUiOverlay.style.display = 'none'; // Hide overlay
                 }
-            } else if (!game.paused && game.running) {
-                // Normal shooting
-                const angle = Utils.angleBetween(game.player.x, game.player.y, clickX, clickY);
-                game.bullets.push(new Bullet(game.player.x, game.player.y, angle));
-                shootSound.play();
             }
         });
 
@@ -1795,8 +2012,6 @@
 
             // Adjust touch coordinates relative to the canvas
             const rect = canvas.getBoundingClientRect();
-            const touchX = e.touches[0].clientX - rect.left;
-            const touchY = e.touches[0].clientY - rect.top;
 
             if (tutorialVisible) {
                 // If tutorial is visible, only allow closing it
@@ -1812,6 +2027,9 @@
                 // Handle "Start" button click on the overlay
                 // Check if the touch is within the bounds of the startBtn element
                 const startBtnRect = startBtn.getBoundingClientRect();
+                const touchX = e.touches[0].clientX - rect.left;
+                const touchY = e.touches[0].clientY - rect.top;
+
                 if (touchX >= (startBtnRect.left - rect.left) && touchX <= (startBtnRect.right - rect.left) &&
                     touchY >= (startBtnRect.top - rect.top) && touchY <= (startBtnRect.bottom - rect.top)) {
                     game.start();
@@ -1837,6 +2055,7 @@
                             game.paused = false;
                             mainUiOverlay.style.display = 'none'; // Hide overlay
                             divineBlastBtn.style.display = 'block'; // Show divine blast button
+                            pauseBtn.style.display = 'block'; // Show pause button
                             game.updateDivineBlastUI();
                             if (game.isSoundOn) { // Only start music if sound is enabled
                                 backgroundMusic.startContinuous();
@@ -1856,27 +2075,46 @@
             }
 
             if (game.shopOpen) {
+                const touchX = e.touches[0].clientX - rect.left;
+                const touchY = e.touches[0].clientY - rect.top;
                 game.processShopClick(touchX, touchY);
                 return;
             }
 
-            // Determine if it's a movement touch (left half) or shooting touch (right half)
-            if (touchX < config.canvas.width / 2) { // Left half for joystick
-                if (!joystick.active) {
-                    joystick.active = true;
-                    joystick.touchId = e.touches[0].identifier;
-                    joystick.startX = touchX;
-                    joystick.startY = touchY;
-                    joystick.currentX = touchX;
-                    joystick.currentY = touchY;
-                    joystick.dx = 0;
-                    joystick.dy = 0;
-                }
-            } else { // Right half for shooting
-                if (!game.paused && game.running) {
-                    const angle = Utils.angleBetween(game.player.x, game.player.y, touchX, touchY);
-                    game.bullets.push(new Bullet(game.player.x, game.player.y, angle));
-                    shootSound.play();
+            // Divine Blast with two-finger tap
+            if (e.touches.length === 2) {
+                game.activateDivineBlast();
+                return; // Consume the touch event for divine blast
+            }
+
+            // Assign touches to joysticks
+            for (let i = 0; i < e.touches.length; i++) {
+                const touch = e.touches[i];
+                const touchX = touch.clientX - rect.left;
+                const touchY = touch.clientY - rect.top;
+
+                if (touchX < config.canvas.width / 2) { // Left half for movement joystick
+                    if (!movementJoystick.active) {
+                        movementJoystick.active = true;
+                        movementJoystick.touchId = touch.identifier;
+                        movementJoystick.startX = touchX;
+                        movementJoystick.startY = touchY;
+                        movementJoystick.currentX = touchX;
+                        movementJoystick.currentY = touchY;
+                        movementJoystick.dx = 0;
+                        movementJoystick.dy = 0;
+                    }
+                } else { // Right half for shooting joystick
+                    if (!shootingJoystick.active) {
+                        shootingJoystick.active = true;
+                        shootingJoystick.touchId = touch.identifier;
+                        shootingJoystick.startX = touchX;
+                        shootingJoystick.startY = touchY;
+                        shootingJoystick.currentX = touchX;
+                        shootingJoystick.currentY = touchY;
+                        shootingJoystick.dx = 0;
+                        shootingJoystick.dy = 0;
+                    }
                 }
             }
         }, { passive: false }); // Set to false to allow preventDefault
@@ -1885,16 +2123,22 @@
             e.preventDefault();
             // Adjust touch coordinates relative to the canvas
             const rect = canvas.getBoundingClientRect();
-            const currentTouchX = e.touches[0].clientX - rect.left;
-            const currentTouchY = e.touches[0].clientY - rect.top;
 
             for (let i = 0; i < e.touches.length; i++) {
-                if (joystick.active && e.touches[i].identifier === joystick.touchId) {
-                    joystick.currentX = currentTouchX;
-                    joystick.currentY = currentTouchY;
-                    joystick.dx = joystick.currentX - joystick.startX;
-                    joystick.dy = joystick.currentY - joystick.startY;
-                    break;
+                const touch = e.touches[i];
+                const currentTouchX = touch.clientX - rect.left;
+                const currentTouchY = touch.clientY - rect.top;
+
+                if (movementJoystick.active && touch.identifier === movementJoystick.touchId) {
+                    movementJoystick.currentX = currentTouchX;
+                    movementJoystick.currentY = currentTouchY;
+                    movementJoystick.dx = movementJoystick.currentX - movementJoystick.startX;
+                    movementJoystick.dy = movementJoystick.currentY - movementJoystick.startY;
+                } else if (shootingJoystick.active && touch.identifier === shootingJoystick.touchId) {
+                    shootingJoystick.currentX = currentTouchX;
+                    shootingJoystick.currentY = currentTouchY;
+                    shootingJoystick.dx = shootingJoystick.currentX - shootingJoystick.startX;
+                    shootingJoystick.dy = shootingJoystick.currentY - shootingJoystick.startY;
                 }
             }
         }, { passive: false });
@@ -1902,12 +2146,17 @@
         canvas.addEventListener("touchend", (e) => {
             e.preventDefault();
             for (let i = 0; i < e.changedTouches.length; i++) {
-                if (joystick.active && e.changedTouches[i].identifier === joystick.touchId) {
-                    joystick.active = false;
-                    joystick.touchId = null;
-                    joystick.dx = 0;
-                    joystick.dy = 0;
-                    break;
+                const touch = e.changedTouches[i];
+                if (movementJoystick.active && touch.identifier === movementJoystick.touchId) {
+                    movementJoystick.active = false;
+                    movementJoystick.touchId = null;
+                    movementJoystick.dx = 0;
+                    movementJoystick.dy = 0;
+                } else if (shootingJoystick.active && touch.identifier === shootingJoystick.touchId) {
+                    shootingJoystick.active = false;
+                    shootingJoystick.touchId = null;
+                    shootingJoystick.dx = 0;
+                    shootingJoystick.dy = 0;
                 }
             }
         });
@@ -1919,6 +2168,15 @@
         divineBlastBtn.addEventListener("touchend", (e) => {
             e.preventDefault(); // Prevent default touch behavior
             game.activateDivineBlast();
+        });
+
+        // Pause button listener
+        pauseBtn.addEventListener("click", () => {
+            game.togglePause();
+        });
+        pauseBtn.addEventListener("touchend", (e) => {
+            e.preventDefault(); // Prevent default touch behavior
+            game.togglePause();
         });
 
 
