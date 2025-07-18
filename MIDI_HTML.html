@@ -10,98 +10,77 @@
     <style>
         /* Apply Inter font and basic styling to the body */
         body {
-            font-family: 'Inter', sans-serif; /* Using Inter as per instructions */
+            font-family: 'Inter', sans-serif;
             display: flex;
-            justify-content: center; /* Center content horizontally */
-            align-items: flex-start; /* Align items to the top */
-            min-height: 100vh; /* Ensure it takes full viewport height */
-            background: radial-gradient(circle at top left, #2a2a2a, #1a1a1a 70%); /* Subtle radial gradient */
-            color: #e0e0e0; /* Light text color */
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            background: radial-gradient(circle at top left, #2a2a2a, #1a1a1a 70%);
+            color: #e0e0e0;
             margin: 0;
             padding: 20px;
             box-sizing: border-box;
-            gap: 20px; /* Space between the left panel and main content */
-            flex-wrap: wrap; /* Allow wrapping on smaller screens */
-        }
-
-        /* Main layout container for left panel and central content */
-        .main-layout-container {
-            display: flex;
-            flex-direction: row; /* Controls on left, main content on right */
             gap: 20px;
-            width: 100%;
-            max-width: 1200px; /* Max width for the entire layout */
-            justify-content: center; /* Center the layout within the body */
-            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            flex-wrap: wrap;
         }
 
-        /* Left panel for knobs */
-        .left-panel {
-            flex: 0 0 280px; /* Slightly wider fixed width for the left panel */
-            background-color: #2a2a2a;
-            padding: 25px; /* Increased padding */
-            border-radius: 15px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4), inset 0 0 10px rgba(0, 0, 0, 0.2); /* Added inner shadow */
-            display: flex;
-            flex-direction: column;
-            gap: 25px; /* Increased gap between sections */
-            border: 1px solid rgba(144, 238, 144, 0.1); /* Subtle green border */
-        }
-
-        /* Central content container (formerly 'container') */
+        /* Central content container */
         .central-content {
-            flex: 1; /* Take remaining space */
-            min-width: 320px; /* Minimum width for central content */
+            flex: 1;
+            min-width: 320px;
             background-color: #2a2a2a;
             padding: 30px;
             border-radius: 15px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4), inset 0 0 10px rgba(0, 0, 0, 0.2); /* Added inner shadow */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4), inset 0 0 10px rgba(0, 0, 0, 0.2);
             text-align: center;
             display: flex;
             flex-direction: column;
-            gap: 25px; /* Increased gap between sections */
-            border: 1px solid rgba(144, 238, 144, 0.1); /* Subtle green border */
+            gap: 25px;
+            border: 1px solid rgba(144, 238, 144, 0.1);
+            max-width: 600px; /* Limit width for central content */
         }
 
         /* Styling for the main heading */
         h1 {
-            color: #90ee90; /* Light green for "Weed" theme */
-            margin-bottom: 10px; /* Reduced margin */
-            font-size: 2.8em; /* Slightly larger */
-            text-shadow: 0 0 12px rgba(144, 238, 144, 0.7); /* Stronger glow effect */
-            font-weight: 700; /* Bolder */
+            color: #90ee90;
+            margin-bottom: 10px;
+            font-size: 2.8em;
+            text-shadow: 0 0 12px rgba(144, 238, 144, 0.7);
+            font-weight: 700;
         }
-        /* Styling for subheadings in knob sections */
+        /* Styling for subheadings in knob sections (now in modals) */
         h3 {
-            color: #a0ffa0; /* Slightly brighter green for subheadings */
+            color: #a0ffa0;
             margin-top: 0;
-            margin-bottom: 15px; /* More space below subheading */
+            margin-bottom: 15px;
             font-size: 1.4em;
             font-weight: 600;
-            border-bottom: 1px solid rgba(144, 238, 144, 0.3); /* Subtle separator */
+            border-bottom: 1px solid rgba(144, 238, 144, 0.3);
             padding-bottom: 10px;
         }
 
         /* Base button styling */
         button {
-            display: flex; /* Enable flexbox for icon and text alignment */
+            display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px; /* Space between icon and text */
+            gap: 8px;
             padding: 15px 30px;
             border: none;
-            border-radius: 10px; /* Rounded corners for buttons */
+            border-radius: 10px;
             cursor: pointer;
             font-size: 1.2em;
-            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease; /* Smooth transitions */
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* More prominent button shadow */
-            outline: none; /* Remove outline on focus */
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            outline: none;
             font-weight: 600;
-            color: white; /* Default text color */
+            color: white;
         }
-        /* Primary button style (Start/Stop) */
+        /* Primary button style (Start/Stop) - SMALLER */
         button.primary {
-            background-color: #4CAF50; /* Green */
+            background-color: #4CAF50;
+            padding: 10px 20px; /* Smaller padding */
+            font-size: 1em; /* Smaller font size */
         }
         button.primary:hover {
             background-color: #45a049;
@@ -114,10 +93,12 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
-        /* Secondary button style (Presets, Record, Vis Modes) */
+        /* Secondary button style (Presets, Record, Vis Modes, Open Modals) */
         button.secondary {
-            background-color: #555; /* Darker grey */
-            border: 1px solid #777; /* Subtle border */
+            background-color: #555;
+            border: 1px solid #777;
+            padding: 12px 25px; /* Slightly adjusted padding for other buttons */
+            font-size: 1.1em;
         }
         button.secondary:hover {
             background-color: #666;
@@ -161,7 +142,7 @@
         .message-box.show {
             opacity: 1;
             visibility: visible;
-            transform: translateX(-50%) translateY(-10px); /* Slight lift animation */
+            transform: translateX(-50%) translateY(-10px);
         }
 
         /* Styling for paragraph text */
@@ -173,64 +154,63 @@
         }
         /* Styling for current section display */
         #currentSectionDisplay {
-            margin-top: 15px; /* Increased margin */
-            font-size: 1.4em; /* Slightly larger */
+            margin-top: 15px;
+            font-size: 1.4em;
             color: #a0ffa0;
             font-weight: bold;
-            transition: color 0.3s ease; /* Smooth color transition for highlight */
+            transition: color 0.3s ease;
         }
         /* Highlight for current section */
         #currentSectionDisplay.highlight {
-            color: #ffcc00; /* Yellowish highlight */
-            text-shadow: 0 0 8px rgba(255, 204, 0, 0.6); /* Subtle glow */
+            color: #ffcc00;
+            text-shadow: 0 0 8px rgba(255, 204, 0, 0.6);
         }
         /* Flex container for control buttons */
         .controls {
             display: flex;
-            gap: 15px; /* Space between buttons */
+            gap: 15px;
             justify-content: center;
-            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            flex-wrap: wrap;
         }
 
-        /* Styling for knob sections */
+        /* Styling for knob sections (now used inside modals) */
         .knob-section {
             background-color: #3a3a3a;
-            padding: 20px; /* Increased padding */
-            border-radius: 12px; /* Slightly more rounded */
-            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2); /* Inner shadow for depth */
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2);
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Responsive grid for knobs, slightly wider min */
-            gap: 20px; /* Increased gap */
-            border: 1px solid rgba(144, 238, 144, 0.05); /* Very subtle border */
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 20px;
+            border: 1px solid rgba(144, 238, 144, 0.05);
         }
         .knob-group {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 8px; /* Increased gap */
-            position: relative; /* For value indicator */
+            gap: 8px;
+            position: relative;
             padding: 10px;
             border-radius: 8px;
-            background-color: #444; /* Slightly lighter background for individual knob groups */
+            background-color: #444;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
         .knob-group label {
-            font-size: 1em; /* Slightly larger */
+            font-size: 1em;
             color: #ccc;
             font-weight: 500;
             text-align: center;
         }
         .knob-group input[type="range"] {
-            width: 100%; /* Make sliders fill their group width */
-            max-width: 150px; /* Max width for consistency */
+            width: 100%;
+            max-width: 150px;
             -webkit-appearance: none;
             appearance: none;
-            height: 10px; /* Slightly thicker slider track */
-            background: #555; /* Default track background */
+            height: 10px;
+            background: #555;
             outline: none;
             border-radius: 5px;
             transition: background 0.2s;
-            /* New: Track fill */
             background-image: linear-gradient(#90ee90, #90ee90);
             background-size: var(--fill-percentage, 0%) 100%;
             background-repeat: no-repeat;
@@ -238,13 +218,13 @@
         .knob-group input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 22px; /* Slightly larger thumb */
+            width: 22px;
             height: 22px;
             border-radius: 50%;
             background: #90ee90;
             cursor: pointer;
-            box-shadow: 0 0 8px rgba(144, 238, 144, 0.7); /* Stronger glow */
-            border: 2px solid #1a1a1a; /* Dark border for contrast */
+            box-shadow: 0 0 8px rgba(144, 238, 144, 0.7);
+            border: 2px solid #1a1a1a;
             transition: background 0.2s, box-shadow 0.2s;
         }
         .knob-group input[type="range"]::-moz-range-thumb {
@@ -257,20 +237,19 @@
             border: 2px solid #1a1a1a;
             transition: background 0.2s, box-shadow 0.2s;
         }
-        /* Enhanced focus styles for range inputs */
         .knob-group input[type="range"]:focus {
-            box-shadow: 0 0 0 3px rgba(144, 238, 144, 0.5); /* Green glow on focus */
+            box-shadow: 0 0 0 3px rgba(144, 238, 144, 0.5);
         }
         .knob-group input[type="range"]:active::-webkit-slider-thumb,
         .knob-group input[type="range"]:active::-moz-range-thumb {
-            background: #a0ffa0; /* Brighter when active */
+            background: #a0ffa0;
             box-shadow: 0 0 12px rgba(160, 255, 160, 0.9);
         }
 
         .knob-value {
-            font-size: 1.1em; /* Slightly larger for better readability */
+            font-size: 1.1em;
             color: #a0ffa0;
-            font-weight: 700; /* Bolder for emphasis */
+            font-weight: 700;
             margin-top: 5px;
         }
         .knob-group select {
@@ -282,28 +261,27 @@
             width: 100%;
             max-width: 150px;
             text-align: center;
-            appearance: none; /* Remove default arrow */
+            appearance: none;
             background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23e0e0e0%22%20d%3D%22M287%2C197.3L159.9%2C69.8c-4.4-4.3-11.4-4.3-15.8%2C0L5.1%2C197.3c-4.4%2C4.3-4.4%2C11.3%2C0%2C15.6l15.8%2C15.6c4.4%2C4.3%2C11.4%2C4.3%2C15.8%2C0L146%2C106.6c4.4-4.3%2C11.4-4.3%2C15.8%2C0l110.2%2C110.2c4.4%2C4.3%2C11.4%2C4.3%2C15.8%2C0l15.8-15.6C291.3%2C208.6%2C291.3%2C201.6%2C287%2C197.3z%22%2F%3E%3C%2Fsvg%3E');
             background-repeat: no-repeat;
             background-position: right 8px top 50%;
             background-size: 12px auto;
             transition: box-shadow 0.2s;
         }
-        /* Enhanced focus styles for select inputs */
         .knob-group select:focus {
-            box-shadow: 0 0 0 3px rgba(144, 238, 144, 0.5); /* Green glow on focus */
+            box-shadow: 0 0 0 3px rgba(144, 238, 144, 0.5);
         }
 
         /* Audio Visualizer */
         #audioVisualizer {
             background-color: #000;
-            border: 2px solid #4CAF50; /* Thicker border */
-            border-radius: 10px; /* More rounded */
-            margin-top: 25px; /* Increased margin */
-            width: 100%; /* Make it responsive */
-            max-width: 450px; /* Max width for desktop */
-            height: 120px; /* Slightly taller */
-            box-shadow: 0 0 15px rgba(144, 238, 144, 0.5); /* Glowing effect */
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            margin-top: 25px;
+            width: 100%;
+            max-width: 450px;
+            height: 120px;
+            box-shadow: 0 0 15px rgba(144, 238, 144, 0.5);
         }
 
         /* Volume Meter */
@@ -312,7 +290,7 @@
             align-items: center;
             justify-content: center;
             margin-top: 20px;
-            gap: 12px; /* Increased gap */
+            gap: 12px;
             background-color: #3a3a3a;
             padding: 15px;
             border-radius: 10px;
@@ -325,8 +303,8 @@
             font-weight: 500;
         }
         #volumeMeter {
-            width: 180px; /* Wider meter */
-            height: 18px; /* Taller meter */
+            width: 180px;
+            height: 18px;
             background-color: #555;
             border-radius: 8px;
             overflow: hidden;
@@ -336,17 +314,17 @@
         }
         #volumeMeterFill {
             height: 100%;
-            width: 0%; /* Starts empty */
+            width: 0%;
             background-color: #90ee90;
-            transition: width 0.05s ease-out; /* Smooth transition for volume changes */
-            box-shadow: 0 0 8px rgba(144, 238, 144, 0.5); /* Subtle glow on fill */
+            transition: width 0.05s ease-out;
+            box-shadow: 0 0 8px rgba(144, 238, 144, 0.5);
         }
         #volumePeak {
             position: absolute;
             height: 100%;
-            width: 3px; /* Thicker line for peak */
-            background-color: #ff0000; /* Red for peak */
-            right: 0; /* Initially at the right, will move with peak */
+            width: 3px;
+            background-color: #ff0000;
+            right: 0;
             opacity: 0;
             transition: opacity 0.2s ease-out;
         }
@@ -356,22 +334,22 @@
             margin-top: 25px;
             display: flex;
             flex-direction: column;
-            gap: 15px; /* Increased gap */
+            gap: 15px;
             align-items: center;
-            background-color: #3a3a3a; /* Consistent background */
+            background-color: #3a3a3a;
             padding: 20px;
             border-radius: 12px;
             box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2);
             border: 1px solid rgba(144, 238, 144, 0.05);
         }
         .preset-controls input[type="text"] {
-            padding: 10px; /* Increased padding */
-            border-radius: 8px; /* More rounded */
+            padding: 10px;
+            border-radius: 8px;
             border: 1px solid #555;
             background-color: #3a3a3a;
             color: #e0e0e0;
-            width: 90%; /* Wider input */
-            max-width: 250px; /* Increased max-width */
+            width: 90%;
+            max-width: 250px;
             font-size: 1em;
             box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
             transition: box-shadow 0.2s;
@@ -384,30 +362,30 @@
         .checkbox-group {
             display: flex;
             align-items: center;
-            gap: 10px; /* Increased gap */
+            gap: 10px;
             margin-top: 10px;
             color: #ccc;
-            font-size: 1em; /* Slightly larger */
+            font-size: 1em;
         }
         .checkbox-group input[type="checkbox"] {
             width: 18px;
             height: 18px;
-            accent-color: #90ee90; /* Green accent for checkbox */
+            accent-color: #90ee90;
             cursor: pointer;
         }
 
         /* Recording Meter Style */
         .recording-meter {
-            background-color: #ff4d4d; /* Red for recording */
+            background-color: #ff4d4d;
             color: white;
-            padding: 8px 15px; /* Increased padding */
-            border-radius: 8px; /* More rounded */
+            padding: 8px 15px;
+            border-radius: 8px;
             margin-top: 15px;
-            font-size: 1em; /* Slightly larger */
-            display: none; /* Hidden by default */
-            animation: pulse 1s infinite alternate; /* Pulsing animation */
+            font-size: 1em;
+            display: none;
+            animation: pulse 1s infinite alternate;
             font-weight: 600;
-            box-shadow: 0 0 10px rgba(255, 77, 77, 0.6); /* Red glow */
+            box-shadow: 0 0 10px rgba(255, 77, 77, 0.6);
             border: 1px solid #ff0000;
         }
 
@@ -429,8 +407,8 @@
             flex-wrap: wrap;
         }
         .visualization-controls button {
-            padding: 10px 18px; /* Adjusted padding */
-            font-size: 0.95em; /* Slightly larger */
+            padding: 10px 18px;
+            font-size: 0.95em;
             background-color: #555;
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
@@ -447,7 +425,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 8px; /* Increased gap */
+            gap: 8px;
             margin-top: 15px;
         }
         .recording-format-control label {
@@ -461,55 +439,138 @@
             border: 1px solid #555;
             background-color: #3a3a3a;
             color: #e0e0e0;
-            width: 160px; /* Slightly wider */
+            width: 160px;
             text-align: center;
-            appearance: none; /* Remove default arrow */
+            appearance: none;
             background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23e0e0e0%22%20d%3D%22M287%2C197.3L159.9%2C69.8c-4.4-4.3-11.4-4.3-15.8%2C0L5.1%2C197.3c-4.4%2C4.3-4.4%2C11.3%2C0%2C15.6l15.8%2C15.6c4.4%2C4.3%2C11.4%2C4.3%2C15.8%2C0L146%2C106.6c4.4-4.3%2C11.4-4.3%2C15.8%2C0l110.2%2C110.2c4.4%2C4.3%2C11.4%2C4.3%2C15.8%2C0l15.8-15.6C291.3%2C208.6%2C291.3%2C201.6%2C287%2C197.3z%22%2F%3E%3C%2Fsvg%3E');
             background-repeat: no-repeat;
             background-position: right 8px top 50%;
             background-size: 12px auto;
         }
 
+        /* MODAL STYLES */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.7); /* Black w/ opacity */
+            /* display: flex;  Removed from here, added by JS when opened */
+            justify-content: center;
+            align-items: center;
+            padding: 20px; /* Padding around the modal content */
+            box-sizing: border-box;
+        }
+
+        .modal-content {
+            background-color: #2a2a2a;
+            margin: auto;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(144, 238, 144, 0.2);
+            max-width: 500px; /* Max width for modal content */
+            width: 90%; /* Responsive width */
+            position: relative; /* For close button positioning */
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            animation: fadeInScale 0.3s ease-out; /* Simple animation */
+            max-height: 90vh; /* Limit height to prevent overflow on small screens */
+            overflow-y: auto; /* Enable scrolling within modal if content is too long */
+        }
+
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: #90ee90;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Container for modal trigger buttons */
+        .modal-trigger-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); /* Responsive grid for icons */
+            gap: 15px;
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #3a3a3a;
+            border-radius: 12px;
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(144, 238, 144, 0.05);
+        }
+        .modal-trigger-buttons button {
+            width: 100%; /* Make buttons fill grid column */
+            padding: 10px; /* Smaller padding for icon buttons */
+            font-size: 1.5em; /* Larger icon size */
+            height: 60px; /* Fixed height for consistent look */
+            flex-direction: column; /* Stack icon and text if needed, though only icon here */
+            gap: 5px;
+        }
+        .modal-trigger-buttons button span {
+            font-size: 0.5em; /* Smaller text for labels under icons */
+            font-weight: normal;
+            margin-top: 2px;
+        }
+
+
         /* Responsive adjustments for mobile */
         @media (max-width: 768px) {
             body {
-                padding: 10px; /* Reduce overall padding */
+                padding: 10px;
             }
-            .main-layout-container {
-                flex-direction: column; /* Stack panels vertically on small screens */
-                align-items: center;
-                gap: 15px; /* Reduce gap between stacked panels */
-            }
-            .left-panel, .central-content {
-                width: 100%; /* Make panels take full width */
-                flex: none; /* Remove flex grow/shrink */
-                padding: 15px; /* Adjusted padding for mobile panels */
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), inset 0 0 5px rgba(0, 0, 0, 0.1); /* Lighter shadows */
+            .central-content {
+                width: 100%;
+                padding: 15px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), inset 0 0 5px rgba(0, 0, 0, 0.1);
             }
             h1 {
-                font-size: 2em; /* Smaller heading on mobile */
+                font-size: 2em;
                 margin-bottom: 5px;
             }
             h3 {
-                font-size: 1.2em; /* Smaller subheadings */
+                font-size: 1.2em;
                 margin-bottom: 10px;
                 padding-bottom: 8px;
             }
             p {
-                font-size: 1em; /* Slightly smaller paragraph text */
+                font-size: 1em;
                 margin-bottom: 10px;
             }
-            button {
-                padding: 12px 20px; /* Smaller button padding */
-                font-size: 1em; /* Smaller button font size */
-                gap: 6px; /* Smaller gap for icons */
+            button.primary {
+                padding: 8px 15px; /* Even smaller for mobile */
+                font-size: 0.9em;
+            }
+            button.secondary {
+                padding: 10px 18px;
+                font-size: 0.95em;
             }
             .controls {
-                gap: 10px; /* Smaller gap between buttons */
+                gap: 10px;
             }
             .knob-section {
-                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Adjust grid for smaller screens */
-                gap: 10px; /* Smaller gap within knob sections */
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+                gap: 10px;
                 padding: 15px;
             }
             .knob-group {
@@ -524,12 +585,12 @@
             }
             .knob-group input[type="range"],
             .knob-group select {
-                max-width: 100%; /* Allow sliders/selects to take full width of their group */
+                max-width: 100%;
             }
             #audioVisualizer {
-                width: 100%; /* Make visualizer wider on small screens */
-                max-width: none; /* No max-width on mobile */
-                height: 100px; /* Slightly shorter visualizer */
+                width: 100%;
+                max-width: none;
+                height: 100px;
                 margin-top: 15px;
             }
             .volume-meter-container {
@@ -537,8 +598,8 @@
                 gap: 8px;
             }
             #volumeMeter {
-                width: 150px; /* Adjust meter width */
-                height: 15px; /* Adjust meter height */
+                width: 150px;
+                height: 15px;
             }
             .preset-controls {
                 padding: 15px;
@@ -546,29 +607,116 @@
             }
             .preset-controls input[type="text"],
             .preset-controls button {
-                width: 95%; /* Wider on mobile */
-                max-width: none; /* No max-width on mobile */
+                width: 95%;
+                max-width: none;
             }
             .recording-format-control select {
-                width: 100%; /* Full width for format select */
+                width: 100%;
             }
             .message-box {
-                width: 90%; /* Take more width on mobile */
-                left: 5%; /* Adjust left to center */
-                transform: translateX(0); /* Remove translateX for centering */
+                width: 90%;
+                left: 5%;
+                transform: translateX(0);
                 padding: 12px 20px;
                 font-size: 0.9em;
-                bottom: 15px; /* Slightly higher from bottom */
+                bottom: 15px;
             }
             .message-box.show {
-                transform: translateX(0) translateY(-10px); /* Adjust animation for new positioning */
+                transform: translateX(0) translateY(-10px);
+            }
+            .modal-content {
+                padding: 20px;
+                width: 95%;
+            }
+            .modal-trigger-buttons {
+                grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); /* Even smaller for mobile icon buttons */
+                gap: 8px;
+            }
+            .modal-trigger-buttons button {
+                height: 50px;
+                font-size: 1.2em;
             }
         }
     </style>
 </head>
 <body>
     <div class="main-layout-container">
-        <div class="left-panel">
+        <div class="central-content">
+            <h1>Simple Relax Looper</h1>
+            <p>Experience a subtly evolving ambient track designed for relaxation.</p>
+            <div class="controls">
+                <button id="startButton" class="primary" title="Start the music loop (Hotkey: Space/Enter)"><i class="fas fa-play"></i> Start</button>
+                <button id="stopButton" class="primary" disabled title="Stop the music loop (Hotkey: Space/Enter)"><i class="fas fa-stop"></i> Stop</button>
+            </div>
+            <div id="currentSectionDisplay">Current Section: --</div>
+            <div id="songIterationDisplay">Song Iteration: 0</div>
+            <div id="messageBox" class="message-box"></div>
+
+            <!-- Audio Visualization Canvas -->
+            <canvas id="audioVisualizer" width="400" height="100"></canvas>
+
+            <!-- Visualization Mode Controls -->
+            <div class="visualization-controls">
+                <button id="visModeSpectrum" class="secondary active" title="Show frequency spectrum visualization">Spectrum</button>
+                <button id="visModeWaveform" class="secondary" title="Show waveform visualization">Waveform</button>
+                <button id="visModeBoth" class="secondary" title="Show both spectrum and waveform visualization">Both</button>
+                <button id="visModeBands" class="secondary" title="Show bass, mid, and treble frequency bands">Bands</button>
+            </div>
+
+            <!-- Master Volume Meter -->
+            <div class="volume-meter-container">
+                <span class="volume-meter-label">Master Volume:</span>
+                <div id="volumeMeter">
+                    <div id="volumeMeterFill"></div>
+                    <div id="volumePeak"></div>
+                </div>
+            </div>
+
+            <!-- New: Buttons to open control modals (now with icons) -->
+            <div class="modal-trigger-buttons">
+                <button id="openMasterControlsModal" class="secondary" title="Master Controls"><i class="fas fa-sliders-h"></i><span>Master</span></button>
+                <button id="openInstrumentGainsModal" class="secondary" title="Instrument Gains"><i class="fas fa-volume-up"></i><span>Gains</span></button>
+                <button id="openInstrumentTimbresModal" class="secondary" title="Instrument Timbres"><i class="fas fa-wave-square"></i><span>Timbres</span></button>
+                <button id="openEffectsModal" class="secondary" title="Effects"><i class="fas fa-magic"></i><span>Effects</span></button>
+                <button id="openCompressorModal" class="secondary" title="Compressor"><i class="fas fa-compress-alt"></i><span>Comp.</span></button>
+                <button id="openReverbModal" class="secondary" title="Reverb"><i class="fas fa-cloud"></i><span>Reverb</span></button>
+                <button id="openDistortionModal" class="secondary" title="Distortion"><i class="fas fa-fire"></i><span>Dist.</span></button>
+                <button id="openPhaserModal" class="secondary" title="Phaser"><i class="fas fa-atom"></i><span>Phaser</span></button>
+            </div>
+
+            <!-- Preset Controls -->
+            <div class="preset-controls">
+                <h3>Presets</h3>
+                <input type="text" id="presetNameInput" placeholder="Enter preset name" title="Enter a name for your preset">
+                <button id="savePresetButton" class="secondary" title="Save current settings as a preset"><i class="fas fa-save"></i> Save Preset</button>
+                <button id="loadPresetButton" class="secondary" title="Load a saved preset"><i class="fas fa-folder-open"></i> Load Preset</button>
+                <button id="exportPresetsButton" class="secondary" title="Export all saved presets to a JSON file"><i class="fas fa-file-export"></i> Export All Presets</button>
+                <input type="file" id="importPresetsInput" accept=".json" style="display: none;" title="Select a JSON file to import presets">
+                <button id="importPresetsButton" class="secondary" title="Import Presets"><i class="fas fa-file-import"></i> Import Presets</button>
+                <p>Quick Load: Press 1-9 to load "Preset 1" to "Preset 9"</p>
+            </div>
+
+            <!-- Recording Controls -->
+            <div class="controls recording-controls">
+                <button id="recordButton" class="secondary" title="Start/Stop recording audio (Hotkey: Ctrl+R)"><i class="fas fa-microphone"></i> Start Recording</button>
+                <div class="recording-format-control">
+                    <label for="recordingFormat">Format:</label>
+                    <select id="recordingFormat" title="Select recording output format">
+                        <option value="wav">WAV (Supported)</option>
+                        <option value="mp3">MP3 (Not Supported Natively)</option>
+                    </select>
+                </div>
+                <div class="recording-meter"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL WINDOWS -->
+
+    <!-- Master Controls Modal -->
+    <div id="masterControlsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
             <div class="knob-section">
                 <h3>Master Controls</h3>
                 <div class="knob-group">
@@ -582,7 +730,13 @@
                     <span class="knob-value" id="tempoValue">420</span>
                 </div>
             </div>
+        </div>
+    </div>
 
+    <!-- Instrument Gains Modal -->
+    <div id="instrumentGainsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
             <div class="knob-section">
                 <h3>Instrument Gains</h3>
                 <div class="knob-group">
@@ -611,14 +765,19 @@
                     <span class="knob-value" id="hihatVolumeValue">0.21</span>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Instrument Timbres Section -->
+    <!-- Instrument Timbres Modal -->
+    <div id="instrumentTimbresModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
             <div class="knob-section">
                 <h3>Instrument Timbres</h3>
                 <div class="knob-group">
                     <label for="bassOscillatorType">Bass Wave</label>
                     <select id="bassOscillatorType" title="Select waveform for bass instrument">
-                        <option value="sine" selected>Sine</option> <!-- Changed default to Sine -->
+                        <option value="sine" selected>Sine</option>
                         <option value="triangle">Triangle</option>
                         <option value="sawtooth">Sawtooth</option>
                         <option value="square">Square</option>
@@ -627,7 +786,7 @@
                 <div class="knob-group">
                     <label for="synthOscillatorType">Synth Wave</label>
                     <select id="synthOscillatorType" title="Select waveform for synth instrument">
-                        <option value="square" selected>Square</option> <!-- Changed default to Square -->
+                        <option value="square" selected>Square</option>
                         <option value="sine">Sine</option>
                         <option value="triangle">Triangle</option>
                         <option value="sawtooth">Sawtooth</option>
@@ -638,7 +797,13 @@
                     <label for="synthArpeggiator">Synth Arpeggiator (A)</label>
                 </div>
             </div>
+        </div>
+    </div>
 
+    <!-- Effects Modal -->
+    <div id="effectsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
             <div class="knob-section">
                 <h3>Effects</h3>
                 <div class="knob-group">
@@ -666,8 +831,13 @@
                     <label for="chorusBypass">Bypass Chorus (C)</label>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Compressor Controls -->
+    <!-- Compressor Modal -->
+    <div id="compressorModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
             <div class="knob-section">
                 <h3>Compressor</h3>
                 <div class="knob-group">
@@ -681,8 +851,13 @@
                     <span class="knob-value" id="compRatioValue">12:1</span>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Reverb Controls -->
+    <!-- Reverb Modal -->
+    <div id="reverbModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
             <div class="knob-section">
                 <h3>Reverb</h3>
                 <div class="knob-group">
@@ -695,8 +870,13 @@
                     <label for="reverbBypass">Bypass Reverb (R)</label>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Distortion Controls -->
+    <!-- Distortion Modal -->
+    <div id="distortionModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
             <div class="knob-section">
                 <h3>Distortion</h3>
                 <div class="knob-group">
@@ -709,8 +889,13 @@
                     <label for="distortionBypass">Bypass Distortion (D)</label>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Phaser Controls -->
+    <!-- Phaser Modal -->
+    <div id="phaserModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
             <div class="knob-section">
                 <h3>Phaser</h3>
                 <div class="knob-group">
@@ -728,64 +913,6 @@
                     <label for="phaserBypass">Bypass Phaser (P)</label>
                 </div>
             </div>
-
-        </div>
-
-        <div class="central-content">
-            <h1>Simple Relax Looper</h1>
-            <p>Experience a subtly evolving ambient track designed for relaxation.</p>
-            <div class="controls">
-                <button id="startButton" class="primary" title="Start the music loop (Hotkey: Space/Enter)"><i class="fas fa-play"></i> Start Looping</button>
-                <button id="stopButton" class="primary" disabled title="Stop the music loop (Hotkey: Space/Enter)"><i class="fas fa-stop"></i> Stop Looping</button>
-            </div>
-            <div id="currentSectionDisplay">Current Section: --</div>
-            <div id="songIterationDisplay">Song Iteration: 0</div> <!-- New element for iteration count -->
-            <div id="messageBox" class="message-box"></div>
-
-            <!-- Audio Visualization Canvas -->
-            <canvas id="audioVisualizer" width="400" height="100"></canvas>
-
-            <!-- Visualization Mode Controls -->
-            <div class="visualization-controls">
-                <button id="visModeSpectrum" class="secondary active" title="Show frequency spectrum visualization">Spectrum</button>
-                <button id="visModeWaveform" class="secondary" title="Show waveform visualization">Waveform</button>
-                <button id="visModeBoth" class="secondary" title="Show both spectrum and waveform visualization">Both</button>
-                <button id="visModeBands" class="secondary" title="Show bass, mid, and treble frequency bands">Bands</button>
-            </div>
-
-            <!-- Master Volume Meter -->
-            <div class="volume-meter-container">
-                <span class="volume-meter-label">Master Volume:</span>
-                <div id="volumeMeter">
-                    <div id="volumeMeterFill"></div>
-                    <div id="volumePeak"></div>
-                </div>
-            </div>
-
-            <!-- Preset Controls -->
-            <div class="preset-controls">
-                <h3>Presets</h3>
-                <input type="text" id="presetNameInput" placeholder="Enter preset name" title="Enter a name for your preset">
-                <button id="savePresetButton" class="secondary" title="Save current settings as a preset"><i class="fas fa-save"></i> Save Preset</button>
-                <button id="loadPresetButton" class="secondary" title="Load a saved preset"><i class="fas fa-folder-open"></i> Load Preset</button>
-                <button id="exportPresetsButton" class="secondary" title="Export all saved presets to a JSON file"><i class="fas fa-file-export"></i> Export All Presets</button>
-                <input type="file" id="importPresetsInput" accept=".json" style="display: none;" title="Select a JSON file to import presets">
-                <button id="importPresetsButton" class="secondary" title="Import Presets"><i class="fas fa-file-import"></i> Import Presets</button>
-                <p>Quick Load: Press 1-9 to load "Preset 1" to "Preset 9"</p>
-            </div>
-
-            <!-- Recording Controls -->
-            <div class="controls recording-controls">
-                <button id="recordButton" class="secondary" title="Start/Stop recording audio (Hotkey: Ctrl+R)"><i class="fas fa-microphone"></i> Start Recording</button>
-                <div class="recording-format-control">
-                    <label for="recordingFormat">Format:</label>
-                    <select id="recordingFormat" title="Select recording output format">
-                        <option value="wav">WAV (Supported)</option>
-                        <option value="mp3">MP3 (Not Supported Natively)</option>
-                    </select>
-                </div>
-                <div class="recording-meter"></div> <!-- Added for the recording meter -->
-            </div>
         </div>
     </div>
 
@@ -799,15 +926,15 @@
 
         // Musical parameters controlled by knobs - initialized to default values
         let masterVolume = 0.55;
-        let bassVolume = 0.03; // Changed bass volume to 0.03
+        let bassVolume = 0.03;
         let synthVolume = 0.08;
         let kickVolume = 0.89;
         let snareVolume = 0.21;
         let hihatVolume = 0.21;
 
         let currentTempo = 420;
-        let targetTempo = 420; // New: For dynamic tempo changes
-        let tempoDriftDirection = 1; // New: For tempo drift
+        let targetTempo = 420; // For dynamic tempo changes
+        let tempoDriftDirection = 1; // For tempo drift
 
         // New target variables for smoother humanization
         let targetDetune = 0;
@@ -836,10 +963,10 @@
         // Humanization intensity factor, also influenced by Fibonacci drift
         let humanizationFactor = 0.5;
 
-        // Instrument timbre settings - Updated defaults
-        let bassOscillatorType = 'sine'; // Default to Sine
-        let synthOscillatorType = 'square'; // Default to Square
-        let isSynthArpeggiatorActive = false; // New: Arpeggiator control
+        // Instrument timbre settings
+        let bassOscillatorType = 'sine';
+        let synthOscillatorType = 'square';
+        let isSynthArpeggiatorActive = false; // Arpeggiator control
 
         // Delay effect nodes and parameters
         let delayNode;
@@ -853,8 +980,8 @@
         let chorusNode;
         let chorusLFO;
         let chorusLfoGain;
-        let chorusDepth = 0.002; // Default chorus depth (delay time modulation amount)
-        let isChorusBypassed = true; // Default to bypassed
+        let chorusDepth = 0.002;
+        let isChorusBypassed = true;
 
         // Compressor nodes and parameters
         let compressorNode;
@@ -864,27 +991,27 @@
         // Reverb nodes and parameters
         let convolverNode;
         let reverbGainNode;
-        let dryGainNode; // For the dry signal path in reverb mix
-        let preCompressorGain; // New node for signal before compressor
+        let dryGainNode;
+        let preCompressorGain;
         let reverbMix = 0.5;
         let isReverbBypassed = true;
 
-        // New: Distortion effect nodes and parameters
+        // Distortion effect nodes and parameters
         let distortionNode;
-        let distortionAmount = 0; // Amount of distortion (0-1000 for curve intensity)
+        let distortionAmount = 0;
         let isDistortionBypassed = true;
-        let postDistortionGain; // Intermediate gain node for distortion bypass
+        let postDistortionGain;
 
-        // New: Phaser effect nodes and parameters
+        // Phaser effect nodes and parameters
         let phaserLFO;
         let phaserLfoGain;
-        let phaserFilterNodes = []; // Array of BiquadFilterNodes for the phaser stages
-        const PHASER_STAGES = 6; // Number of all-pass filter stages for the phaser
-        let phaserRate = 1; // LFO rate in Hz
-        let phaserDepth = 0.5; // Modulation depth (0-1)
+        let phaserFilterNodes = [];
+        const PHASER_STAGES = 6;
+        let phaserRate = 1;
+        let phaserDepth = 0.5;
         let isPhaserBypassed = true;
-        let phaserInputGain; // Input gain for phaser
-        let postPhaserGain; // Output gain for phaser
+        let phaserInputGain;
+        let postPhaserGain;
 
         // Recording
         let looperRecorder;
@@ -895,11 +1022,11 @@
         let audioVisualizerCtx;
         let volumeMeterElement;
         let volumeMeterFillElement;
-        let volumePeakElement; // For peak indicator
-        let dataArray; // For analyser time domain data
-        let frequencyDataArray; // For analyser frequency data
-        let peakValue = 0; // Stores the highest volume peak (0-1 normalized)
-        let visualizationMode = 'spectrum'; // 'spectrum', 'waveform', 'both', or 'bands'
+        let volumePeakElement;
+        let dataArray;
+        let frequencyDataArray;
+        let peakValue = 0;
+        let visualizationMode = 'spectrum';
 
         // For cycling through verse patterns (normal and Raga)
         const normalVerseOptions = {
@@ -907,9 +1034,8 @@
             verse2: ['verse2_A', 'verse2_B', 'verse2_C', 'verse2_D'],
             verse3: ['verse3_A', 'verse3_B', 'verse3_C']
         };
-        // Updated: Added more Raga scales
         const ragaVerseOptions = ['ragaYamanPhrase', 'ragaBhairaviPhrase', 'ragaBhoopaliPhrase', 'ragaKhamajPhrase', 'ragaBhimpalasiPhrase', 'ragaKedarPhrase', 'ragaBageshriPhrase', 'ragaMalkaunsPhrase', 'ragaDarbariPhrase', 'ragaBhairavPhrase'];
-        let availableRagas = [...ragaVerseOptions]; // Copy for shuffling
+        let availableRagas = [...ragaVerseOptions];
         let normalVerseIndex = 0;
         let verseIterationCount = 0;
 
@@ -939,13 +1065,13 @@
         const keyToSemitoneOffsetFromC = {
             'C': 0, 'G': 7, 'D': 2, 'A': 9, 'E': 4, 'B': 11, 'F#': 6,
             'Db': 1, 'Ab': 8, 'Eb': 3, 'Bb': 10, 'F': 5
-        }; // Maps key name to semitone offset from C
+        };
 
-        let currentKey = 'C'; // Initial key for the loop
+        let currentKey = 'C';
         let sectionsSinceLastKeyChange = 0;
-        let sectionsPerKeyChange = 2; // Base value, will be randomized
+        let sectionsPerKeyChange = 2;
 
-        let songIterationCount = 0; // New: Counter for full song iterations
+        let songIterationCount = 0;
 
         /**
          * Transposes an array of note strings by a given number of semitones.
@@ -954,7 +1080,6 @@
          * @returns {Array<string>} A new array with transposed note strings.
          */
         function transposeNotes(notesArray, semitones) {
-            // Filter out any non-string or invalid notes first
             const validNotes = notesArray.filter(noteString => typeof noteString === 'string' && noteString.length >= 2);
 
             return validNotes.map(noteString => {
@@ -963,12 +1088,12 @@
                 
                 if (!noteToSemitone.hasOwnProperty(baseNote)) {
                     console.warn(`Unknown base note for transposition: ${baseNote}. Returning original.`);
-                    return noteString; // Return original if unknown base note
+                    return noteString;
                 }
 
                 let semitoneValue = noteToSemitone[baseNote] + semitones;
                 let newOctave = octave + Math.floor(semitoneValue / 12);
-                let newSemitoneIndex = (semitoneValue % 12 + 12) % 12; // Ensure positive modulo
+                let newSemitoneIndex = (semitoneValue % 12 + 12) % 12;
 
                 return chromaticScale[newSemitoneIndex] + newOctave;
             });
@@ -978,17 +1103,17 @@
         const ragaScales = {
             yaman: ['C4', 'D4', 'E4', 'F#4', 'G4', 'A4', 'B4', 'C5'],
             bhairavi: ['C4', 'C#4', 'D#4', 'F4', 'G4', 'G#4', 'A#4', 'C5'],
-            bhoopali: ['C4', 'D4', 'E4', 'G4', 'A4', 'C5'], // Pentatonic scale
-            khamaj: ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'A#4', 'C5'], // Natural minor with major 7th
-            bhimpalasi: ['C4', 'Eb4', 'F4', 'G4', 'Bb4', 'C5'], // Sa Komal Ga Ma Pa Komal Ni (simplified for 6 notes)
-            kedar: ['C4', 'D4', 'E4', 'F#4', 'G4', 'A4', 'B4', 'C5'], // Sa Re Ga Tivra Ma Pa Dha Ni (similar to Yaman, but different characteristic phrases)
-            bageshri: ['C4', 'Eb4', 'F4', 'Ab4', 'Bb4', 'C5'], // Sa Komal Dha Ma Komal Dha Komal Ni (simplified for 6 notes)
-            malkauns: ['C4', 'Eb4', 'F4', 'Ab4', 'Bb4', 'C5'], // Sa Komal Ga Ma Komal Dha Komal Ni (pentatonic, no Re, Pa)
-            darbari: ['C4', 'D4', 'Eb4', 'F4', 'G4', 'Ab4', 'Bb4', 'C5'], // Sa Re Komal Ga Ma Pa Komal Dha Komal Ni
-            bhairav: ['C4', 'C#4', 'E4', 'F4', 'G4', 'G#4', 'B4', 'C5'] // Sa Komal Re Ga Ma Pa Komal Dha Ni
+            bhoopali: ['C4', 'D4', 'E4', 'G4', 'A4', 'C5'],
+            khamaj: ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'A#4', 'C5'],
+            bhimpalasi: ['C4', 'Eb4', 'F4', 'G4', 'Bb4', 'C5'],
+            kedar: ['C4', 'D4', 'E4', 'F#4', 'G4', 'A4', 'B4', 'C5'],
+            bageshri: ['C4', 'Eb4', 'F4', 'Ab4', 'Bb4', 'C5'],
+            malkauns: ['C4', 'Eb4', 'F4', 'Ab4', 'Bb4', 'C5'],
+            darbari: ['C4', 'D4', 'Eb4', 'F4', 'G4', 'Ab4', 'Bb4', 'C5'],
+            bhairav: ['C4', 'C#4', 'E4', 'F4', 'G4', 'G#4', 'B4', 'C5']
         };
 
-        // Raga Characteristics System - UPDATED to include new ragas
+        // Raga Characteristics System
         const ragaCharacteristics = {
             time: {
                 morning: ['yaman', 'bhairavi', 'bhoopali', 'bhairav'],
@@ -1016,14 +1141,13 @@
                 hour >= 16 && hour < 20 ? 'evening' : 'night';
             
             const appropriateRagas = ragaCharacteristics.time[timeOfDay];
-            // Filter to ensure we only pick ragas that are actually defined in ragaScales
             const availableAndDefinedRagas = appropriateRagas.filter(raga => ragaScales[raga]);
 
             if (availableAndDefinedRagas.length > 0) {
                 return availableAndDefinedRagas[Math.floor(Math.random() * availableAndDefinedRagas.length)];
             } else {
                 console.warn(`No defined Raga scales found for time of day: ${timeOfDay}. Falling back to 'yaman'.`);
-                return 'yaman'; // Fallback to a default Raga if none are defined for the time
+                return 'yaman';
             }
         }
 
@@ -1036,41 +1160,38 @@
          * @returns {Array<Object>} An array of phrase steps.
          */
         function generateRagaMelody(scale, phraseLength, humanizationFactor) {
-            // Ensure scale is a non-empty array of strings
             if (!Array.isArray(scale) || scale.length === 0) {
                 console.error("generateRagaMelody received an empty or invalid scale array:", scale);
-                return []; // Return an empty phrase to prevent errors
+                return [];
             }
 
             const generatedPhrase = [];
-            let currentSynthNoteIndex = Math.floor(Math.random() * scale.length); // Start randomly
+            let currentSynthNoteIndex = Math.floor(Math.random() * scale.length);
             let lastSynthDirection = Math.random() < 0.5 ? 1 : -1;
 
-            // Safely get vadiNote and samvadiNote, ensuring they are valid and default to first note if issues
             const getSafeNote = (arr, index) => arr[index] || arr[0];
 
-            // Ensure scale has enough elements for Vadi/Samvadi
-            const vadiNote = getSafeNote(scale, 0); // Tonic is often Vadi
-            const samvadiNote = getSafeNote(scale, scale.length > 4 ? 4 : scale.length - 1); // Fifth or last note as Samvadi
+            const vadiNote = getSafeNote(scale, 0);
+            const samvadiNote = getSafeNote(scale, scale.length > 4 ? 4 : scale.length - 1);
 
             for (let i = 0; i < phraseLength; i++) {
                 const step = {
                     bass: [],
                     synth: [],
                     percussion: {},
-                    delaySend: 0.3 + (Math.random() * 0.3) // Vary delay send per step
+                    delaySend: 0.3 + (Math.random() * 0.3)
                 };
 
                 // --- Bass Line Generation ---
-                if (i % 4 === 0) { // On beat 1 and 5 (for 8-step phrase)
-                    step.bass.push(vadiNote.replace('4', '2')); // Root
-                } else if (i % 2 === 0) { // On other even beats
-                    if (Math.random() < 0.7) { // 70% chance to play a bass note
+                if (i % 4 === 0) {
+                    step.bass.push(vadiNote.replace('4', '2'));
+                } else if (i % 2 === 0) {
+                    if (Math.random() < 0.7) {
                         const bassOptions = [
-                            vadiNote.replace('4', '2'), // Root
-                            samvadiNote.replace('4', '2') // Fifth
+                            vadiNote.replace('4', '2'),
+                            samvadiNote.replace('4', '2')
                         ];
-                        if (scale.length > 2) { // Third
+                        if (scale.length > 2) {
                             bassOptions.push(getSafeNote(scale, 2).replace('4', '2'));
                         }
                         const selectedBassNote = bassOptions[Math.floor(Math.random() * bassOptions.length)];
@@ -1079,41 +1200,38 @@
                         }
                     }
                 }
-                if (step.bass.length === 0) { // Ensure at least one bass note per main beat
+                if (step.bass.length === 0) {
                     step.bass.push(vadiNote.replace('4', '2'));
                 }
 
                 // --- Synth Melody Generation ---
-                // Number of synth notes influenced by humanizationFactor
                 const numSynthNotes = 1 + Math.floor(Math.random() * (humanizationFactor * 2));
                 let synthNotesForStep = [];
 
                 for (let j = 0; j < numSynthNotes; j++) {
                     let nextSynthNoteIndex = currentSynthNoteIndex;
 
-                    // Stronger tendency towards stepwise motion (increased from 0.7 to 0.8)
-                    if (Math.random() < 0.8) { 
+                    if (Math.random() < 0.8) {
                         nextSynthNoteIndex = (currentSynthNoteIndex + lastSynthDirection + scale.length * 2) % scale.length;
-                    } else if (Math.random() < 0.95) { // 15% chance of small leap (2nd or 3rd within scale)
-                        const leapAmount = Math.random() < 0.5 ? 2 : 3; // 2 or 3 steps in scale
+                    } else if (Math.random() < 0.95) {
+                        const leapAmount = Math.random() < 0.5 ? 2 : 3;
                         nextSynthNoteIndex = (currentSynthNoteIndex + lastSynthDirection * leapAmount + scale.length * 2) % scale.length;
-                    } else { // 5% chance of larger leap or change direction
-                        lastSynthDirection *= -1; // Change direction
-                        const leapAmount = Math.floor(Math.random() * (scale.length / 2)) + 1; // Random leap, still within reasonable bounds
+                    } else {
+                        lastSynthDirection *= -1;
+                        const leapAmount = Math.floor(Math.random() * (scale.length / 2)) + 1;
                         nextSynthNoteIndex = (currentSynthNoteIndex + lastSynthDirection * leapAmount + scale.length * 2) % scale.length;
                     }
 
-                    // Emphasize Vadi/Samvadi (increased probability)
-                    if (vadiNote && Math.random() < 0.4) { // 40% chance to gravitate towards Vadi
+                    if (vadiNote && Math.random() < 0.4) {
                         const targetVadiBaseNote = vadiNote.slice(0, -1);
-                        let vadiIndex = scale.findIndex(note => note.startsWith(targetVadiBaseNote)); // Find note by base name
+                        let vadiIndex = scale.findIndex(note => note.startsWith(targetVadiBaseNote));
                         if (vadiIndex !== -1) {
                             nextSynthNoteIndex = vadiIndex;
                         } else {
                             nextSynthNoteIndex = Math.floor(Math.random() * scale.length);
                             console.warn(`Vadi note base ${targetVadiBaseNote} not found in current scale. Picking random note.`);
                         }
-                    } else if (samvadiNote && Math.random() < 0.25) { // 25% chance for Samvadi
+                    } else if (samvadiNote && Math.random() < 0.25) {
                         const targetSamvadiBaseNote = samvadiNote.slice(0, -1);
                         let samvadiIndex = scale.findIndex(note => note.startsWith(targetSamvadiBaseNote));
                         if (samvadiIndex !== -1) {
@@ -1126,7 +1244,6 @@
 
                     currentSynthNoteIndex = nextSynthNoteIndex;
 
-                    // Ensure currentSynthNoteIndex is valid and points to a defined note
                     if (currentSynthNoteIndex < 0 || currentSynthNoteIndex >= scale.length || !scale[currentSynthNoteIndex]) {
                         console.warn(`Invalid currentSynthNoteIndex (${currentSynthNoteIndex}) or undefined note in scale. Re-selecting random note.`);
                         currentSynthNoteIndex = Math.floor(Math.random() * scale.length);
@@ -1135,8 +1252,7 @@
                     let synthNote = scale[currentSynthNoteIndex];
                     const currentOctave = parseInt(synthNote.slice(-1));
                     
-                    // Octave variation for synth notes (reduced frequency of jumps)
-                    if (Math.random() < 0.2 * humanizationFactor) { // Less frequent octave jumps
+                    if (Math.random() < 0.2 * humanizationFactor) {
                         if (Math.random() < 0.5 && currentOctave < 5) {
                             synthNote = synthNote.slice(0, -1) + (currentOctave + 1);
                         } else if (currentOctave > 3) {
@@ -1146,10 +1262,8 @@
                     synthNotesForStep.push(synthNote);
                 }
                 
-                // Add an arpeggiated chord if humanizationFactor is high and random chance
-                if (humanizationFactor > 0.7 && Math.random() < 0.25 * humanizationFactor) { // Increased chance with humanization
+                if (humanizationFactor > 0.7 && Math.random() < 0.25 * humanizationFactor) {
                     const rootIndex = currentSynthNoteIndex;
-                    // Ensure indices are valid before accessing scale elements
                     const thirdNote = getSafeNote(scale, (rootIndex + 2) % scale.length);
                     const fifthNote = getSafeNote(scale, (rootIndex + 4) % scale.length);
                     
@@ -1157,23 +1271,23 @@
                     if (fifthNote) synthNotesForStep.push(fifthNote);
                 }
 
-                step.synth = synthNotesForStep.length > 0 ? synthNotesForStep : [getSafeNote(scale, currentSynthNoteIndex)]; // Ensure at least one note
+                step.synth = synthNotesForStep.length > 0 ? synthNotesForStep : [getSafeNote(scale, currentSynthNoteIndex)];
 
                 // --- Percussion Generation (more varied) ---
-                if (i === 0) { // Kick on beat 1
+                if (i === 0) {
                     step.percussion.kick = { active: true, probability: 0.95, velocity: 1.0 };
                     step.percussion.hihat = { active: true, probability: 1.0, type: 'closed', velocity: 0.8 };
-                } else if (i === 4) { // Kick on beat 5
+                } else if (i === 4) {
                     step.percussion.kick = { active: true, probability: 0.8, velocity: 0.9 };
                     step.percussion.hihat = { active: true, probability: 1.0, type: 'closed', velocity: 0.8 };
-                } else if (i === 2 || i === 6) { // Snare on beats 3 and 7
+                } else if (i === 2 || i === 6) {
                     step.percussion.snare = { active: true, probability: 0.85, velocity: 1.0 };
                     step.percussion.hihat = { active: true, probability: 1.0, type: 'closed', velocity: 0.8 };
-                } else if (i % 2 !== 0) { // Off-beats, mostly hi-hats
+                } else if (i % 2 !== 0) {
                     if (Math.random() < 0.9) {
                         step.percussion.hihat = { active: true, probability: 1.0, type: 'closed', velocity: 0.7 };
                     }
-                    if (Math.random() < 0.2) { // Occasional ghost kick/snare
+                    if (Math.random() < 0.2) {
                         if (Math.random() < 0.5) {
                             step.percussion.kick = { active: true, probability: 0.5, velocity: 0.3 };
                         } else {
@@ -1190,7 +1304,6 @@
 
         // Define musical phrases for each section of the song.
         // All phrases are defined in the key of C Major. They will be transposed dynamically.
-        // Percussion now includes 'active', 'probability', and 'velocity' for dynamic sequencing
         const musicalPhrases = {
             intro: [
                 { bass: ['C2'], synth: ['C4'], percussion: {}, delaySend: 0.8 },
@@ -1210,7 +1323,7 @@
                 { bass: ['A2'], synth: ['A3', 'C4', 'E4'], percussion: {}, delaySend: 0.0 },
                 { bass: ['F2'], synth: ['F3', 'A3', 'C4'], percussion: {}, delaySend: 0.0 }
             ],
-            verse1_A: [ // C-G-Am-F progression
+            verse1_A: [
                 { bass: ['C2'], synth: ['C4', 'E4', 'G4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
                 { bass: ['C2'], synth: ['E4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['G2'], synth: ['G3', 'B3', 'D4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
@@ -1220,7 +1333,7 @@
                 { bass: ['F2'], synth: ['A3', 'C4', 'F4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
                 { bass: ['F2'], synth: ['A3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            verse1_B: [ // C-G-Am-F progression with slightly different synth
+            verse1_B: [
                 { bass: ['C2'], synth: ['E4', 'G4', 'C5'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
                 { bass: ['C2'], synth: ['G4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['G2'], synth: ['B3', 'D4', 'G4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
@@ -1230,7 +1343,7 @@
                 { bass: ['F2'], synth: ['A3', 'C4', 'F4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
                 { bass: ['F2'], synth: ['C4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            verse1_C: [ // C-G-Am-F progression, more sparse synth
+            verse1_C: [
                 { bass: ['C2'], synth: ['C4', 'G4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
                 { bass: ['C2'], synth: ['E4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['G2'], synth: ['G3', 'D4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
@@ -1240,7 +1353,7 @@
                 { bass: ['F2'], synth: ['F3', 'C4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
                 { bass: ['F2'], synth: ['A3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            verse1_D: [ // C-G-Am-F progression, more active synth
+            verse1_D: [
                 { bass: ['C2'], synth: ['C4', 'E4', 'G4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
                 { bass: ['C2'], synth: ['G4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['G2'], synth: ['B3', 'D4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } } },
@@ -1250,7 +1363,7 @@
                 { bass: ['F2'], synth: ['F3', 'A3', 'C4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.2 },
                 { bass: ['F2'], synth: ['C4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            verse2_A: [ // F-C-G-Am progression
+            verse2_A: [
                 { bass: ['F2'], synth: ['F3', 'A3', 'C4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['F2'], synth: ['A3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['C2'], synth: ['C4', 'E4', 'G4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
@@ -1260,7 +1373,7 @@
                 { bass: ['A2'], synth: ['A3', 'C4', 'E4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['A2'], synth: ['C4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            verse2_B: [ // F-C-G-Am progression with slightly different synth
+            verse2_B: [
                 { bass: ['F2'], synth: ['C4', 'F4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['F2'], synth: ['A3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['C2'], synth: ['G3', 'C4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
@@ -1270,7 +1383,7 @@
                 { bass: ['A2'], synth: ['E4', 'A4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['A2'], synth: ['C4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            verse2_C: [ // F-C-G-Am progression, more sparse synth
+            verse2_C: [
                 { bass: ['F2'], synth: ['F3', 'C4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['F2'], synth: ['A3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['C2'], synth: ['C4', 'G4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
@@ -1280,7 +1393,7 @@
                 { bass: ['A2'], synth: ['A3', 'E4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['C2'], synth: ['C4', 'E4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            verse2_D: [ // F-C-G-Am progression, more active synth
+            verse2_D: [
                 { bass: ['F2'], synth: ['F3', 'A3', 'C4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['F2'], synth: ['C4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['C2'], synth: ['G3', 'E4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
@@ -1290,7 +1403,7 @@
                 { bass: ['A2'], synth: ['A3', 'C4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['C2'], synth: ['E4', 'G4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            verse3_A: [ // G-D-Em-C progression
+            verse3_A: [
                 { bass: ['G2'], synth: ['G3', 'B3', 'D4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['G2'], synth: ['B3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['D2'], synth: ['D3', 'F#3', 'A3'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
@@ -1300,7 +1413,7 @@
                 { bass: ['C3'], synth: ['C4', 'E4', 'G4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['C3'], synth: ['E4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            verse3_B: [ // G-D-Em-C progression with slightly different synth
+            verse3_B: [
                 { bass: ['G2'], synth: ['D4', 'G4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['G2'], synth: ['B3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['D2'], synth: ['A3', 'D4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
@@ -1310,7 +1423,7 @@
                 { bass: ['C3'], synth: ['G4', 'C5'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['C3'], synth: ['E4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            verse3_C: [ // G-D-Em-C progression, more sparse synth
+            verse3_C: [
                 { bass: ['G2'], synth: ['G3', 'D4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['G2'], synth: ['B3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
                 { bass: ['D2'], synth: ['D3', 'A3'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
@@ -1320,7 +1433,6 @@
                 { bass: ['C3'], synth: ['C4', 'G4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['G2'], synth: ['G3', 'B3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            // Raga phrases - these will be dynamically generated and thus are empty here
             ragaYamanPhrase: [],
             ragaBhairaviPhrase: [],
             ragaBhoopaliPhrase: [],
@@ -1332,7 +1444,7 @@
             ragaDarbariPhrase: [],    
             ragaBhairavPhrase: [],    
             
-            chorus: [ // More full and impactful chorus
+            chorus: [
                 { bass: ['C2'], synth: ['C4', 'E4', 'G4', 'C5'], percussion: { kick: { active: true, probability: 0.95, velocity: 1.0 }, snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'open', velocity: 0.9 } }, delaySend: 0.6 },
                 { bass: ['C2'], synth: ['G4', 'C5'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.6 },
                 { bass: ['G2'], synth: ['G3', 'B3', 'D4', 'G4'], percussion: { kick: { active: true, probability: 0.95, velocity: 1.0 }, snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'open', velocity: 0.9 } }, delaySend: 0.6 },
@@ -1342,7 +1454,7 @@
                 { bass: ['F2'], synth: ['F3', 'A3', 'C4', 'F4'], percussion: { kick: { active: true, probability: 0.95, velocity: 1.0 }, snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'open', velocity: 0.9 } }, delaySend: 0.6 },
                 { bass: ['F2'], synth: ['A3', 'C4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.6 }
             ],
-            bridge: [ // More atmospheric and building
+            bridge: [
                 { bass: ['D2'], synth: ['D4', 'F4', 'A4'], percussion: { hihat: { active: true, probability: 0.5, type: 'closed', velocity: 0.6 } }, delaySend: 0.5 },
                 { bass: ['E2'], synth: ['E4', 'G4', 'B4'], percussion: { hihat: { active: true, probability: 0.5, type: 'closed', velocity: 0.6 } }, delaySend: 0.5 },
                 { bass: ['A2'], synth: ['A3', 'D4', 'G4'], percussion: { hihat: { active: true, probability: 0.5, type: 'closed', velocity: 0.6 } }, delaySend: 0.5 },
@@ -1365,11 +1477,11 @@
         };
 
         const songStructure = [
-            { type: 'intro', durationMultiplier: 2, initialKey: 'C' }, // Base key for intro
-            { type: 'verse', baseName: 'verse1', durationMultiplier: 3, initialKey: 'C' }, // Base key for verse1
+            { type: 'intro', durationMultiplier: 2, initialKey: 'C' },
+            { type: 'verse', baseName: 'verse1', durationMultiplier: 3, initialKey: 'C' },
             { type: 'chorus', durationMultiplier: 2, initialKey: 'C' },
-            { type: 'verse', baseName: 'verse2', durationMultiplier: 3, initialKey: 'C' }, // Base key for verse2
-            { type: 'verse', baseName: 'verse3', durationMultiplier: 5, initialKey: 'C' }, // Base key for verse3
+            { type: 'verse', baseName: 'verse2', durationMultiplier: 3, initialKey: 'C' },
+            { type: 'verse', baseName: 'verse3', durationMultiplier: 5, initialKey: 'C' },
             { type: 'bridge', durationMultiplier: 2, initialKey: 'C' },
             { type: 'chorus', durationMultiplier: 3, initialKey: 'C' },
             { type: 'verse', baseName: 'verse1', durationMultiplier: 2, initialKey: 'C' },
@@ -1379,7 +1491,7 @@
         let currentSongSectionIndex = 0;
         let currentSectionType = '';
         let currentSectionName = '';
-        let currentSectionPhrase = []; // This will hold the *transposed* phrase for the current section
+        let currentSectionPhrase = [];
         let currentPhraseIndex = 0;
         let stepsPlayedInCurrentSection = 0;
         let currentSectionTotalSteps = 0;
@@ -1461,7 +1573,6 @@
             const messageBox = document.getElementById('messageBox');
             messageBox.textContent = message;
             messageBox.classList.add('show');
-            // Clear any existing timeout to prevent premature hiding
             clearTimeout(messageBox.hideTimeout);
             messageBox.hideTimeout = setTimeout(() => {
                 messageBox.classList.remove('show');
@@ -1491,20 +1602,16 @@
         function updateDistortionBypassConnection() {
             if (!audioContext || !masterGainNode || !distortionNode || !postDistortionGain || !phaserInputGain) return;
 
-            // Disconnect masterGainNode from wherever it was connected
             try {
                 masterGainNode.disconnect();
             } catch (e) { /* ignore */ }
 
             if (isDistortionBypassed) {
-                // Bypass: masterGainNode -> postDistortionGain
                 masterGainNode.connect(postDistortionGain);
             } else {
-                // Engage: masterGainNode -> distortionNode -> postDistortionGain
                 masterGainNode.connect(distortionNode);
                 distortionNode.connect(postDistortionGain);
             }
-            // Reconnect the next stage (phaser input)
             updatePhaserBypassConnection();
         }
 
@@ -1514,26 +1621,21 @@
         function updatePhaserBypassConnection() {
             if (!audioContext || !postDistortionGain || !phaserInputGain || phaserFilterNodes.length === 0 || !postPhaserGain || !chorusNode || !preCompressorGain) return;
 
-            // Disconnect postDistortionGain from wherever it was connected
             try {
                 postDistortionGain.disconnect();
             } catch (e) { /* ignore */ }
             
-            // Disconnect phaser chain from wherever it was connected
             try {
                 phaserFilterNodes[PHASER_STAGES - 1].disconnect();
             } catch (e) { /* ignore */ }
 
             if (isPhaserBypassed) {
-                // Bypass: postDistortionGain -> postPhaserGain
                 postDistortionGain.connect(postPhaserGain);
             } else {
-                // Engage: postDistortionGain -> phaserInputGain -> phaserFilterNodes[0] -> ... -> phaserFilterNodes[last] -> postPhaserGain
                 postDistortionGain.connect(phaserInputGain);
                 phaserInputGain.connect(phaserFilterNodes[0]);
                 phaserFilterNodes[PHASER_STAGES - 1].connect(postPhaserGain);
             }
-            // Reconnect the next stage (chorus/preCompressorGain)
             updateChorusBypassConnection();
         }
 
@@ -1543,16 +1645,13 @@
         function updateChorusBypassConnection() {
             if (!audioContext || !postPhaserGain || !preCompressorGain || !chorusNode) return;
 
-            // Disconnect postPhaserGain from wherever it was connected
             try {
                 postPhaserGain.disconnect();
             } catch (e) { /* ignore */ }
             
             if (isChorusBypassed) {
-                // Bypass: postPhaserGain -> preCompressorGain
                 postPhaserGain.connect(preCompressorGain);
             } else {
-                // Engage: postPhaserGain -> chorusNode -> preCompressorGain
                 postPhaserGain.connect(chorusNode);
                 chorusNode.connect(preCompressorGain);
             }
@@ -1564,46 +1663,38 @@
         function updateReverbBypassConnection() {
             if (!audioContext || !preCompressorGain || !convolverNode || !reverbGainNode || !dryGainNode) return;
 
-            // Disconnect existing connections from preCompressorGain to reverb/dry
             try {
                 preCompressorGain.disconnect(dryGainNode);
                 preCompressorGain.disconnect(reverbGainNode);
             } catch (e) { /* ignore */ }
 
-            // Disconnect reverb output from preCompressorGain
             try {
                 convolverNode.disconnect(preCompressorGain);
             } catch (e) { /* ignore */ }
 
             if (isReverbBypassed) {
-                // Bypass: All signal directly to preCompressorGain (already connected through main chain)
-                // No need to connect dryGainNode or reverbGainNode if bypassed, as preCompressorGain is already the main path.
-                // The main chain is already connected like: masterGainNode -> ... -> preCompressorGain -> compressor -> analyser -> destination
-                // So, if bypassed, the signal simply continues through the main path.
+                // No need to connect dryGainNode or reverbGainNode if bypassed
             } else {
-                // Engage: Split signal to dry and wet paths, then sum them back to preCompressorGain
                 dryGainNode.gain.setValueAtTime(1 - reverbMix, audioContext.currentTime);
                 reverbGainNode.gain.setValueAtTime(reverbMix, audioContext.currentTime);
 
-                preCompressorGain.connect(dryGainNode); // Send dry signal
-                dryGainNode.connect(compressorNode); // Dry signal rejoins before compressor
+                preCompressorGain.connect(dryGainNode);
+                dryGainNode.connect(compressorNode);
 
-                preCompressorGain.connect(reverbGainNode); // Send wet signal
+                preCompressorGain.connect(reverbGainNode);
                 reverbGainNode.connect(convolverNode);
-                convolverNode.connect(compressorNode); // Wet signal rejoins before compressor
+                convolverNode.connect(compressorNode);
             }
         }
 
         /**
          * Updates a specific audio parameter based on the UI element ID and its new value.
-         * This function is crucial for linking UI knobs/sliders to audio graph parameters.
-         * @param {string} id - The ID of the HTML input element (e.g., 'masterVolume', 'tempo').
+         * @param {string} id - The ID of the HTML input element.
          * @param {number|string} value - The new value from the input element.
          */
         function updateAudioParameter(id, value) {
             const valueDisplay = document.getElementById(id + 'Value');
             if (valueDisplay) {
-                // Format display values for specific parameters
                 if (id === 'compThreshold') {
                     valueDisplay.textContent = `${value} dB`;
                 } else if (id === 'compRatio') {
@@ -1617,7 +1708,6 @@
                 }
             }
 
-            // Update global variables and audio nodes
             if (audioContext) {
                 const currentTime = audioContext.currentTime;
                 switch (id) {
@@ -1626,7 +1716,7 @@
                         if (masterGainNode) masterGainNode.gain.setValueAtTime(masterVolume, currentTime);
                         break;
                     case 'tempo':
-                        targetTempo = value; // Update targetTempo
+                        targetTempo = value;
                         break;
                     case 'bassVolume':
                         bassVolume = value;
@@ -1643,10 +1733,10 @@
                     case 'hihatVolume':
                         hihatVolume = value;
                         break;
-                    case 'bassOscillatorType': // New
+                    case 'bassOscillatorType':
                         bassOscillatorType = value;
                         break;
-                    case 'synthOscillatorType': // New
+                    case 'synthOscillatorType':
                         synthOscillatorType = value;
                         break;
                     case 'delayTime':
@@ -1659,7 +1749,6 @@
                         break;
                     case 'delaySendLevel':
                         delaySendLevel = value;
-                        // This will be applied per step in the scheduler, but update the global variable
                         break;
                     case 'chorusDepth':
                         chorusDepth = value;
@@ -1678,21 +1767,20 @@
                         if (reverbGainNode) reverbGainNode.gain.setValueAtTime(reverbMix, currentTime);
                         if (dryGainNode) dryGainNode.gain.setValueAtTime(1 - reverbMix, currentTime);
                         break;
-                    case 'distortionAmount': // New
+                    case 'distortionAmount':
                         distortionAmount = value;
                         if (distortionNode) distortionNode.curve = makeDistortionCurve(distortionAmount);
                         break;
-                    case 'phaserRate': // New
+                    case 'phaserRate':
                         phaserRate = value;
                         if (phaserLFO) phaserLFO.frequency.setValueAtTime(phaserRate, currentTime);
                         break;
-                    case 'phaserDepth': // New
+                    case 'phaserDepth':
                         phaserDepth = value;
-                        if (phaserLfoGain) phaserLfoGain.gain.setValueAtTime(phaserDepth * 1000, currentTime); // Scale for frequency modulation
+                        if (phaserLfoGain) phaserLfoGain.gain.setValueAtTime(phaserDepth * 1000, currentTime);
                         break;
                 }
             }
-            // Update the CSS variable for slider fill
             const knobElement = document.getElementById(id);
             if (knobElement && knobElement.type === 'range') {
                 const min = parseFloat(knobElement.min);
@@ -1704,49 +1792,43 @@
 
         /**
          * Selects the next key based on weighted probabilities for musical coherence.
-         * Favors tonic, dominant, subdominant, and nearby keys on the Circle of Fifths.
          * @param {string} currentKey - The current key (e.g., 'C').
          * @returns {string} The newly selected key.
          */
         function selectNextKey(currentKey) {
             const currentKeyIndex = majorKeysCircleOfFifths.indexOf(currentKey);
-            let nextKey = currentKey; // Default to staying in the same key
+            let nextKey = currentKey;
             let transitionMessage = `Staying in ${currentKey} Major.`;
 
-            // Probabilities (sum to 1.0)
             const probabilities = {
-                tonic: 0.40, // Stay in current key
-                dominant: 0.30, // Move to dominant (e.g., C -> G)
-                subdominant: 0.20, // Move to subdominant (e.g., C -> F)
-                nearbyRandom: 0.10 // Move to a nearby key (e.g., +/- 2 or 3 steps on CoF)
+                tonic: 0.40,
+                dominant: 0.30,
+                subdominant: 0.20,
+                nearbyRandom: 0.10
             };
 
             const rand = Math.random();
             let cumulativeProbability = 0;
 
-            // Tonic
             cumulativeProbability += probabilities.tonic;
             if (rand < cumulativeProbability) {
                 nextKey = currentKey;
                 transitionMessage = `Staying in ${currentKey} Major.`;
             } else {
-                // Dominant
                 cumulativeProbability += probabilities.dominant;
                 if (rand < cumulativeProbability) {
                     nextKey = majorKeysCircleOfFifths[(currentKeyIndex + 1) % majorKeysCircleOfFifths.length];
                     transitionMessage = `Modulating to Dominant: ${nextKey} Major!`;
                 } else {
-                    // Subdominant
                     cumulativeProbability += probabilities.subdominant;
                     if (rand < cumulativeProbability) {
                         nextKey = majorKeysCircleOfFifths[(currentKeyIndex - 1 + majorKeysCircleOfFifths.length) % majorKeysCircleOfFifths.length];
                         transitionMessage = `Modulating to Subdominant: ${nextKey} Major!`;
                     } else {
-                        // Nearby Random (e.g., +/- 2 or 3 steps on CoF)
                         let offset;
                         do {
-                            offset = Math.floor(Math.random() * 6) - 3; // -3, -2, -1, 1, 2, 3 (avoid 0)
-                            if (offset >= 0) offset += 1; // Ensure no 0
+                            offset = Math.floor(Math.random() * 6) - 3;
+                            if (offset >= 0) offset += 1;
                         } while (offset === 0);
                         
                         const newIndex = (currentKeyIndex + offset + majorKeysCircleOfFifths.length * 2) % majorKeysCircleOfFifths.length;
@@ -1762,172 +1844,133 @@
 
         /**
          * Initializes the Web Audio API context and the main audio graph nodes.
-         * This function needs to be called after a user gesture (e.g., button click)
-         * to comply with browser autoplay policies.
          * @returns {boolean} True if audio context was successfully initialized or already exists, false otherwise.
          */
         function initAudio() {
             console.log("Attempting to initialize audio context...");
             if (!audioContext) {
                 try {
-                    showMessage("Loading Audio System...", 5000); // Show loading message
+                    showMessage("Loading Audio System...", 5000);
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-                    // Main Gain Node - first in the chain
                     masterGainNode = audioContext.createGain();
                     masterGainNode.gain.value = masterVolume;
 
-                    // Distortion Effect
                     distortionNode = audioContext.createWaveShaper();
                     distortionNode.curve = makeDistortionCurve(distortionAmount);
-                    distortionNode.oversample = '4x'; // High quality oversampling
-                    postDistortionGain = audioContext.createGain(); // For bypass
+                    distortionNode.oversample = '4x';
+                    postDistortionGain = audioContext.createGain();
 
-                    // Phaser Effect
-                    phaserInputGain = audioContext.createGain(); // Input gain for phaser bypass
-                    postPhaserGain = audioContext.createGain(); // Output gain for phaser bypass
+                    phaserInputGain = audioContext.createGain();
+                    postPhaserGain = audioContext.createGain();
 
-                    // Create phaser filter stages (all-pass filters)
                     for (let i = 0; i < PHASER_STAGES; i++) {
                         const filter = audioContext.createBiquadFilter();
                         filter.type = 'allpass';
-                        filter.frequency.value = 1000; // Base frequency, will be modulated
-                        filter.Q.value = 1; // Resonance
+                        filter.frequency.value = 1000;
+                        filter.Q.value = 1;
                         phaserFilterNodes.push(filter);
                     }
 
-                    // Connect phaser stages in series
                     for (let i = 0; i < PHASER_STAGES - 1; i++) {
                         phaserFilterNodes[i].connect(phaserFilterNodes[i + 1]);
                     }
 
-                    // Create Phaser LFO for modulation
                     phaserLFO = audioContext.createOscillator();
                     phaserLFO.type = 'sine';
                     phaserLFO.frequency.value = phaserRate;
                     phaserLFO.start(0);
 
                     phaserLfoGain = audioContext.createGain();
-                    phaserLfoGain.gain.value = phaserDepth * 1000; // Modulate frequency range
+                    phaserLfoGain.gain.value = phaserDepth * 1000;
                     phaserLFO.connect(phaserLfoGain);
 
-                    // Connect LFO to each filter's frequency parameter
                     phaserFilterNodes.forEach(filter => {
                         phaserLfoGain.connect(filter.frequency);
                     });
 
-                    // Chorus Effect
-                    chorusNode = audioContext.createDelay(0.01); // Max delay for chorus, typically very small
+                    chorusNode = audioContext.createDelay(0.01);
                     chorusLFO = audioContext.createOscillator();
                     chorusLfoGain = audioContext.createGain();
 
                     chorusLFO.type = 'sine';
-                    chorusLFO.frequency.value = 1.5; // LFO frequency (rate of modulation)
-                    chorusLfoGain.gain.value = chorusDepth; // Depth of modulation
+                    chorusLFO.frequency.value = 1.5;
+                    chorusLfoGain.gain.value = chorusDepth;
                     
                     chorusLFO.connect(chorusLfoGain);
                     chorusLfoGain.connect(chorusNode.delayTime);
-                    chorusLFO.start(audioContext.currentTime); // Start LFO immediately
+                    chorusLFO.start(audioContext.currentTime);
 
-                    // Node where all instrument outputs connect before effects
-                    // This is the source for the main audio path
-                    preCompressorGain = audioContext.createGain(); // Renamed for clarity: this is where dry and wet signals meet before compressor
+                    preCompressorGain = audioContext.createGain();
 
-                    // Delay Effect (Feedback Delay)
-                    delayNode = audioContext.createDelay(2.0); // Max delay time of 2 seconds
+                    delayNode = audioContext.createDelay(2.0);
                     delayFeedbackGain = audioContext.createGain();
-                    delaySendGain = audioContext.createGain(); // Controls how much signal goes TO the delay
+                    delaySendGain = audioContext.createGain();
 
                     delayNode.delayTime.value = delayTimeValue;
                     delayFeedbackGain.gain.value = delayFeedbackValue;
                     delaySendGain.gain.value = delaySendLevel;
 
-                    // Connect delay: preCompressorGain -> delaySendGain -> delay -> feedback -> delay -> preCompressorGain (wet return)
                     delaySendGain.connect(delayNode);
                     delayNode.connect(delayFeedbackGain);
-                    delayFeedbackGain.connect(delayNode); // Feedback loop
-                    delayNode.connect(preCompressorGain); // Wet delay signal returns to preCompressorGain
+                    delayFeedbackGain.connect(delayNode);
+                    delayNode.connect(preCompressorGain);
 
-                    // Compressor Node
                     compressorNode = audioContext.createDynamicsCompressor();
                     compressorNode.threshold.value = compThreshold;
-                    compressorNode.knee.value = 30; // Default value, not exposed to UI
+                    compressorNode.knee.value = 30;
                     compressorNode.ratio.value = compRatio;
-                    compressorNode.attack.value = 0.003; // Default value
-                    compressorNode.release.value = 0.25; // Default value
+                    compressorNode.attack.value = 0.003;
+                    compressorNode.release.value = 0.25;
 
-                    // Reverb Effect (Convolver)
                     convolverNode = audioContext.createConvolver();
-                    reverbGainNode = audioContext.createGain(); // Wet signal gain for reverb
-                    dryGainNode = audioContext.createGain(); // Dry signal gain for reverb mix
+                    reverbGainNode = audioContext.createGain();
+                    dryGainNode = audioContext.createGain();
 
-                    // Create a simple synthetic impulse response for reverb
-                    const impulseLength = 2; // seconds
+                    const impulseLength = 2;
                     const sampleRate = audioContext.sampleRate;
                     const impulseBuffer = audioContext.createBuffer(2, sampleRate * impulseLength, sampleRate);
                     const leftChannel = impulseBuffer.getChannelData(0);
                     const rightChannel = impulseBuffer.getChannelData(1);
 
                     for (let i = 0; i < sampleRate * impulseLength; i++) {
-                        // Simple decaying noise burst
                         leftChannel[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / (sampleRate * impulseLength), 2);
                         rightChannel[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / (sampleRate * impulseLength), 2);
                     }
                     convolverNode.buffer = impulseBuffer;
                     reverbGainNode.gain.value = reverbMix;
-                    dryGainNode.gain.value = 1 - reverbMix; // Initial dry mix
+                    dryGainNode.gain.value = 1 - reverbMix;
 
-                    // Analyser Node for Visualization and Volume Meter
                     analyserNode = audioContext.createAnalyser();
-                    analyserNode.fftSize = 256; // For time domain data
-                    analyserNode.smoothingTimeConstant = 0.8; // Smoother visualization
+                    analyserNode.fftSize = 256;
+                    analyserNode.smoothingTimeConstant = 0.8;
                     analyserNode.minDecibels = -90;
                     analyserNode.maxDecibels = -10;
                     
-                    // Initialize data arrays with correct sizes
-                    dataArray = new Uint8Array(analyserNode.frequencyBinCount); // For time domain visualization
-                    frequencyDataArray = new Uint8Array(analyserNode.frequencyBinCount); // For frequency visualization and volume meter
+                    dataArray = new Uint8Array(analyserNode.frequencyBinCount);
+                    frequencyDataArray = new Uint8Array(analyserNode.frequencyBinCount);
 
-                    // Connect the main audio graph:
-                    // masterGainNode -> Distortion -> Phaser -> Chorus -> preCompressorGain -> Compressor -> Analyser -> Destination
-                    // Send effects (Delay, Reverb) from preCompressorGain
+                    updateDistortionBypassConnection();
+                    updatePhaserBypassConnection();
+                    updateChorusBypassConnection();
 
-                    // 1. Master Gain -> Distortion (if active) OR postDistortionGain
-                    updateDistortionBypassConnection(); // Handles masterGainNode -> distortion/postDistortionGain
-
-                    // 2. postDistortionGain -> Phaser (if active) OR postPhaserGain
-                    updatePhaserBypassConnection(); // Handles postDistortionGain -> phaser/postPhaserGain
-
-                    // 3. postPhaserGain -> Chorus (if active) OR preCompressorGain
-                    updateChorusBypassConnection(); // Handles postPhaserGain -> chorus/preCompressorGain
-
-                    // 4. preCompressorGain -> Compressor
                     preCompressorGain.connect(compressorNode);
-
-                    // 5. Compressor -> Analyser
                     compressorNode.connect(analyserNode);
-
-                    // 6. Analyser always connects to destination
                     analyserNode.connect(audioContext.destination);
 
-                    // Connect send effects (Delay, Reverb) from preCompressorGain
-                    preCompressorGain.connect(delaySendGain); // Send signal to delay
-                    // Reverb is now connected from preCompressorGain to dry/wet paths
+                    preCompressorGain.connect(delaySendGain);
                     updateReverbBypassConnection();
 
-                    // Initialize UI elements for visualization and volume meter
                     audioVisualizerCanvas = document.getElementById('audioVisualizer');
                     audioVisualizerCtx = audioVisualizerCanvas.getContext('2d');
                     volumeMeterElement = document.getElementById('volumeMeter');
                     volumeMeterFillElement = document.getElementById('volumeMeterFill');
                     volumePeakElement = document.getElementById('volumePeak');
 
-                    // Set initial values for delay
                     delayNode.delayTime.value = delayTimeValue;
                     delayFeedbackGain.gain.value = delayFeedbackValue;
                     delaySendGain.gain.value = delaySendLevel;
 
-                    // Initialize recorder
                     looperRecorder = new EnhancedLooperRecorder(audioContext);
 
                     showMessage(`Audio context initialized. Master Gain: ${masterVolume.toFixed(2)}`);
@@ -1956,7 +1999,7 @@
          * @param {number} velocity - The velocity (0-1) of the note.
          */
         function playNote(frequency, startTime, duration, detuneValue = currentDetune, filterFreq = currentFilterFrequency, filterQ = currentFilterQ, instrumentType = 'synth', velocity = 1.0) {
-            if (!audioContext || !masterGainNode || !preCompressorGain) { // Ensure preCompressorGain is available
+            if (!audioContext || !masterGainNode || !preCompressorGain) {
                 console.warn("Cannot play note: AudioContext or main gain nodes not available.");
                 return;
             }
@@ -1977,28 +2020,28 @@
             let sustainLevel = 0.5;
             let releaseTime = 0.2;
             let initialGain;
-            let oscType; // Determined by UI selection
+            let oscType;
 
             switch (instrumentType) {
                 case 'bass':
-                    oscType = bassOscillatorType; // Use selected type
+                    oscType = bassOscillatorType;
                     attackTime = 0.02;
                     decayTime = 0.3;
                     sustainLevel = 0.5;
                     releaseTime = 0.2;
-                    initialGain = bassVolume * velocity; // Apply velocity
+                    initialGain = bassVolume * velocity;
                     filterNode.type = 'lowpass';
                     filterNode.frequency.setValueAtTime(400, actualStartTime);
                     filterNode.Q.setValueAtTime(0.8, actualStartTime);
                     break;
                 case 'synth':
                 default:
-                    oscType = synthOscillatorType; // Use selected type
+                    oscType = synthOscillatorType;
                     attackTime = 0.1;
                     decayTime = 0.5;
                     sustainLevel = 0.6;
                     releaseTime = 0.8;
-                    initialGain = synthVolume * velocity; // Apply velocity
+                    initialGain = synthVolume * velocity;
                     filterNode.type = 'lowpass';
                     
                     const initialFilterFreq = filterFreq * (1 + (Math.random() - 0.5) * 0.2 * humanizationFactor);
@@ -2016,7 +2059,7 @@
 
             oscillator.connect(filterNode);
             filterNode.connect(gainNode);
-            gainNode.connect(masterGainNode); // Connect to masterGainNode
+            gainNode.connect(masterGainNode);
             
             gainNode.gain.setValueAtTime(0, actualStartTime);
             gainNode.gain.linearRampToValueAtTime(initialGain * dynamicFactor, actualStartTime + attackTime);
@@ -2056,20 +2099,20 @@
             const actualStartTime = Math.max(0, startTime);
 
             drumOscillator.type = 'sine';
-            drumOscillator.frequency.setValueAtTime(120, actualStartTime); // Start frequency
-            drumOscillator.frequency.exponentialRampToValueAtTime(30, actualStartTime + 0.1); // Decay to 30Hz
+            drumOscillator.frequency.setValueAtTime(120, actualStartTime);
+            drumOscillator.frequency.exponentialRampToValueAtTime(30, actualStartTime + 0.1);
 
             drumFilter.type = 'lowpass';
-            drumFilter.frequency.setValueAtTime(500, actualStartTime); // Initial filter frequency
-            drumFilter.frequency.exponentialRampToValueAtTime(100, actualStartTime + 0.15); // Decay filter
+            drumFilter.frequency.setValueAtTime(500, actualStartTime);
+            drumFilter.frequency.exponentialRampToValueAtTime(100, actualStartTime + 0.15);
             drumFilter.Q.setValueAtTime(0.8, actualStartTime);
 
             drumOscillator.connect(drumFilter);
             drumFilter.connect(drumGain);
-            drumGain.connect(masterGainNode); // Connect to masterGainNode
+            drumGain.connect(masterGainNode);
 
-            drumGain.gain.setValueAtTime(kickVolume * velocity, actualStartTime); // Apply velocity
-            drumGain.gain.exponentialRampToValueAtTime(0.001, actualStartTime + 0.2); // Quick decay
+            drumGain.gain.setValueAtTime(kickVolume * velocity, actualStartTime);
+            drumGain.gain.exponentialRampToValueAtTime(0.001, actualStartTime + 0.2);
 
             drumOscillator.start(actualStartTime);
             drumOscillator.stop(actualStartTime + 0.2);
@@ -2094,7 +2137,6 @@
 
             const actualStartTime = Math.max(0, startTime);
 
-            // Noise component
             const noise = audioContext.createBufferSource();
             const bufferSize = audioContext.sampleRate * 0.2;
             const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
@@ -2105,26 +2147,24 @@
             noise.buffer = buffer;
 
             const noiseGain = audioContext.createGain();
-            noiseGain.gain.setValueAtTime(snareVolume * 0.7 * velocity, actualStartTime); // Apply velocity
+            noiseGain.gain.setValueAtTime(snareVolume * 0.7 * velocity, actualStartTime);
             noiseGain.gain.exponentialRampToValueAtTime(0.001, actualStartTime + 0.15);
             noise.connect(noiseGain);
 
-            // Tone component
             const osc = audioContext.createOscillator();
             osc.type = 'triangle';
             osc.frequency.setValueAtTime(200, actualStartTime);
             osc.frequency.exponentialRampToValueAtTime(100, actualStartTime + 0.1);
 
             const oscGain = audioContext.createGain();
-            oscGain.gain.setValueAtTime(snareVolume * 1.0 * velocity, actualStartTime); // Apply velocity
+            oscGain.gain.setValueAtTime(snareVolume * 1.0 * velocity, actualStartTime);
             oscGain.gain.exponentialRampToValueAtTime(0.001, actualStartTime + 0.1);
             osc.connect(oscGain);
 
-            // Mixer for noise and tone
             const mixer = audioContext.createGain();
             noiseGain.connect(mixer);
             oscGain.connect(mixer);
-            mixer.connect(masterGainNode); // Connect to masterGainNode
+            mixer.connect(masterGainNode);
 
             noise.start(actualStartTime);
             osc.start(actualStartTime);
@@ -2155,18 +2195,18 @@
             const filter = audioContext.createBiquadFilter();
 
             osc.type = 'square';
-            osc.frequency.setValueAtTime(10000, actualStartTime); // High frequency for hi-hat
+            osc.frequency.setValueAtTime(10000, actualStartTime);
             
             filter.type = 'highpass';
-            filter.frequency.setValueAtTime(7000, actualStartTime); // Filter out lower frequencies
+            filter.frequency.setValueAtTime(7000, actualStartTime);
             filter.Q.setValueAtTime(0.5, actualStartTime);
 
             osc.connect(filter);
             filter.connect(gain);
-            gain.connect(masterGainNode); // Connect to masterGainNode
+            gain.connect(masterGainNode);
 
-            gain.gain.setValueAtTime(hihatVolume * 0.7 * velocity, actualStartTime); // Apply velocity
-            gain.gain.exponentialRampToValueAtTime(0.001, actualStartTime + 0.05); // Quick decay for closed hi-hat
+            gain.gain.setValueAtTime(hihatVolume * 0.7 * velocity, actualStartTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, actualStartTime + 0.05);
 
             osc.start(actualStartTime);
             osc.stop(actualStartTime + 0.05);
@@ -2193,7 +2233,7 @@
             const filter = audioContext.createBiquadFilter();
 
             osc.type = 'square';
-            osc.frequency.setValueAtTime(8000, actualStartTime); // Slightly lower frequency for open hi-hat
+            osc.frequency.setValueAtTime(8000, actualStartTime);
             
             filter.type = 'highpass';
             filter.frequency.setValueAtTime(5000, actualStartTime);
@@ -2201,10 +2241,10 @@
 
             osc.connect(filter);
             filter.connect(gain);
-            gain.connect(masterGainNode); // Connect to masterGainNode
+            gain.connect(masterGainNode);
 
-            gain.gain.setValueAtTime(hihatVolume * 1.0 * velocity, actualStartTime); // Apply velocity
-            gain.gain.exponentialRampToValueAtTime(0.001, actualStartTime + 0.2); // Longer decay for open hi-hat
+            gain.gain.setValueAtTime(hihatVolume * 1.0 * velocity, actualStartTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, actualStartTime + 0.2);
 
             osc.start(actualStartTime);
             osc.stop(actualStartTime + 0.2);
@@ -2218,7 +2258,7 @@
 
         /**
          * Plays an arpeggiated sequence of notes for the synth.
-         * @param {Array<string>} notesArray - Array of note names (e.g., ['C4', 'E4', 'G4']).
+         * @param {Array<string>} notesArray - Array of note names.
          * @param {number} startTime - The AudioContext.currentTime when the arpeggio should start.
          * @param {number} totalDuration - The total duration the arpeggio should occupy.
          * @param {number} detuneValue - The detune value in cents.
@@ -2229,15 +2269,14 @@
         function playArpeggio(notesArray, startTime, totalDuration, detuneValue, filterFreq, filterQ, velocity) {
             if (!audioContext || notesArray.length === 0) return;
 
-            const noteDuration = totalDuration / notesArray.length; // Duration for each note in the arpeggio
+            const noteDuration = totalDuration / notesArray.length;
             let currentArpTime = startTime;
 
             notesArray.forEach(noteName => {
                 const frequency = notes[noteName];
                 if (frequency) {
-                    // Apply slight velocity variation for humanization within arpeggio
                     const arpVelocity = velocity * (1 + (Math.random() - 0.5) * 0.2);
-                    playNote(frequency, currentArpTime, noteDuration * 0.8, detuneValue, filterFreq, filterQ, 'synth', arpVelocity); // Shorten note slightly for separation
+                    playNote(frequency, currentArpTime, noteDuration * 0.8, detuneValue, filterFreq, filterQ, 'synth', arpVelocity);
                 }
                 currentArpTime += noteDuration;
             });
@@ -2245,13 +2284,11 @@
 
         /**
          * Applies subtle, random changes to various musical parameters for the next musical step.
-         * These changes are applied on top of the user-controlled knob values.
          */
         function applySubtleChanges() {
             const driftScale = fibonacciDriftScales[currentFibonacciDriftScaleIndex];
-            const interpolationFactor = 0.05; // How quickly current values approach targets
+            const interpolationFactor = 0.05;
 
-            // Tempo drift (already uses target/current)
             targetTempo += tempoDriftDirection * (Math.random() * driftScale * 10 + 2);
             if (targetTempo > 650) {
                 tempoDriftDirection = -1;
@@ -2259,9 +2296,8 @@
                 tempoDriftDirection = 1;
             }
             targetTempo = Math.max(300, Math.min(900, targetTempo));
-            currentTempo += (targetTempo - currentTempo) * interpolationFactor; // Smoother interpolation
+            currentTempo += (targetTempo - currentTempo) * interpolationFactor;
 
-            // Detune drift
             targetDetune += detuneDriftDirection * (Math.random() * driftScale * 2 + 0.5);
             if (targetDetune > 20) {
                 detuneDriftDirection = -1;
@@ -2269,9 +2305,8 @@
                 detuneDriftDirection = 1;
             }
             targetDetune = Math.max(-20, Math.min(20, targetDetune));
-            currentDetune += (targetDetune - currentDetune) * interpolationFactor; // Smoother interpolation
+            currentDetune += (targetDetune - currentDetune) * interpolationFactor;
 
-            // Filter Frequency drift
             targetFilterFrequency += filterDriftDirection * (Math.random() * driftScale * 100 + 20);
             if (targetFilterFrequency > 4000) {
                 filterDriftDirection = -1;
@@ -2279,24 +2314,20 @@
                 filterDriftDirection = 1;
             }
             targetFilterFrequency = Math.max(400, Math.min(4000, targetFilterFrequency));
-            currentFilterFrequency += (targetFilterFrequency - currentFilterFrequency) * interpolationFactor; // Smoother interpolation
+            currentFilterFrequency += (targetFilterFrequency - currentFilterFrequency) * interpolationFactor;
 
-            // Filter Q drift
             targetFilterQ += (Math.random() - 0.5) * driftScale * 0.8;
             targetFilterQ = Math.max(0.3, Math.min(4, targetFilterQ));
-            currentFilterQ += (targetFilterQ - currentFilterQ) * interpolationFactor; // Smoother interpolation
+            currentFilterQ += (targetFilterQ - currentFilterQ) * interpolationFactor;
 
-            // Base Note Duration drift
             targetBaseNoteDuration += (Math.random() - 0.5) * driftScale * 0.08;
             targetBaseNoteDuration = Math.max(0.2, Math.min(0.8, targetBaseNoteDuration));
-            baseNoteDuration += (targetBaseNoteDuration - baseNoteDuration) * interpolationFactor; // Smoother interpolation
+            baseNoteDuration += (targetBaseNoteDuration - baseNoteDuration) * interpolationFactor;
 
-            // Humanization Factor drift
             targetHumanizationFactor += (Math.random() - 0.5) * driftScale * 0.15;
             targetHumanizationFactor = Math.max(0.1, Math.min(1.0, targetHumanizationFactor));
-            humanizationFactor += (targetHumanizationFactor - humanizationFactor) * interpolationFactor; // Smoother interpolation
+            humanizationFactor += (targetHumanizationFactor - humanizationFactor) * interpolationFactor;
 
-            // Delay Time drift
             targetDelayTimeValue += delayTimeDriftDirection * (Math.random() - 0.5) * driftScale * 0.05;
             if (targetDelayTimeValue > 1.5) {
                 delayTimeDriftDirection = -1;
@@ -2304,10 +2335,9 @@
                 delayTimeDriftDirection = 1;
             }
             targetDelayTimeValue = Math.max(0.01, Math.min(2.0, targetDelayTimeValue));
-            delayTimeValue += (targetDelayTimeValue - delayTimeValue) * interpolationFactor; // Smoother interpolation
+            delayTimeValue += (targetDelayTimeValue - delayTimeValue) * interpolationFactor;
             if (audioContext && delayNode) delayNode.delayTime.setValueAtTime(delayTimeValue, audioContext.currentTime);
 
-            // Delay Feedback drift
             targetDelayFeedbackValue += delayFeedbackDriftDirection * (Math.random() - 0.5) * driftScale * 0.03;
             if (targetDelayFeedbackValue > 0.9) {
                 delayFeedbackDriftDirection = -1;
@@ -2315,14 +2345,12 @@
                 delayFeedbackDriftDirection = 1;
             }
             targetDelayFeedbackValue = Math.max(0, Math.min(0.95, targetDelayFeedbackValue));
-            delayFeedbackValue += (targetDelayFeedbackValue - delayFeedbackValue) * interpolationFactor; // Smoother interpolation
+            delayFeedbackValue += (targetDelayFeedbackValue - delayFeedbackValue) * interpolationFactor;
             if (audioContext && delayFeedbackGain) delayFeedbackGain.gain.setValueAtTime(delayFeedbackValue, audioContext.currentTime);
         }
 
         /**
-         * The main audio scheduling loop. It continuously checks if there are events
-         * to be played in the near future and schedules them using AudioContext.currentTime.
-         * This method is more precise than setTimeout for timing musical events.
+         * The main audio scheduling loop.
          */
         function scheduler() {
             if (!isPlaying || !audioContext) {
@@ -2333,17 +2361,15 @@
             while (nextNoteTime < audioContext.currentTime + 0.1) {
                 const currentStep = currentSectionPhrase[currentPhraseIndex];
                 
-                // Robust check for currentStep and its essential properties
                 if (!currentStep || typeof currentStep !== 'object' || !Array.isArray(currentStep.synth) || !Array.isArray(currentStep.bass) || typeof currentStep.percussion !== 'object' || currentStep.percussion === null) {
                     console.error(`Invalid or malformed currentStep at index ${currentPhraseIndex}:`, currentStep);
-                    // Attempt to recover by forcing a section transition
-                    currentPhraseIndex = 0; // Reset index for the new section
-                    stepsPlayedInCurrentSection = currentSectionTotalSteps; // Force transition
-                    continue; // Skip to the next iteration of the while loop
+                    currentPhraseIndex = 0;
+                    stepsPlayedInCurrentSection = currentSectionTotalSteps;
+                    continue;
                 }
 
                 const duration = baseNoteDuration;
-                const baseVelocity = 0.7 + (Math.random() * 0.3); // Base velocity for notes
+                const baseVelocity = 0.7 + (Math.random() * 0.3);
 
                 const effectiveDelaySend = (currentStep.delaySend !== undefined ? currentStep.delaySend : 0.5) * delaySendLevel;
                 if (audioContext && delaySendGain) {
@@ -2376,7 +2402,6 @@
                     });
                 }
 
-                // Percussion logic updated to use probability and velocity
                 if (currentStep.percussion) {
                     if (currentStep.percussion.kick && currentStep.percussion.kick.active && Math.random() < currentStep.percussion.kick.probability) {
                         playDrum(nextNoteTime, currentStep.percussion.kick.velocity);
@@ -2393,7 +2418,7 @@
                     }
                 }
 
-                nextNoteTime += (currentTempo / 1000); // Use the dynamically adjusted currentTempo
+                nextNoteTime += (currentTempo / 1000);
                 
                 stepsPlayedInCurrentSection++;
                 currentPhraseIndex++;
@@ -2413,61 +2438,53 @@
 
                     if (currentSongSectionIndex >= songStructure.length) {
                         currentSongSectionIndex = 0;
-                        songIterationCount++; // Increment song iteration count
-                        updateSongIterationDisplay(); // Update display
+                        songIterationCount++;
+                        updateSongIterationDisplay();
                         console.log("End of song structure reached. Looping back to Intro. Song Iteration:", songIterationCount);
                     }
 
                     const nextSectionDef = songStructure[currentSongSectionIndex];
                     currentSectionType = nextSectionDef.type;
-                    let phraseToUse = []; // Temporary variable to hold the phrase before assignment
+                    let phraseToUse = [];
                     
-                    // Key Change Logic
                     let previousKey = currentKey;
                     sectionsSinceLastKeyChange++;
 
                     if (sectionsSinceLastKeyChange >= sectionsPerKeyChange) {
-                        currentKey = selectNextKey(previousKey); // Use the new function for weighted key selection
-                        sectionsSinceLastKeyChange = 0; // Reset counter
-                        // Introduce variability to the next key change interval
-                        sectionsPerKeyChange = Math.floor(Math.random() * 3) + 2; // Randomly 2, 3, or 4 sections
+                        currentKey = selectNextKey(previousKey);
+                        sectionsSinceLastKeyChange = 0;
+                        sectionsPerKeyChange = Math.floor(Math.random() * 3) + 2;
                         console.log(`Next key change will happen in ${sectionsPerKeyChange} sections.`);
                     } else {
-                        // If not time for a key change, just keep the current key
-                        showMessage(`Staying in ${currentKey} Major.`, 2500); // Re-emphasize current key
+                        showMessage(`Staying in ${currentKey} Major.`, 2500);
                     }
 
                     const semitonesToTranspose = keyToSemitoneOffsetFromC[currentKey] - keyToSemitoneOffsetFromC['C'];
 
                     if (currentSectionType === 'verse' && verseIterationCount % 2 === 0) {
-                        // This block handles Raga sections
-                        const selectedRagaName = selectTimeAppropriateRaga(); // Use the function to select a time-appropriate raga
-                        currentSectionName = `raga${selectedRagaName.charAt(0).toUpperCase() + selectedRagaName.slice(1)}Phrase`; // Format for display
+                        const selectedRagaName = selectTimeAppropriateRaga();
+                        currentSectionName = `raga${selectedRagaName.charAt(0).toUpperCase() + selectedRagaName.slice(1)}Phrase`;
                         
-                        const selectedRagaScale = ragaScales[selectedRagaName]; // Get the actual scale array
+                        const selectedRagaScale = ragaScales[selectedRagaName];
 
-                        // Safeguard: Ensure selectedRagaScale is a valid, non-empty array
                         if (selectedRagaScale && Array.isArray(selectedRagaScale) && selectedRagaScale.length > 0) {
-                            // Transpose the Raga scale from its base (C) to the new key
                             const transposedRagaScale = transposeNotes(selectedRagaScale, semitonesToTranspose);
                             phraseToUse = generateRagaMelody(transposedRagaScale, 8, humanizationFactor);
                         } else {
                             console.error(`Invalid or empty Raga scale found for name: ${selectedRagaName}. Falling back to a default verse.`);
-                            currentSectionName = getRandomNormalVerseVariation('verse1'); // Fallback to a known good verse
-                            // Transpose the fallback phrase to the new key
+                            currentSectionName = getRandomNormalVerseVariation('verse1');
                             phraseToUse = musicalPhrases[currentSectionName].map(step => ({
                                 ...step,
                                 bass: transposeNotes(step.bass, semitonesToTranspose),
                                 synth: transposeNotes(step.synth, semitonesToTranspose)
                             }));
                         }
-                    } else { // Normal verse variations or other sections
+                    } else {
                         if (currentSectionType === 'verse') {
                             currentSectionName = getRandomNormalVerseVariation(nextSectionDef.baseName);
                         } else {
-                            currentSectionName = nextSectionDef.type; // For intro, chorus, bridge, outro
+                            currentSectionName = nextSectionDef.type;
                         }
-                        // Transpose the base phrase (which is in C) to the new key
                         const basePhrase = musicalPhrases[currentSectionName];
                         if (basePhrase && Array.isArray(basePhrase)) {
                              phraseToUse = basePhrase.map(step => ({
@@ -2486,11 +2503,8 @@
                         }
                     }
                     
-                    // Assign the determined/generated phrase to currentSectionPhrase
                     currentSectionPhrase = phraseToUse;
 
-                    // Safeguard: Ensure the phrase is not empty after selection/generation.
-                    // If it is, fall back to a known good phrase.
                     if (!currentSectionPhrase || currentSectionPhrase.length === 0) {
                         console.warn(`Section '${currentSectionName}' resulted in an empty phrase. Falling back to intro.`);
                         currentSectionName = 'intro';
@@ -2499,11 +2513,10 @@
                                 bass: transposeNotes(step.bass, semitonesToTranspose),
                                 synth: transposeNotes(step.synth, semitonesToTranspose)
                             }));
-                        currentKey = songStructure[0].initialKey || 'C'; // Reset key to intro's key
+                        currentKey = songStructure[0].initialKey || 'C';
                         currentSectionTotalSteps = currentSectionPhrase.length * nextSectionDef.durationMultiplier;
                     }
 
-                    // Calculate total steps based on the *final* currentSectionPhrase length
                     currentSectionTotalSteps = currentSectionPhrase.length * nextSectionDef.durationMultiplier;
 
                     console.log(`Transitioning to section: ${currentSectionName} (type: ${currentSectionType}) in ${currentKey} Major for ${currentSectionTotalSteps} steps. Humanization Factor: ${humanizationFactor.toFixed(2)}`);
@@ -2515,7 +2528,7 @@
         }
 
         /**
-         * Starts the music looping. Handles initial audio context setup and resumption.
+         * Starts the music looping.
          */
         function startLoop() {
             console.log("Start button clicked. Attempting to start loop.");
@@ -2553,20 +2566,19 @@
             nextNoteTime = audioContext.currentTime;
             
             currentSongSectionIndex = 0;
-            songIterationCount = 0; // Reset iteration count on fresh start
-            updateSongIterationDisplay(); // Update display
+            songIterationCount = 0;
+            updateSongIterationDisplay();
 
             const initialSectionDef = songStructure[currentSongSectionIndex];
             currentSectionType = initialSectionDef.type;
-            currentKey = initialSectionDef.initialKey || 'C'; // Set initial key
+            currentKey = initialSectionDef.initialKey || 'C';
 
             let initialPhraseToUse = [];
             const semitonesToTranspose = keyToSemitoneOffsetFromC[currentKey] - keyToSemitoneOffsetFromC['C'];
 
             if (currentSectionType === 'verse' && verseIterationCount % 2 === 0) {
                 verseIterationCount = 1;
-                currentSectionName = initialSectionDef.baseName + '_A'; // Start with verse1_A
-                // Transpose the initial verse phrase to the initial key
+                currentSectionName = initialSectionDef.baseName + '_A';
                 const basePhrase = musicalPhrases[currentSectionName];
                 initialPhraseToUse = basePhrase.map(step => ({
                     ...step,
@@ -2575,8 +2587,7 @@
                 }));
                 console.log(`Forcing initial verse to start with: ${currentSectionName} in ${currentKey} Major`);
             } else {
-                currentSectionName = initialSectionDef.type; // For intro, chorus, bridge, outro
-                // Transpose the initial non-verse phrase to its initial key
+                currentSectionName = initialSectionDef.type;
                 const basePhrase = musicalPhrases[currentSectionName];
                 initialPhraseToUse = basePhrase.map(step => ({
                     ...step,
@@ -2585,19 +2596,15 @@
                 }));
             }
 
-            currentSectionPhrase = initialPhraseToUse; // Assign the determined phrase
+            currentSectionPhrase = initialPhraseToUse;
 
             shuffleArray(availableRagas);
 
             currentPhraseIndex = 0;
             stepsPlayedInCurrentSection = 0;
-            sectionsSinceLastKeyChange = 0; // Reset key change counter at start
-            sectionsPerKeyChange = Math.floor(Math.random() * 3) + 2; // Initialize with random 2-4 sections
+            sectionsSinceLastKeyChange = 0;
+            sectionsPerKeyChange = Math.floor(Math.random() * 3) + 2;
 
-            // Calculate total steps based on the assigned currentSectionPhrase length
-            currentSectionTotalSteps = currentSectionPhrase.length * initialSectionDef.durationMultiplier;
-
-            // Safeguard for initial phrase if it somehow ends up empty (though unlikely for 'intro')
             if (!currentSectionPhrase || currentSectionPhrase.length === 0) {
                 console.warn(`Initial section phrase for '${currentSectionName}' is empty. Falling back to intro.`);
                 currentSectionName = 'intro';
@@ -2606,9 +2613,11 @@
                                 bass: transposeNotes(step.bass, semitonesToTranspose),
                                 synth: transposeNotes(step.synth, semitonesToTranspose)
                             }));
-                currentKey = songStructure[0].initialKey || 'C'; // Reset key to intro's key
+                currentKey = songStructure[0].initialKey || 'C';
                 currentSectionTotalSteps = currentSectionPhrase.length * initialSectionDef.durationMultiplier;
             }
+
+            currentSectionTotalSteps = currentSectionPhrase.length * initialSectionDef.durationMultiplier;
 
             updateSectionDisplay();
             console.log(`Starting with section: ${currentSectionName} (type: ${currentSectionType}) in ${currentKey} Major for ${currentSectionTotalSteps} steps. Humanization Factor: ${humanizationFactor.toFixed(2)}`);
@@ -2617,16 +2626,16 @@
             masterGainNode.gain.linearRampToValueAtTime(masterVolume, audioContext.currentTime + 4);
 
             scheduler();
-            initializeVisualization(); // Call the visualization function after audio context is running
+            initializeVisualization();
             
             document.getElementById('startButton').disabled = true;
-            document.getElementById('stopButton').disabled = false; /* Corrected: Enable stop button */
+            document.getElementById('stopButton').disabled = false;
             showMessage("Music started. Enjoy the evolving structured loop!");
             console.log("Music loop started.");
         }
 
         /**
-         * Stops the music looping by clearing the scheduler timeout and suspending the audio context.
+         * Stops the music looping.
          */
         function stopLoop() {
             console.log("Stop button clicked. Attempting to stop loop.");
@@ -2662,22 +2671,18 @@
 
         /**
          * The main drawing loop for audio visualization.
-         * Draws waveform, frequency bars, and updates the volume meter.
          */
         function initializeVisualization() {
             if (!analyserNode || !audioVisualizerCtx) return;
             
-            // Start the drawing loop
             drawVisualizationLoop();
         }
 
         /**
          * The main drawing loop for audio visualization.
-         * Draws waveform, frequency bars, and updates the volume meter.
          */
         function drawVisualizationLoop() {
             if (!isPlaying || !analyserNode || !audioVisualizerCtx) {
-                // Clear canvas and reset meters when not playing
                 if (audioVisualizerCtx) {
                     audioVisualizerCtx.clearRect(0, 0, audioVisualizerCanvas.width, audioVisualizerCanvas.height);
                 }
@@ -2695,45 +2700,40 @@
             const width = audioVisualizerCanvas.width;
             const height = audioVisualizerCanvas.height;
 
-            // Get both waveform and frequency data
             analyserNode.getByteTimeDomainData(dataArray);
             analyserNode.getByteFrequencyData(frequencyDataArray);
             
-            // Clear canvas
             audioVisualizerCtx.fillStyle = '#000';
             audioVisualizerCtx.fillRect(0, 0, width, height);
             
-            // Draw based on visualizationMode
             if (visualizationMode === 'spectrum') {
-                // Draw frequency spectrum (bars) with gradient
                 const gradient = audioVisualizerCtx.createLinearGradient(0, 0, 0, height);
-                gradient.addColorStop(0, '#ff0000'); // Red at the top (highest intensity)
-                gradient.addColorStop(0.5, '#ffff00'); // Yellow in the middle
-                gradient.addColorStop(1, '#00ff00'); // Green at the bottom (lowest intensity)
+                gradient.addColorStop(0, '#ff0000');
+                gradient.addColorStop(0.5, '#ffff00');
+                gradient.addColorStop(1, '#00ff00');
                 audioVisualizerCtx.fillStyle = gradient;
                 
-                const barWidth = width / analyserNode.frequencyBinCount; // Adjusted for better distribution
+                const barWidth = width / analyserNode.frequencyBinCount;
                 
                 for(let i = 0; i < analyserNode.frequencyBinCount; i++) {
                     const barHeight = (frequencyDataArray[i] / 255) * height;
                     audioVisualizerCtx.fillRect(
                         i * barWidth,
                         height - barHeight,
-                        barWidth - 1, // Small gap between bars
+                        barWidth - 1,
                         barHeight
                     );
                 }
             } else if (visualizationMode === 'waveform') {
-                // Draw waveform overlay
                 audioVisualizerCtx.beginPath();
-                audioVisualizerCtx.strokeStyle = 'rgba(255, 255, 255, 0.7)'; // Semi-transparent white for waveform
+                audioVisualizerCtx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
                 audioVisualizerCtx.lineWidth = 2;
                 
                 const sliceWidth = width * 1.0 / dataArray.length;
                 let x = 0;
                 
                 for(let i = 0; i < dataArray.length; i++) {
-                    const v = dataArray[i] / 128.0; // Normalize to 0-2
+                    const v = dataArray[i] / 128.0;
                     const y = v * height/2;
                     
                     if(i === 0) {
@@ -2747,11 +2747,10 @@
                 audioVisualizerCtx.lineTo(width, height/2);
                 audioVisualizerCtx.stroke();
             } else if (visualizationMode === 'both') {
-                // Draw frequency spectrum (bars) with gradient
                 const gradient = audioVisualizerCtx.createLinearGradient(0, 0, 0, height);
-                gradient.addColorStop(0, '#ff0000'); // Red at the top (highest intensity)
-                gradient.addColorStop(0.5, '#ffff00'); // Yellow in the middle
-                gradient.addColorStop(1, '#00ff00'); // Green at the bottom (lowest intensity)
+                gradient.addColorStop(0, '#ff0000');
+                gradient.addColorStop(0.5, '#ffff00');
+                gradient.addColorStop(1, '#00ff00');
                 audioVisualizerCtx.fillStyle = gradient;
                 
                 const barWidth = width / analyserNode.frequencyBinCount;
@@ -2766,7 +2765,6 @@
                     );
                 }
 
-                // Draw waveform overlay
                 audioVisualizerCtx.beginPath();
                 audioVisualizerCtx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
                 audioVisualizerCtx.lineWidth = 2;
@@ -2789,16 +2787,12 @@
                 audioVisualizerCtx.lineTo(width, height/2);
                 audioVisualizerCtx.stroke();
             } else if (visualizationMode === 'bands') {
-                // Draw separate bands for bass, mid, treble
                 const nyquist = audioContext.sampleRate / 2;
                 const binWidth = nyquist / analyserNode.frequencyBinCount;
 
-                // Define frequency ranges for bands (approximate)
-                const bassMaxFreq = 250; // Hz
-                const midMaxFreq = 2000; // Hz
-                // Treble is everything above midMaxFreq
+                const bassMaxFreq = 250;
+                const midMaxFreq = 2000;
 
-                // Calculate bin indices for each band
                 const bassEndBin = Math.floor(bassMaxFreq / binWidth);
                 const midEndBin = Math.floor(midMaxFreq / binWidth);
 
@@ -2806,7 +2800,6 @@
                 let midEnergy = 0;
                 let trebleEnergy = 0;
 
-                // Sum energy for each band
                 for (let i = 0; i < analyserNode.frequencyBinCount; i++) {
                     const value = frequencyDataArray[i];
                     if (i <= bassEndBin) {
@@ -2818,41 +2811,36 @@
                     }
                 }
 
-                // Normalize energy (average value per bin in that band)
                 const bassAvg = bassEndBin > 0 ? bassEnergy / bassEndBin : 0;
                 const midAvg = (midEndBin - bassEndBin) > 0 ? midEnergy / (midEndBin - bassEndBin) : 0;
                 const trebleAvg = (analyserNode.frequencyBinCount - midEndBin) > 0 ? trebleEnergy / (analyserNode.frequencyBinCount - midEndBin) : 0;
 
-                const maxEnergy = 255; // Max value for byte data
+                const maxEnergy = 255;
 
-                const barWidth = (width / 3) - 5; // 3 bars with some spacing
+                const barWidth = (width / 3) - 5;
                 const spacing = 5;
 
-                // Draw Bass Bar (Reddish)
-                audioVisualizerCtx.fillStyle = `hsl(0, 100%, ${50 + (bassAvg / maxEnergy) * 40}%)`; // Adjust lightness based on intensity
+                audioVisualizerCtx.fillStyle = `hsl(0, 100%, ${50 + (bassAvg / maxEnergy) * 40}%)`;
                 const bassHeight = (bassAvg / maxEnergy) * height;
                 audioVisualizerCtx.fillRect(spacing, height - bassHeight, barWidth, bassHeight);
                 audioVisualizerCtx.fillText('Bass', spacing + barWidth / 2 - 15, height - bassHeight - 5);
 
 
-                // Draw Mid Bar (Greenish)
                 audioVisualizerCtx.fillStyle = `hsl(120, 100%, ${50 + (midAvg / maxEnergy) * 40}%)`;
                 const midHeight = (midAvg / maxEnergy) * height;
                 audioVisualizerCtx.fillRect(spacing * 2 + barWidth, height - midHeight, barWidth, midHeight);
                 audioVisualizerCtx.fillText('Mid', spacing * 2 + barWidth / 2 + barWidth - 10, height - midHeight - 5);
 
-                // Draw Treble Bar (Blueish)
                 audioVisualizerCtx.fillStyle = `hsl(240, 100%, ${50 + (trebleAvg / maxEnergy) * 40}%)`;
                 const trebleHeight = (trebleAvg / maxEnergy) * height;
                 audioVisualizerCtx.fillRect(spacing * 3 + barWidth * 2, height - trebleHeight, barWidth, trebleHeight);
                 audioVisualizerCtx.fillText('Treble', spacing * 3 + barWidth * 2 + barWidth / 2 - 20, height - trebleHeight - 5);
                 
-                audioVisualizerCtx.fillStyle = '#e0e0e0'; // Reset text color
+                audioVisualizerCtx.fillStyle = '#e0e0e0';
                 audioVisualizerCtx.font = '10px Arial';
                 audioVisualizerCtx.textAlign = 'center';
             }
             
-            // Update volume meter
             updateVolumeMeter();
         }
 
@@ -2862,36 +2850,29 @@
         function updateVolumeMeter() {
             if (!analyserNode || !volumeMeterFillElement || !volumePeakElement) return;
             
-            // frequencyDataArray is already updated in drawVisualizationLoop
-            
-            // Calculate RMS volume
             let sum = 0;
             for(let i = 0; i < frequencyDataArray.length; i++) {
                 sum += frequencyDataArray[i] * frequencyDataArray[i];
             }
             const rms = Math.sqrt(sum / frequencyDataArray.length);
-            const volume = rms / 255; // Normalize to 0-1
+            const volume = rms / 255;
             
-            // Update meter fill
             volumeMeterFillElement.style.width = `${volume * 100}%`;
             
-            // Update peak indicator
             if (volume > peakValue) {
                 peakValue = volume;
-                volumePeakElement.style.right = `${(1 - peakValue) * 100}%`; // Position from right
+                volumePeakElement.style.right = `${(1 - peakValue) * 100}%`;
                 volumePeakElement.style.opacity = '1';
                 
-                // Clear previous fade-out timeout and set a new one
                 clearTimeout(volumePeakElement.fadeTimeout);
                 volumePeakElement.fadeTimeout = setTimeout(() => {
-                    volumePeakElement.style.opacity = '0.5'; // Fade to 0.5 opacity
-                    // Start a slower decay of the peak value itself
+                    volumePeakElement.style.opacity = '0.5';
                     clearTimeout(volumePeakElement.decayTimeout);
                     volumePeakElement.decayTimeout = setTimeout(() => {
-                        peakValue *= 0.95; // Decay peak value
-                        if (peakValue < 0.01) peakValue = 0; // Reset if too low
-                    }, 500); // Start decaying peak value after it fades slightly
-                }, 1000); // Peak indicator fades after 1 second
+                        peakValue *= 0.95;
+                        if (peakValue < 0.01) peakValue = 0;
+                    }, 500);
+                }, 1000);
             }
         }
 
@@ -2901,8 +2882,8 @@
          */
         class PresetManager {
             constructor() {
-                this.storageKeyPrefix = 'simple_relax_preset_'; // Renamed prefix
-                this.autoSaveKey = 'simple_relax_autosave_settings'; // Renamed key
+                this.storageKeyPrefix = 'simple_relax_preset_';
+                this.autoSaveKey = 'simple_relax_autosave_settings';
             }
 
             /**
@@ -2996,7 +2977,7 @@
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `simple_relax_presets_${new Date().toISOString().replace(/:/g, '-')}.json`; // Renamed filename
+                    a.download = `simple_relax_presets_${new Date().toISOString().replace(/:/g, '-')}.json`;
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
@@ -3024,7 +3005,6 @@
                         let importedCount = 0;
                         for (const name in importedPresets) {
                             if (importedPresets.hasOwnProperty(name) && importedPresets[name].settings) {
-                                // Ensure the imported preset has a 'settings' property
                                 if (this.savePreset(name, importedPresets[name].settings)) {
                                     importedCount++;
                                 }
@@ -3059,15 +3039,14 @@
                 kickVolume: parseFloat(document.getElementById('kickVolume').value),
                 snareVolume: parseFloat(document.getElementById('snareVolume').value),
                 hihatVolume: parseFloat(document.getElementById('hihatVolume').value),
-                bassOscillatorType: document.getElementById('bassOscillatorType').value, // New
-                synthOscillatorType: document.getElementById('synthOscillatorType').value, // New
-                isSynthArpeggiatorActive: document.getElementById('synthArpeggiator').checked, // New
+                bassOscillatorType: document.getElementById('bassOscillatorType').value,
+                synthOscillatorType: document.getElementById('synthOscillatorType').value,
+                isSynthArpeggiatorActive: document.getElementById('synthArpeggiator').checked,
                 delayTime: parseFloat(document.getElementById('delayTime').value),
                 delayFeedback: parseFloat(document.getElementById('delayFeedback').value),
                 delaySendLevel: parseFloat(document.getElementById('delaySendLevel').value),
                 chorusDepth: parseFloat(document.getElementById('chorusDepth').value),
                 isChorusBypassed: document.getElementById('chorusBypass').checked,
-                // Include target values for humanization parameters
                 targetDetune: targetDetune,
                 targetFilterFrequency: targetFilterFrequency,
                 targetFilterQ: targetFilterQ,
@@ -3075,16 +3054,12 @@
                 targetHumanizationFactor: targetHumanizationFactor,
                 targetDelayTimeValue: targetDelayTimeValue,
                 targetDelayFeedbackValue: targetDelayFeedbackValue,
-                // Compressor settings
                 compThreshold: parseFloat(document.getElementById('compThreshold').value),
                 compRatio: parseFloat(document.getElementById('compRatio').value),
-                // Reverb settings
                 reverbMix: parseFloat(document.getElementById('reverbMix').value),
                 isReverbBypassed: document.getElementById('reverbBypass').checked,
-                // New: Distortion settings
                 distortionAmount: parseFloat(document.getElementById('distortionAmount').value),
                 isDistortionBypassed: document.getElementById('distortionBypass').checked,
-                // New: Phaser settings
                 phaserRate: parseFloat(document.getElementById('phaserRate').value),
                 phaserDepth: parseFloat(document.getElementById('phaserDepth').value),
                 isPhaserBypassed: document.getElementById('phaserBypass').checked
@@ -3096,7 +3071,6 @@
          * @param {Object} settings - An object containing settings to apply.
          */
         function applySettings(settings) {
-            // Apply settings to UI elements and trigger their input events to update audio parameters
             document.getElementById('masterVolume').value = settings.masterVolume;
             document.getElementById('masterVolume').dispatchEvent(new Event('input'));
 
@@ -3118,14 +3092,13 @@
             document.getElementById('hihatVolume').value = settings.hihatVolume;
             document.getElementById('hihatVolume').dispatchEvent(new Event('input'));
 
-            // New: Instrument oscillator types
             document.getElementById('bassOscillatorType').value = settings.bassOscillatorType;
-            bassOscillatorType = settings.bassOscillatorType; // Update global variable
+            bassOscillatorType = settings.bassOscillatorType;
             document.getElementById('synthOscillatorType').value = settings.synthOscillatorType;
-            synthOscillatorType = settings.synthOscillatorType; // Update global variable
+            synthOscillatorType = settings.synthOscillatorType;
             
-            document.getElementById('synthArpeggiator').checked = settings.isSynthArpeggiatorActive; // New
-            isSynthArpeggiatorActive = settings.isSynthArpeggiatorActive; // Update global variable
+            document.getElementById('synthArpeggiator').checked = settings.isSynthArpeggiatorActive;
+            isSynthArpeggiatorActive = settings.isSynthArpeggiatorActive;
 
             document.getElementById('delayTime').value = settings.delayTime;
             document.getElementById('delayTime').dispatchEvent(new Event('input'));
@@ -3140,7 +3113,7 @@
             document.getElementById('chorusDepth').dispatchEvent(new Event('input'));
             
             document.getElementById('chorusBypass').checked = settings.isChorusBypassed;
-            document.getElementById('chorusBypass').dispatchEvent(new Event('change')); // Trigger change event
+            document.getElementById('chorusBypass').dispatchEvent(new Event('change'));
 
             document.getElementById('compThreshold').value = settings.compThreshold;
             document.getElementById('compThreshold').dispatchEvent(new Event('input'));
@@ -3152,15 +3125,13 @@
             document.getElementById('reverbMix').dispatchEvent(new Event('input'));
 
             document.getElementById('reverbBypass').checked = settings.isReverbBypassed;
-            document.getElementById('reverbBypass').dispatchEvent(new Event('change')); // Trigger change event
+            document.getElementById('reverbBypass').dispatchEvent(new Event('change'));
 
-            // New: Distortion settings
             document.getElementById('distortionAmount').value = settings.distortionAmount;
             document.getElementById('distortionAmount').dispatchEvent(new Event('input'));
             document.getElementById('distortionBypass').checked = settings.isDistortionBypassed;
             document.getElementById('distortionBypass').dispatchEvent(new Event('change'));
 
-            // New: Phaser settings
             document.getElementById('phaserRate').value = settings.phaserRate;
             document.getElementById('phaserRate').dispatchEvent(new Event('input'));
             document.getElementById('phaserDepth').value = settings.phaserDepth;
@@ -3168,14 +3139,12 @@
             document.getElementById('phaserBypass').checked = settings.isPhaserBypassed;
             document.getElementById('phaserBypass').dispatchEvent(new Event('change'));
 
-            // Update global variables that are not directly tied to a knob
             currentDetune = settings.currentDetune;
             currentFilterFrequency = settings.currentFilterFrequency;
             currentFilterQ = settings.currentFilterQ;
             baseNoteDuration = settings.baseNoteDuration;
             humanizationFactor = settings.humanizationFactor;
 
-            // Update target variables for humanization as well
             targetDetune = settings.targetDetune;
             targetFilterFrequency = settings.targetFilterFrequency;
             targetFilterQ = settings.targetFilterQ;
@@ -3200,9 +3169,7 @@
                 return;
             }
 
-            // Check if preset already exists
             if (localStorage.getItem(presetManager.storageKeyPrefix + presetName)) {
-                // Modified to use custom message box instead of confirm
                 const confirmOverwrite = () => {
                     const confirmBox = document.createElement('div');
                     confirmBox.style.cssText = `
@@ -3273,12 +3240,10 @@
                 this.chunks = [];
                 this.isRecording = false;
                 this.recordingStartTime = 0;
-                // Ensure this selector matches the HTML element
                 this.recordingMeter = document.querySelector('.recording-meter');
                 this.recordingFormatSelect = document.getElementById('recordingFormat');
                 this.selectedFormat = this.recordingFormatSelect ? this.recordingFormatSelect.value : 'wav';
                 
-                // Initialize if we have access to MediaRecorder
                 if (typeof MediaRecorder !== 'undefined') {
                     this.initializeRecorder();
                 } else {
@@ -3297,7 +3262,6 @@
             }
             
             async initializeRecorder() {
-                // Check if analyserNode exists before connecting
                 if (!analyserNode) {
                     console.error("AnalyserNode not available for recording initialization.");
                     showMessage("Audio system not ready for recording. Please start music first.", 3000);
@@ -3305,9 +3269,6 @@
                 }
 
                 const dest = this.audioContext.createMediaStreamDestination();
-                // Connect the analyserNode to the recording destination
-                // Important: Ensure analyserNode is connected to the audio graph before this,
-                // and that its output is also going to the main audio destination.
                 analyserNode.connect(dest);
                 
                 try {
@@ -3331,8 +3292,7 @@
                 }
                 if (this.selectedFormat === 'mp3') {
                     showMessage('MP3 recording is not natively supported. Recording in WAV format.', 4000);
-                    // Fallback to WAV if MP3 is selected
-                    this.selectedFormat = 'wav'; 
+                    this.selectedFormat = 'wav';
                 }
 
                 this.chunks = [];
@@ -3369,7 +3329,7 @@
                 this.isRecording = false;
                 if (this.recordingMeter) {
                     this.recordingMeter.classList.remove('active');
-                    this.recordingMeter.textContent = ''; // Clear text
+                    this.recordingMeter.textContent = '';
                 }
                 
                 showMessage('Recording stopped. Preparing download...');
@@ -3385,19 +3345,18 @@
             }
             
             async processRecording() {
-                const mimeType = this.selectedFormat === 'wav' ? 'audio/wav' : 'audio/webm'; // Default to webm if not wav, though we only support wav for now
+                const mimeType = this.selectedFormat === 'wav' ? 'audio/wav' : 'audio/webm';
                 const blob = new Blob(this.chunks, { type: mimeType }); 
                 const url = URL.createObjectURL(blob);
                 
-                // Create download link
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `simple_relax_loop_${new Date().toISOString().replace(/:/g, '-')}.${this.selectedFormat === 'wav' ? 'wav' : 'webm'}`; // Use webm for mp3 attempts
-                document.body.appendChild(a); // Append to body to make it clickable
+                a.download = `simple_relax_loop_${new Date().toISOString().replace(/:/g, '-')}.${this.selectedFormat === 'wav' ? 'wav' : 'webm'}`;
+                document.body.appendChild(a);
                 a.click();
-                document.body.removeChild(a); // Clean up
+                document.body.removeChild(a);
                 
-                URL.revokeObjectURL(url); // Release object URL
+                URL.revokeObjectURL(url);
                 showMessage("Recording downloaded!", 3000);
                 console.log("Recording download initiated.");
             }
@@ -3406,138 +3365,153 @@
         // Add Recording Controls to UI
         function addRecordingControls() {
             const recordButton = document.getElementById('recordButton');
-            const stopButton = document.getElementById('stopButton'); // Get stop button reference
-            const startButton = document.getElementById('startButton'); // Get start button reference
+            const stopButton = document.getElementById('stopButton');
+            const startButton = document.getElementById('startButton');
 
             if (recordButton) {
                 recordButton.addEventListener('click', () => {
-                    // Ensure audioContext is initialized before interacting with recorder
                     if (!audioContext) {
                         showMessage("Please start the music loop first to initialize audio.", 3000);
                         return;
                     }
                     
-                    // The looperRecorder is initialized in initAudio, so it should exist here.
-                    // If it somehow doesn't, initialize it now.
                     if (!looperRecorder) {
                         looperRecorder = new EnhancedLooperRecorder(audioContext);
                     }
 
                     if (looperRecorder.isRecording) {
                         looperRecorder.stopRecording();
-                        recordButton.innerHTML = '<i class="fas fa-microphone"></i> Start Recording'; // Update button text and icon
-                        // Re-enable start/stop if needed, or handle based on main loop state
+                        recordButton.innerHTML = '<i class="fas fa-microphone"></i> Start Recording';
                         if (!isPlaying) {
                             startButton.disabled = false;
                             stopButton.disabled = true;
                         }
                     } else {
                         looperRecorder.startRecording();
-                        recordButton.innerHTML = '<i class="fas fa-stop"></i> Stop Recording'; // Update button text and icon
+                        recordButton.innerHTML = '<i class="fas fa-stop"></i> Stop Recording';
                     }
                 });
+            }
+        }
+
+        // MODAL FUNCTIONS
+        let activeModal = null; // Track the currently open modal
+
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'flex'; // Use flex to center
+                activeModal = modal;
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+                if (activeModal === modal) {
+                    activeModal = null;
+                }
             }
         }
 
         // Keyboard Controls Initialization
         function initializeKeyboardControls() {
             document.addEventListener('keydown', (e) => {
-                // Only handle shortcuts if not typing in an input
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
                 
                 const startButton = document.getElementById('startButton');
                 const stopButton = document.getElementById('stopButton');
-                const recordButton = document.getElementById('recordButton'); // Get record button
+                const recordButton = document.getElementById('recordButton');
                 const chorusBypassCheckbox = document.getElementById('chorusBypass');
                 const reverbBypassCheckbox = document.getElementById('reverbBypass');
-                const distortionBypassCheckbox = document.getElementById('distortionBypass'); // New
-                const phaserBypassCheckbox = document.getElementById('phaserBypass'); // New
-                const synthArpeggiatorCheckbox = document.getElementById('synthArpeggiator'); // New
-
+                const distortionBypassCheckbox = document.getElementById('distortionBypass');
+                const phaserBypassCheckbox = document.getElementById('phaserBypass');
+                const synthArpeggiatorCheckbox = document.getElementById('synthArpeggiator');
 
                 switch(e.code) {
                     case 'Space':
-                    case 'Enter': // Add Enter as transport control
-                        e.preventDefault(); // Prevent default spacebar/enter action (e.g., scrolling, submitting forms)
+                    case 'Enter':
+                        e.preventDefault();
                         if (isPlaying) {
                             stopButton.click();
                         } else {
                             startButton.click();
                         }
                         break;
+                    case 'Escape': // Close active modal on Escape key
+                        if (activeModal) {
+                            closeModal(activeModal.id);
+                        }
+                        break;
                     case 'KeyR':
-                        if (e.ctrlKey) { // Ctrl+R for recording
+                        if (e.ctrlKey) {
                             e.preventDefault();
                             recordButton.click();
-                        } else { // R key alone for Reverb bypass
+                        } else {
                              e.preventDefault();
                              reverbBypassCheckbox.checked = !reverbBypassCheckbox.checked;
                              reverbBypassCheckbox.dispatchEvent(new Event('change'));
                         }
                         break;
-                    case 'KeyC': // C key for Chorus bypass
+                    case 'KeyC':
                         e.preventDefault();
                         chorusBypassCheckbox.checked = !chorusBypassCheckbox.checked;
                         chorusBypassCheckbox.dispatchEvent(new Event('change'));
                         break;
-                    case 'KeyD': // D key for Distortion bypass (New)
+                    case 'KeyD':
                         e.preventDefault();
                         distortionBypassCheckbox.checked = !distortionBypassCheckbox.checked;
                         distortionBypassCheckbox.dispatchEvent(new Event('change'));
                         break;
-                    case 'KeyP': // P key for Phaser bypass (New)
+                    case 'KeyP':
                         e.preventDefault();
                         phaserBypassCheckbox.checked = !phaserBypassCheckbox.checked;
                         phaserBypassCheckbox.dispatchEvent(new Event('change'));
                         break;
-                    case 'KeyA': // A key for Synth Arpeggiator (New)
+                    case 'KeyA':
                         e.preventDefault();
                         synthArpeggiatorCheckbox.checked = !synthArpeggiatorCheckbox.checked;
                         synthArpeggiatorCheckbox.dispatchEvent(new Event('change'));
                         break;
                     case 'KeyM':
-                        // Master volume mute/unmute
                         const volKnob = document.getElementById('masterVolume');
                         if (volKnob) {
                             if (parseFloat(volKnob.value) > 0) {
-                                volKnob.dataset.lastValue = volKnob.value; // Store current value
+                                volKnob.dataset.lastValue = volKnob.value;
                                 volKnob.value = 0;
                             } else {
-                                volKnob.value = volKnob.dataset.lastValue || 0.55; // Restore or default
+                                volKnob.value = volKnob.dataset.lastValue || 0.55;
                             }
-                            volKnob.dispatchEvent(new Event('input')); // Trigger input event to update UI and audio
+                            volKnob.dispatchEvent(new Event('input'));
                             showMessage(`Master Volume: ${parseFloat(volKnob.value) === 0 ? 'Muted' : 'Unmuted'}`, 1500);
                         }
                         break;
                     case 'ArrowUp':
                     case 'ArrowDown':
-                        // Parameter fine-tuning for all range inputs
                         if (e.target.tagName === 'INPUT' && e.target.type === 'range') {
-                            e.preventDefault(); // Prevent default scrolling
+                            e.preventDefault();
                             const knob = e.target;
-                            const step = e.shiftKey ? parseFloat(knob.step) : (knob.id === 'tempo' ? 10 : 0.01); // Smaller step for fine-tuning
+                            const step = e.shiftKey ? parseFloat(knob.step) : (knob.id === 'tempo' ? 10 : 0.01);
                             const direction = e.code === 'ArrowUp' ? 1 : -1;
                             let newValue = parseFloat(knob.value) + (direction * step);
 
-                            // Clamp value to min/max
                             newValue = Math.min(parseFloat(knob.max), Math.max(parseFloat(knob.min), newValue));
                             knob.value = newValue;
-                            knob.dispatchEvent(new Event('input')); // Trigger input event to update UI and audio
+                            knob.dispatchEvent(new Event('input'));
                             showMessage(`${knob.labels[0].textContent}: ${knob.nextElementSibling.textContent}`, 1000);
                         } else {
-                            // Default behavior for tempo if no specific knob is focused
                             const tempoKnob = document.getElementById('tempo');
                             if (tempoKnob) {
-                                e.preventDefault(); // Prevent default scrolling
+                                e.preventDefault();
                                 const step = e.shiftKey ? 1 : 10;
                                 const direction = e.code === 'ArrowUp' ? 1 : -1;
                                 tempoKnob.value = Math.min(parseFloat(tempoKnob.max), Math.max(parseFloat(tempoKnob.min), parseInt(tempoKnob.value) + (direction * step)));
-                                tempoKnob.dispatchEvent(new Event('input')); // Trigger input event to update UI and audio
+                                tempoKnob.dispatchEvent(new Event('input'));
                                 showMessage(`Tempo: ${tempoKnob.value} ms`, 1000);
                             }
                         }
                         break;
-                    // Quick preset loading (1-9)
                     case 'Digit1':
                     case 'Digit2':
                     case 'Digit3':
@@ -3551,13 +3525,12 @@
                         const presetNumber = parseInt(e.key);
                         const presetName = `Preset ${presetNumber}`;
                         document.getElementById('presetNameInput').value = presetName;
-                        loadPreset(); // Call the existing loadPreset function
+                        loadPreset();
                         break;
                 }
             });
         }
 
-        // Add event listeners once the DOM is fully loaded
         document.addEventListener('DOMContentLoaded', () => {
             console.log("DOM Content Loaded. Attaching event listeners.");
             document.getElementById('startButton').addEventListener('click', startLoop);
@@ -3565,8 +3538,8 @@
             document.getElementById('savePresetButton').addEventListener('click', savePreset);
             document.getElementById('loadPresetButton').addEventListener('click', loadPreset);
             document.getElementById('exportPresetsButton').addEventListener('click', () => presetManager.exportAllPresets());
-            document.getElementById('importPresetsButton').addEventListener('click', () => { // Added click listener for import button
-                document.getElementById('importPresetsInput').click(); // Trigger file input click
+            document.getElementById('importPresetsButton').addEventListener('click', () => {
+                document.getElementById('importPresetsInput').click();
             });
             document.getElementById('importPresetsInput').addEventListener('change', (event) => {
                 if (event.target.files.length > 0) {
@@ -3574,24 +3547,19 @@
                 }
             });
             
-            // Add event listeners for all range input knobs
             document.querySelectorAll('input[type="range"]').forEach(knob => {
                 knob.addEventListener('input', (e) => {
                     updateAudioParameter(e.target.id, parseFloat(e.target.value));
                 });
             });
 
-            // Add select box event listeners for oscillator types
-            document.getElementById('bassOscillatorType').addEventListener('change', (e) => {
-                updateAudioParameter(e.target.id, e.target.value);
-                showMessage(`Bass Wave: ${e.target.value}`);
-            });
-            document.getElementById('synthOscillatorType').addEventListener('change', (e) => {
-                updateAudioParameter(e.target.id, e.target.value);
-                showMessage(`Synth Wave: ${e.target.value}`);
+            document.querySelectorAll('select').forEach(select => {
+                select.addEventListener('change', (e) => {
+                    updateAudioParameter(e.target.id, e.target.value);
+                    showMessage(`${e.target.labels ? e.target.labels[0].textContent : e.target.id}: ${e.target.value}`);
+                });
             });
 
-            // Add checkbox event listeners
             document.getElementById('chorusBypass').addEventListener('change', (event) => {
                 isChorusBypassed = event.target.checked;
                 updateChorusBypassConnection();
@@ -3604,21 +3572,18 @@
                 showMessage(`Reverb is now ${isReverbBypassed ? 'bypassed' : 'active'}.`);
             });
 
-            // New: Distortion bypass checkbox
             document.getElementById('distortionBypass').addEventListener('change', (event) => {
                 isDistortionBypassed = event.target.checked;
                 updateDistortionBypassConnection();
                 showMessage(`Distortion is now ${isDistortionBypassed ? 'bypassed' : 'active'}.`);
             });
 
-            // New: Phaser bypass checkbox
             document.getElementById('phaserBypass').addEventListener('change', (event) => {
                 isPhaserBypassed = event.target.checked;
                 updatePhaserBypassConnection();
                 showMessage(`Phaser is now ${isPhaserBypassed ? 'bypassed' : 'active'}.`);
             });
 
-            // New: Synth Arpeggiator checkbox
             document.getElementById('synthArpeggiator').addEventListener('change', (event) => {
                 isSynthArpeggiatorActive = event.target.checked;
                 showMessage(`Synth Arpeggiator is now ${isSynthArpeggiatorActive ? 'active' : 'inactive'}.`);
@@ -3650,38 +3615,54 @@
                 showMessage('Visualization: Frequency Bands');
             });
 
+            // Modal Trigger Buttons
+            document.getElementById('openMasterControlsModal').addEventListener('click', () => openModal('masterControlsModal'));
+            document.getElementById('openInstrumentGainsModal').addEventListener('click', () => openModal('instrumentGainsModal'));
+            document.getElementById('openInstrumentTimbresModal').addEventListener('click', () => openModal('instrumentTimbresModal'));
+            document.getElementById('openEffectsModal').addEventListener('click', () => openModal('effectsModal'));
+            document.getElementById('openCompressorModal').addEventListener('click', () => openModal('compressorModal'));
+            document.getElementById('openReverbModal').addEventListener('click', () => openModal('reverbModal'));
+            document.getElementById('openDistortionModal').addEventListener('click', () => openModal('distortionModal'));
+            document.getElementById('openPhaserModal').addEventListener('click', () => openModal('phaserModal'));
 
-            // Initial display update for all knobs and selects
+            // Close buttons for modals
+            document.querySelectorAll('.modal .close-button').forEach(button => {
+                button.addEventListener('click', (e) => closeModal(e.target.closest('.modal').id));
+            });
+
+            // Close modal when clicking outside content
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) { // Only close if clicking on the overlay itself
+                        closeModal(modal.id);
+                    }
+                });
+            });
+
+
             document.querySelectorAll('input[type="range"]').forEach(knob => {
                 updateAudioParameter(knob.id, parseFloat(knob.value));
             });
             document.querySelectorAll('select').forEach(select => {
                 updateAudioParameter(select.id, select.value);
             });
-            // Trigger initial bypass connections to set up the graph correctly
             updateDistortionBypassConnection();
             updatePhaserBypassConnection();
             updateChorusBypassConnection();
             updateReverbBypassConnection();
 
-
             updateSectionDisplay();
-            updateSongIterationDisplay(); // Initialize iteration display
+            updateSongIterationDisplay();
 
-            // Initialize keyboard controls
             initializeKeyboardControls();
-            
-            // Add recording controls (looperRecorder is initialized in initAudio)
             addRecordingControls();
 
-            // Auto-load settings on page load
             const autoSavedSettings = presetManager.loadAutoSavedSettings();
             if (autoSavedSettings) {
                 applySettings(autoSavedSettings);
                 showMessage("Auto-saved settings loaded.", 2000);
             }
 
-            // Auto-save settings before page unload
             window.addEventListener('beforeunload', () => {
                 presetManager.autoSaveSettings();
             });
