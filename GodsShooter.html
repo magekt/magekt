@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Divine Shooter: GANESH v5.0 – Mobile Ultimate Edition</title>
+    <title>Divine Shooter: GANESH v6.0 – Mobile Ultimate Edition</title>
     <style>
         body {
             margin: 0;
@@ -210,7 +210,7 @@
 </head>
 <body>
     <div id="tutorialOverlay">
-        <h2>Welcome to Divine Shooter: GANESH v5.0!</h2>
+        <h2>Welcome to Divine Shooter: GANESH v6.0!</h2>
         <p>Protect the universe from rogue divinities!</p>
         <p><strong>Desktop Controls:</strong></p>
         <p>Use <strong>WASD</strong> or <strong>Arrow Keys</strong> to move.</p>
@@ -403,15 +403,112 @@
             }
         }
 
+        /**
+         * Base class for all game objects.
+         * Provides common properties like position and basic update/draw methods.
+         */
+        class GameObject {
+            constructor(x = 0, y = 0) {
+                this.x = x;
+                this.y = y;
+                this.active = true; // For object pooling: indicates if object is in use
+            }
+
+            update(dt) {
+                // Base update logic (can be overridden by subclasses)
+            }
+
+            draw(ctx) {
+                // Base draw logic (can be overridden by subclasses)
+            }
+
+            // Resets the object to its initial state for reuse from the pool
+            reset(x, y, ...args) {
+                this.x = x;
+                this.y = y;
+                this.active = true;
+            }
+        }
+
+        /**
+         * Manages a pool of reusable objects to reduce garbage collection.
+         */
+        class Pool {
+            constructor(ObjectClass, initialSize = 100) {
+                this.ObjectClass = ObjectClass;
+                this.pool = [];
+                this.inUse = [];
+
+                // Pre-populate the pool
+                for (let i = 0; i < initialSize; i++) {
+                    this.pool.push(new ObjectClass());
+                }
+            }
+
+            // Gets an object from the pool or creates a new one if the pool is empty
+            get(x, y, ...args) {
+                let obj;
+                if (this.pool.length > 0) {
+                    obj = this.pool.pop();
+                    obj.reset(x, y, ...args); // Reset its state
+                } else {
+                    // Fallback: create new if pool is exhausted (should be rare with good initialSize)
+                    obj = new this.ObjectClass(x, y, ...args);
+                }
+                this.inUse.push(obj);
+                return obj;
+            }
+
+            // Returns an object to the pool
+            return(obj) {
+                obj.active = false; // Mark as inactive
+                const index = this.inUse.indexOf(obj);
+                if (index > -1) {
+                    this.inUse.splice(index, 1);
+                    this.pool.push(obj);
+                }
+            }
+
+            // Update all active objects in the pool
+            updateAll(dt) {
+                // Iterate backwards to safely remove inactive objects
+                for (let i = this.inUse.length - 1; i >= 0; i--) {
+                    const obj = this.inUse[i];
+                    if (obj.active) {
+                        obj.update(dt);
+                    } else {
+                        this.return(obj); // Already marked inactive, just return to pool
+                    }
+                }
+            }
+
+            // Draw all active objects in the pool
+            drawAll(ctx) {
+                for (const obj of this.inUse) {
+                    if (obj.active) {
+                        obj.draw(ctx);
+                    }
+                }
+            }
+        }
+
         // Starfield background.
-        class Star {
-            constructor() {
+        class Star extends GameObject {
+            constructor(x, y) {
+                super(x, y); // Call GameObject constructor
+                this.reset(x, y);
+            }
+
+            reset(x, y) {
+                super.reset(x, y); // Call base reset
                 this.x = Math.random() * config.canvas.width;
                 this.y = Math.random() * config.canvas.height;
                 this.radius = Math.random() * 1.5 + 0.5;
                 this.speed = Math.random() * 0.5 + 0.2;
             }
+
             update(dt) {
+                super.update(dt); // Call base update
                 this.y += this.speed * dt * 20; // Adjusted speed for smaller canvas
                 if (this.y > config.canvas.height) {
                     this.y = 0;
@@ -419,6 +516,7 @@
                 }
             }
             draw(ctx) {
+                super.draw(ctx); // Call base draw
                 ctx.fillStyle = "white";
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
@@ -427,8 +525,14 @@
         }
 
         // Particle class for explosion effects.
-        class Particle {
+        class Particle extends GameObject {
             constructor(x, y) {
+                super(x, y); // Call GameObject constructor
+                this.reset(x, y);
+            }
+
+            reset(x, y) {
+                super.reset(x, y); // Call base reset
                 this.x = x;
                 this.y = y;
                 const angle = Math.random() * 2 * Math.PI;
@@ -440,11 +544,17 @@
                 this.created = performance.now();
                 this.color = config.particles.colors[Math.floor(Math.random() * config.particles.colors.length)];
             }
+
             update(dt) {
+                super.update(dt); // Call base update
                 this.x += this.vx * dt;
                 this.y += this.vy * dt;
+                if (performance.now() - this.created > this.lifetime) {
+                    this.active = false; // Mark for return to pool
+                }
             }
             draw(ctx) {
+                super.draw(ctx); // Call base draw
                 const lifeProgress = (performance.now() - this.created) / this.lifetime;
                 ctx.globalAlpha = Math.max(1 - lifeProgress, 0);
                 ctx.fillStyle = this.color;
@@ -456,15 +566,17 @@
         }
 
         // PowerUp class.
-        class PowerUp {
+        class PowerUp extends GameObject {
             constructor(type, x, y) {
+                super(x, y); // Call GameObject constructor
                 this.type = type;
-                this.x = x;
-                this.y = y;
                 this.size = 4; // Adjusted size (50% of 8)
             }
-            update(dt) { }
+            update(dt) {
+                super.update(dt); // Call base update
+            }
             draw(ctx) {
+                super.draw(ctx); // Call base draw
                 ctx.font = "4px Arial"; // Adjusted font size (50% of 8)
                 ctx.textAlign = "center";
                 let label = "";
@@ -490,16 +602,16 @@
         }
 
         // Player class.
-        class Player {
+        class Player extends GameObject {
             constructor(x, y) {
-                this.x = x;
-                this.y = y;
+                super(x, y); // Call GameObject constructor
                 this.vx = 0;
                 this.vy = 0;
                 this.isHit = false; // New property for hit effect
                 this.hitEffectEndTime = 0; // New property for hit effect duration
             }
             update(dt, keys) {
+                super.update(dt); // Call base update
                 let effectiveAccel = config.player.acceleration;
                 if (game.speedBoostActive) { effectiveAccel *= 1.5; }
                 if (keys["ArrowUp"] || keys["w"]) this.vy -= effectiveAccel * dt;
@@ -542,6 +654,7 @@
                 }
             }
             draw(ctx) {
+                super.draw(ctx); // Call base draw
                 if (game.playerPerks.invisibility) { ctx.globalAlpha = 0.3; }
                 
                 // Player hit effect: flash red
@@ -577,8 +690,14 @@
         }
 
         // Bullet class.
-        class Bullet {
+        class Bullet extends GameObject {
             constructor(x, y, angle) {
+                super(x, y); // Call GameObject constructor
+                this.reset(x, y, angle); // Initial reset
+            }
+
+            reset(x, y, angle) {
+                super.reset(x, y); // Call base reset
                 this.x = x;
                 this.y = y;
                 this.angle = angle;
@@ -587,11 +706,19 @@
                 this.lifetime = 1000; // Bullet lifetime
                 this.created = performance.now();
             }
+
             update(dt) {
+                super.update(dt); // Call base update
                 this.x += Math.cos(this.angle) * this.speed * dt;
                 this.y += Math.sin(this.angle) * this.speed * dt;
+                if (performance.now() - this.created > this.lifetime ||
+                    this.x < -10 || this.x > config.canvas.width + 10 ||
+                    this.y < -10 || this.y > config.canvas.height + 10) {
+                    this.active = false; // Mark for return to pool
+                }
             }
             draw(ctx) {
+                super.draw(ctx); // Call base draw
                 ctx.fillStyle = config.bullet.color;
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
@@ -602,12 +729,19 @@
         // MagicBullet class (homing bullet).
         class MagicBullet extends Bullet {
             constructor(x, y, angle, target) {
-                super(x, y, angle);
+                super(x, y, angle); // Call Bullet constructor
+                this.target = target; // Set target during initial construction
+                this.reset(x, y, angle, target); // Initial reset
+            }
+
+            reset(x, y, angle, target) {
+                super.reset(x, y, angle); // Call base Bullet reset
                 this.homing = true;
                 this.target = target;
                 this.size = config.bullet.size * 1.5; // Larger size for magic bullet
                 this.color = "#ff00ff"; // Distinct color
             }
+
             update(dt) {
                 // If target exists and is alive, home in on it
                 if (this.target && this.target.hp > 0) {
@@ -620,15 +754,17 @@
                     // If target is gone or no target, find the nearest enemy
                     let nearest = null;
                     let nearestDist = Infinity;
+                    // Iterate through active enemies in the game's enemy list
                     for (let enemy of game.enemies) {
                         let d = Utils.distance(this.x, this.y, enemy.x, enemy.y);
                         if (d < nearestDist) { nearestDist = d; nearest = enemy; }
                     }
                     this.target = nearest; // Set new target
                 }
-                super.update(dt); // Move bullet
+                super.update(dt); // Move bullet (which also handles lifetime/off-screen check)
             }
             draw(ctx) {
+                super.draw(ctx); // Call base Bullet draw
                 ctx.fillStyle = this.color;
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
@@ -643,8 +779,14 @@
         }
 
         // Shiva's Projectile
-        class ShivaProjectile {
+        class ShivaProjectile extends GameObject {
             constructor(x, y, targetX, targetY) {
+                super(x, y); // Call GameObject constructor
+                this.reset(x, y, targetX, targetY); // Initial reset
+            }
+
+            reset(x, y, targetX, targetY) {
+                super.reset(x, y); // Call base reset
                 this.x = x;
                 this.y = y;
                 this.size = config.divine.shivaProjectileSize;
@@ -655,11 +797,16 @@
             }
 
             update(dt) {
+                super.update(dt); // Call base update
                 this.x += Math.cos(this.angle) * this.speed * dt;
                 this.y += Math.sin(this.angle) * this.speed * dt;
+                if (performance.now() - this.created > this.lifetime) {
+                    this.active = false; // Mark for return to pool
+                }
             }
 
             draw(ctx) {
+                super.draw(ctx); // Call base draw
                 ctx.fillStyle = "#8a2be2"; // Purple color for Shiva's projectile
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
@@ -669,14 +816,15 @@
 
 
         // Enemy class with behavior determined by type.
-        class Enemy {
+        class Enemy extends GameObject {
             constructor(type, game) {
+                super(); // Call GameObject constructor
                 this.game = game;
                 this.type = type;
                 this.size = config.divine.baseSize;
                 this.visible = true;
                 this.state = {};
-                this.projectiles = []; // For Shiva's projectiles
+                this.projectiles = []; // For Shiva's projectiles (not pooled for simplicity here, but could be)
 
                 // Set defaults for health and speed based on type and level.
                 if (game.level % 10 === 0 || type === config.divine.boss) {
@@ -702,6 +850,11 @@
 
             // Spawn method moved inside the class definition
             spawn() {
+                // Reset common state for all enemies
+                this.visible = true;
+                this.state = {};
+                this.projectiles = []; // Clear projectiles for Shiva
+
                 // Spawn logic for different enemy types
                 if (this.type === "Buddha") {
                     // Buddha spawns near player, but not too close
@@ -775,6 +928,7 @@
                 }
             }
             update(dt) {
+                super.update(dt); // Call base update
                 const now = performance.now();
                 let effectiveDt = dt;
                 if (game.slowTimeActive) { effectiveDt = dt * 0.5; } // Enemies are affected by slow time
@@ -1024,6 +1178,7 @@
                 this.y = newY;
             }
             draw(ctx) {
+                super.draw(ctx); // Call base draw
                 // Odin's shield
                 if (this.type === "Odin" && this.state.shieldActive) {
                     ctx.beginPath();
@@ -1120,14 +1275,6 @@
             }
         }
 
-        // Helper function for random spawn from edges.
-        function getRandomSpawn() {
-            // This function is now modified within the Enemy.spawn() method
-            // to ensure enemies are spawned fully inside the canvas.
-            // This placeholder is kept for clarity but its logic is integrated directly.
-            return { x: 0, y: 0 }; // Placeholder
-        }
-
         // Main Game class.
         class Game {
             constructor() {
@@ -1138,10 +1285,10 @@
                 this.lives = 3;
                 this.scoreMultiplier = 1;
                 this.player = new Player(config.canvas.width / 2, config.canvas.height / 2);
-                this.bullets = [];
+                this.bullets = []; // Will be managed by bulletPool
                 this.enemies = [];
                 this.powerUps = [];
-                this.particles = [];
+                this.particles = []; // Will be managed by particlePool
                 this.stars = [];
                 this.lastEnemySpawn = performance.now();
                 this.lastPowerUpSpawn = performance.now();
@@ -1165,14 +1312,22 @@
                 // For shield perk, store initial durability to calculate alpha
                 this.playerPerks.initialShieldDurability = 5;
 
+                // Initialize object pools
+                this.bulletPool = new Pool(Bullet, 200); // Pool for bullets
+                this.particlePool = new Pool(Particle, 300); // Pool for particles
+
                 for (let i = 0; i < 75; i++) { this.stars.push(new Star()); } // Adjusted stars for new canvas size
             }
             start() {
+                // Resume audio context on first user interaction
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+
                 this.reset();
                 this.running = true;
                 this.paused = false;
                 lastTime = performance.now();
-                // Background music control moved to soundToggleBtn
                 divineBlastBtn.style.display = 'block'; // Show divine blast button
                 pauseBtn.style.display = 'block'; // Show pause button
                 this.updateDivineBlastUI();
@@ -1184,10 +1339,15 @@
                 this.lives = 3;
                 this.scoreMultiplier = 1;
                 this.player = new Player(config.canvas.width / 2, config.canvas.height / 2);
-                this.bullets = [];
+                
+                // Clear active objects in pools
+                this.bulletPool.inUse.forEach(bullet => this.bulletPool.return(bullet));
+                this.particlePool.inUse.forEach(particle => this.particlePool.return(particle));
+                this.bullets = []; // Ensure internal array is clear
+                this.particles = []; // Ensure internal array is clear
+
                 this.enemies = [];
                 this.powerUps = [];
-                this.particles = [];
                 this.lastEnemySpawn = performance.now();
                 this.lastPowerUpSpawn = performance.now();
                 this.lastMagicBulletTime = performance.now();
@@ -1369,27 +1529,11 @@
                 if (!this.paused && !this.shopOpen) {
                     const now = performance.now();
 
-                    // Update stars, player, bullets, enemies, power-ups, and particles.
+                    // Update stars, player, power-ups, and enemies.
                     this.stars.forEach(star => star.update(dt));
                     this.player.update(dt, keysPressed);
-
-                    let effectiveDt = dt;
-                    if (this.slowTimeActive) {
-                        effectiveDt = dt * 0.5; // Game elements move slower
-                        if (now > this.slowTimeEnd) { this.slowTimeActive = false; }
-                    }
-
-                    this.bullets = this.bullets.filter(bullet => {
-                        bullet.update(effectiveDt);
-                        // Remove bullets that are too old or off-screen
-                        return (timestamp - bullet.created) < bullet.lifetime &&
-                            bullet.x > -10 && bullet.x < config.canvas.width + 10 &&
-                            bullet.y > -10 && bullet.y < config.canvas.height + 10;
-                    });
-
-                    this.enemies.forEach(enemy => enemy.update(effectiveDt));
                     this.powerUps.forEach(pu => {
-                        pu.update(effectiveDt);
+                        pu.update(dt);
                         // Magnetic perk pulls power-ups towards player
                         if (this.playerPerks.magnetic) {
                             let dx = this.player.x - pu.x;
@@ -1402,9 +1546,17 @@
                             }
                         }
                     });
+                    this.enemies.forEach(enemy => enemy.update(dt)); // Enemies are updated with full dt, their internal logic handles slow time
 
-                    this.particles.forEach(p => p.update(dt));
-                    this.particles = this.particles.filter(p => (timestamp - p.created) < p.lifetime);
+                    let effectiveDt = dt;
+                    if (this.slowTimeActive) {
+                        effectiveDt = dt * 0.5; // Bullets and particles are affected by slow time
+                        if (now > this.slowTimeEnd) { this.slowTimeActive = false; }
+                    }
+
+                    // Update pooled objects
+                    this.bulletPool.updateAll(effectiveDt);
+                    this.particlePool.updateAll(dt); // Particles not affected by slow time
 
                     // Deactivate speed boost if time is up
                     if (this.speedBoostActive && now > this.speedBoostEnd) { this.speedBoostActive = false; }
@@ -1429,8 +1581,7 @@
                                 if (d < nearestDist) { nearestDist = d; nearest = enemy; }
                             }
                             const angle = Utils.angleBetween(this.player.x, this.player.y, nearest.x, nearest.y);
-                            const mb = new MagicBullet(this.player.x, this.player.y, angle, nearest);
-                            this.bullets.push(mb);
+                            this.bulletPool.get(this.player.x, this.player.y, angle, nearest); // Get MagicBullet from pool
                             this.lastMagicBulletTime = now;
                         }
                     }
@@ -1456,7 +1607,7 @@
                         for (let i = 0; i < config.bullet.count; i++) {
                             const spreadAngle = (i - (config.bullet.count - 1) / 2) * (Math.PI / 30); // 6-degree spread per bullet
                             const angle = Utils.angleBetween(this.player.x, this.player.y, targetX, targetY) + spreadAngle;
-                            this.bullets.push(new Bullet(this.player.x, this.player.y, angle));
+                            this.bulletPool.get(this.player.x, this.player.y, angle); // Get Bullet from pool
                         }
                         if (this.isSoundOn) { // Only play sound if sound is enabled
                             shootSound.play();
@@ -1548,10 +1699,10 @@
                 }
 
                 this.player.draw(this.ctx);
-                this.bullets.forEach(bullet => bullet.draw(this.ctx));
+                this.bulletPool.drawAll(this.ctx); // Draw bullets from pool
                 this.enemies.forEach(enemy => enemy.draw(this.ctx));
                 this.powerUps.forEach(pu => pu.draw(this.ctx));
-                this.particles.forEach(p => p.draw(this.ctx));
+                this.particlePool.drawAll(this.ctx); // Draw particles from pool
 
                 // Draw movement joystick if active.
                 if (movementJoystick.active) {
@@ -1713,7 +1864,11 @@
             }
             checkCollisions() {
                 // Bullet-Enemy collisions
-                this.bullets = this.bullets.filter(bullet => {
+                // Iterate through active bullets in the pool
+                for (let i = game.bulletPool.inUse.length - 1; i >= 0; i--) {
+                    const bullet = game.bulletPool.inUse[i];
+                    if (!bullet.active) continue; // Skip if already marked inactive
+
                     let hitEnemy = false;
                     this.enemies = this.enemies.filter(enemy => {
                         if (enemy.visible && Utils.distance(bullet.x, bullet.y, enemy.x, enemy.y) < enemy.size + bullet.size) {
@@ -1725,11 +1880,10 @@
                             // Play sound on hit
                             shootSound.play();
                             enemy.hp--;
-                            for (let i = 0; i < config.particles.count; i++) {
-                                this.particles.push(new Particle(enemy.x, enemy.y));
+                            // Get particles from pool
+                            for (let j = 0; j < config.particles.count; j++) {
+                                this.particlePool.get(enemy.x, enemy.y);
                             }
-                            // TODO: Implement object pooling for particles and bullets to reduce garbage collection.
-                            // Instead of `new Particle()`, get from pool; instead of `push`, add to pool.
                             hitEnemy = true; // Mark bullet for removal
 
                             if (enemy.hp <= 0) {
@@ -1744,8 +1898,10 @@
                         }
                         return true; // Enemy remains
                     });
-                    return !hitEnemy; // Remove bullet if it hit an enemy
-                });
+                    if (hitEnemy) {
+                        game.bulletPool.return(bullet); // Return bullet to pool
+                    }
+                }
 
                 // Player-Enemy collisions
                 this.enemies = this.enemies.filter(enemy => {
@@ -1916,8 +2072,9 @@
                     this.enemies = this.enemies.filter(enemy => {
                         if (Utils.distance(this.player.x, this.player.y, enemy.x, enemy.y) < maxBlastRadius) {
                             enemy.hp -= config.divineBlast.damage;
+                            // Get particles from pool
                             for (let i = 0; i < config.particles.count * 2; i++) { // More particles for blast
-                                this.particles.push(new Particle(enemy.x, enemy.y));
+                                this.particlePool.get(enemy.x, enemy.y);
                             }
                             if (enemy.hp <= 0) {
                                 this.score += 100 * this.scoreMultiplier; // Get score for destroyed enemies
@@ -2194,6 +2351,11 @@
 
         // Sound Toggle Button Listener
         soundToggleBtn.addEventListener("click", () => {
+            // Resume audio context on first user interaction
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+
             if (game.isSoundOn) {
                 backgroundMusic.stopContinuous(); // Stop continuous sound
                 backgroundMusic.setVolume(0);
