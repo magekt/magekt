@@ -1034,8 +1034,7 @@
             verse2: ['verse2_A', 'verse2_B', 'verse2_C', 'verse2_D'],
             verse3: ['verse3_A', 'verse3_B', 'verse3_C']
         };
-        const ragaVerseOptions = ['ragaYamanPhrase', 'ragaBhairaviPhrase', 'ragaBhoopaliPhrase', 'ragaKhamajPhrase', 'ragaBhimpalasiPhrase', 'ragaKedarPhrase', 'ragaBageshriPhrase', 'ragaMalkaunsPhrase', 'ragaDarbariPhrase', 'ragaBhairavPhrase'];
-        let availableRagas = [...ragaVerseOptions];
+        // Removed ragaVerseOptions and related logic as we're now explicitly calling specific raga/song sections.
         let normalVerseIndex = 0;
         let verseIterationCount = 0;
 
@@ -1099,69 +1098,19 @@
             });
         }
 
-        // Raga scale definitions (using C as tonic for simplicity)
-        const ragaScales = {
-            yaman: ['C4', 'D4', 'E4', 'F#4', 'G4', 'A4', 'B4', 'C5'],
-            bhairavi: ['C4', 'C#4', 'D#4', 'F4', 'G4', 'G#4', 'A#4', 'C5'],
-            bhoopali: ['C4', 'D4', 'E4', 'G4', 'A4', 'C5'],
-            khamaj: ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'A#4', 'C5'],
-            bhimpalasi: ['C4', 'Eb4', 'F4', 'G4', 'Bb4', 'C5'],
-            kedar: ['C4', 'D4', 'E4', 'F#4', 'G4', 'A4', 'B4', 'C5'],
-            bageshri: ['C4', 'Eb4', 'F4', 'Ab4', 'Bb4', 'C5'],
-            malkauns: ['C4', 'Eb4', 'F4', 'Ab4', 'Bb4', 'C5'],
-            darbari: ['C4', 'D4', 'Eb4', 'F4', 'G4', 'Ab4', 'Bb4', 'C5'],
-            bhairav: ['C4', 'C#4', 'E4', 'F4', 'G4', 'G#4', 'B4', 'C5']
-        };
-
-        // Raga Characteristics System
-        const ragaCharacteristics = {
-            time: {
-                morning: ['yaman', 'bhairavi', 'bhoopali', 'bhairav'],
-                afternoon: ['bhimpalasi', 'khamaj', 'kedar'],
-                evening: ['yaman', 'kedar', 'bageshri'],
-                night: ['bageshri', 'malkauns', 'darbari']
-            },
-            moods: {
-                peaceful: ['bhoopali', 'yaman', 'bhairav'],
-                energetic: ['bhairavi', 'khamaj', 'kedar'],
-                melancholic: ['bhimpalasi', 'bageshri', 'malkauns', 'darbari'],
-                romantic: ['khamaj', 'yaman', 'bageshri']
-            }
-        };
+        // New Raga Kirwani scale (C-based)
+        const kirwaniScale = ['C4', 'D4', 'Eb4', 'F#4', 'G4', 'Ab4', 'B4', 'C5'];
 
         /**
-         * Selects a Raga appropriate for the current time of day.
-         * @returns {string} The name of a time-appropriate Raga (e.g., 'yaman').
-         */
-        function selectTimeAppropriateRaga() {
-            const hour = new Date().getHours();
-            const timeOfDay = 
-                hour >= 4 && hour < 8 ? 'morning' :
-                hour >= 8 && hour < 16 ? 'afternoon' :
-                hour >= 16 && hour < 20 ? 'evening' : 'night';
-            
-            const appropriateRagas = ragaCharacteristics.time[timeOfDay];
-            const availableAndDefinedRagas = appropriateRagas.filter(raga => ragaScales[raga]);
-
-            if (availableAndDefinedRagas.length > 0) {
-                return availableAndDefinedRagas[Math.floor(Math.random() * availableAndDefinedRagas.length)];
-            } else {
-                console.warn(`No defined Raga scales found for time of day: ${timeOfDay}. Falling back to 'yaman'.`);
-                return 'yaman';
-            }
-        }
-
-
-        /**
-         * Generates a melodic phrase within a given Raga scale, with expressive variations.
-         * @param {Array<string>} scale - Array of note names in the Raga scale (e.g., ['C4', 'D4', 'E4']).
-         * @param {number} phraseLength - Number of steps in the phrase (e.g., 8).
+         * Generates a melodic phrase based on the Raga Kirwani scale.
+         * @param {Array<string>} scale - The Kirwani scale notes (e.g., ['C4', 'D4', 'Eb4', 'F#4', 'G4', 'Ab4', 'B4', 'C5']).
+         * @param {number} phraseLength - The desired length of the phrase in steps.
          * @param {number} humanizationFactor - A factor influencing how "busy" or sparse the melody is (0-1).
          * @returns {Array<Object>} An array of phrase steps.
          */
-        function generateRagaMelody(scale, phraseLength, humanizationFactor) {
+        function generateKirwaniMelody(scale, phraseLength, humanizationFactor) {
             if (!Array.isArray(scale) || scale.length === 0) {
-                console.error("generateRagaMelody received an empty or invalid scale array:", scale);
+                console.error("generateKirwaniMelody received an empty or invalid scale array:", scale);
                 return [];
             }
 
@@ -1171,9 +1120,6 @@
 
             const getSafeNote = (arr, index) => arr[index] || arr[0];
 
-            const vadiNote = getSafeNote(scale, 0);
-            const samvadiNote = getSafeNote(scale, scale.length > 4 ? 4 : scale.length - 1);
-
             for (let i = 0; i < phraseLength; i++) {
                 const step = {
                     bass: [],
@@ -1182,64 +1128,43 @@
                     delaySend: 0.3 + (Math.random() * 0.3)
                 };
 
-                // --- Bass Line Generation ---
+                // Simplified Bass for Kirwani (often drone-like or root-fifth)
                 if (i % 4 === 0) {
-                    step.bass.push(vadiNote.replace('4', '2'));
+                    step.bass.push(getSafeNote(scale, 0).replace('4', '2')); // Root
                 } else if (i % 2 === 0) {
-                    if (Math.random() < 0.7) {
-                        const bassOptions = [
-                            vadiNote.replace('4', '2'),
-                            samvadiNote.replace('4', '2')
-                        ];
-                        if (scale.length > 2) {
-                            bassOptions.push(getSafeNote(scale, 2).replace('4', '2'));
-                        }
-                        const selectedBassNote = bassOptions[Math.floor(Math.random() * bassOptions.length)];
-                        if (selectedBassNote) {
-                            step.bass.push(selectedBassNote);
-                        }
+                    if (Math.random() < 0.6) {
+                        step.bass.push(getSafeNote(scale, 4).replace('4', '2')); // Fifth
+                    } else {
+                        step.bass.push(getSafeNote(scale, 0).replace('4', '2'));
                     }
-                }
-                if (step.bass.length === 0) {
-                    step.bass.push(vadiNote.replace('4', '2'));
+                } else {
+                    step.bass.push(getSafeNote(scale, 0).replace('4', '2'));
                 }
 
-                // --- Synth Melody Generation ---
+                // Synth Melody Generation (more complex for Raga feel)
                 const numSynthNotes = 1 + Math.floor(Math.random() * (humanizationFactor * 2));
                 let synthNotesForStep = [];
 
                 for (let j = 0; j < numSynthNotes; j++) {
                     let nextSynthNoteIndex = currentSynthNoteIndex;
 
-                    if (Math.random() < 0.8) {
+                    // Tendency to move stepwise or small leaps
+                    if (Math.random() < 0.7) {
                         nextSynthNoteIndex = (currentSynthNoteIndex + lastSynthDirection + scale.length * 2) % scale.length;
-                    } else if (Math.random() < 0.95) {
+                    } else if (Math.random() < 0.9) {
                         const leapAmount = Math.random() < 0.5 ? 2 : 3;
                         nextSynthNoteIndex = (currentSynthNoteIndex + lastSynthDirection * leapAmount + scale.length * 2) % scale.length;
                     } else {
-                        lastSynthDirection *= -1;
+                        lastSynthDirection *= -1; // Change direction more often
                         const leapAmount = Math.floor(Math.random() * (scale.length / 2)) + 1;
                         nextSynthNoteIndex = (currentSynthNoteIndex + lastSynthDirection * leapAmount + scale.length * 2) % scale.length;
                     }
 
-                    if (vadiNote && Math.random() < 0.4) {
-                        const targetVadiBaseNote = vadiNote.slice(0, -1);
-                        let vadiIndex = scale.findIndex(note => note.startsWith(targetVadiBaseNote));
-                        if (vadiIndex !== -1) {
-                            nextSynthNoteIndex = vadiIndex;
-                        } else {
-                            nextSynthNoteIndex = Math.floor(Math.random() * scale.length);
-                            console.warn(`Vadi note base ${targetVadiBaseNote} not found in current scale. Picking random note.`);
-                        }
-                    } else if (samvadiNote && Math.random() < 0.25) {
-                        const targetSamvadiBaseNote = samvadiNote.slice(0, -1);
-                        let samvadiIndex = scale.findIndex(note => note.startsWith(targetSamvadiBaseNote));
-                        if (samvadiIndex !== -1) {
-                            nextSynthNoteIndex = samvadiIndex;
-                        } else {
-                            nextSynthNoteIndex = Math.floor(Math.random() * scale.length);
-                            console.warn(`Samvadi note base ${targetSamvadiBaseNote} not found in current scale. Picking random note.`);
-                        }
+                    // Emphasize tonic (Sa) and dominant (Pa)
+                    if (Math.random() < 0.3) { // Higher chance to hit Sa
+                        nextSynthNoteIndex = 0;
+                    } else if (Math.random() < 0.2) { // Chance to hit Pa (5th)
+                        nextSynthNoteIndex = 4;
                     }
 
                     currentSynthNoteIndex = nextSynthNoteIndex;
@@ -1252,7 +1177,8 @@
                     let synthNote = scale[currentSynthNoteIndex];
                     const currentOctave = parseInt(synthNote.slice(-1));
                     
-                    if (Math.random() < 0.2 * humanizationFactor) {
+                    // Octave jumps for expressiveness
+                    if (Math.random() < 0.15 * humanizationFactor) {
                         if (Math.random() < 0.5 && currentOctave < 5) {
                             synthNote = synthNote.slice(0, -1) + (currentOctave + 1);
                         } else if (currentOctave > 3) {
@@ -1262,7 +1188,8 @@
                     synthNotesForStep.push(synthNote);
                 }
                 
-                if (humanizationFactor > 0.7 && Math.random() < 0.25 * humanizationFactor) {
+                // Add more notes for chordal/richer sound if humanization is high
+                if (humanizationFactor > 0.7 && Math.random() < 0.2) {
                     const rootIndex = currentSynthNoteIndex;
                     const thirdNote = getSafeNote(scale, (rootIndex + 2) % scale.length);
                     const fifthNote = getSafeNote(scale, (rootIndex + 4) % scale.length);
@@ -1273,7 +1200,7 @@
 
                 step.synth = synthNotesForStep.length > 0 ? synthNotesForStep : [getSafeNote(scale, currentSynthNoteIndex)];
 
-                // --- Percussion Generation (more varied) ---
+                // Percussion (similar to existing logic)
                 if (i === 0) {
                     step.percussion.kick = { active: true, probability: 0.95, velocity: 1.0 };
                     step.percussion.hihat = { active: true, probability: 1.0, type: 'closed', velocity: 0.8 };
@@ -1300,6 +1227,21 @@
             }
             return generatedPhrase;
         }
+
+        // Dazed and Confused Bass and Synth (simplified core riff)
+        // Notes from D minor pentatonic for synth: D, F, G, A, C
+        const dazedAndConfusedPhrase = [
+            // D - A - C - G
+            { bass: ['D2'], synth: ['D4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.1 },
+            { bass: ['A1'], synth: ['C4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
+            { bass: ['C2'], synth: ['A3'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.1 },
+            { bass: ['G1'], synth: ['G3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
+            // D - A - C - Bb (variation)
+            { bass: ['D2'], synth: ['F4'], percussion: { kick: { active: true, probability: 0.9, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.1 },
+            { bass: ['A1'], synth: ['C4'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 },
+            { bass: ['C2'], synth: ['G3'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.1 },
+            { bass: ['Bb1'], synth: ['F3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
+        ];
 
 
         // Define musical phrases for each section of the song.
@@ -1433,17 +1375,6 @@
                 { bass: ['C3'], synth: ['C4', 'G4'], percussion: { snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.8 } }, delaySend: 0.0 },
                 { bass: ['G2'], synth: ['G3', 'B3'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.0 }
             ],
-            ragaYamanPhrase: [],
-            ragaBhairaviPhrase: [],
-            ragaBhoopaliPhrase: [],
-            ragaKhamajPhrase: [],
-            ragaBhimpalasiPhrase: [], 
-            ragaKedarPhrase: [],      
-            ragaBageshriPhrase: [],   
-            ragaMalkaunsPhrase: [],   
-            ragaDarbariPhrase: [],    
-            ragaBhairavPhrase: [],    
-            
             chorus: [
                 { bass: ['C2'], synth: ['C4', 'E4', 'G4', 'C5'], percussion: { kick: { active: true, probability: 0.95, velocity: 1.0 }, snare: { active: true, probability: 0.8, velocity: 1.0 }, hihat: { active: true, probability: 1.0, type: 'open', velocity: 0.9 } }, delaySend: 0.6 },
                 { bass: ['C2'], synth: ['G4', 'C5'], percussion: { hihat: { active: true, probability: 1.0, type: 'closed', velocity: 0.7 } }, delaySend: 0.6 },
@@ -1473,15 +1404,18 @@
                 { bass: ['G2'], synth: ['G3'], percussion: {}, delaySend: 0.3 },
                 { bass: ['A2'], synth: ['A3'], percussion: {}, delaySend: 0.2 },
                 { bass: ['F2'], synth: ['F3'], percussion: {}, delaySend: 0.0 }
-            ]
+            ],
+            // New phrases
+            dazedAndConfused: dazedAndConfusedPhrase,
+            kirwaniMelody: [] // This will be dynamically generated
         };
 
         const songStructure = [
             { type: 'intro', durationMultiplier: 2, initialKey: 'C' },
             { type: 'verse', baseName: 'verse1', durationMultiplier: 3, initialKey: 'C' },
             { type: 'chorus', durationMultiplier: 2, initialKey: 'C' },
-            { type: 'verse', baseName: 'verse2', durationMultiplier: 3, initialKey: 'C' },
-            { type: 'verse', baseName: 'verse3', durationMultiplier: 5, initialKey: 'C' },
+            { type: 'dazedAndConfused', durationMultiplier: 3, initialKey: 'D' }, // Led Zeppelin inspired
+            { type: 'kirwani', durationMultiplier: 5, initialKey: 'C' }, // Anoushka Shankar inspired
             { type: 'bridge', durationMultiplier: 2, initialKey: 'C' },
             { type: 'chorus', durationMultiplier: 3, initialKey: 'C' },
             { type: 'verse', baseName: 'verse1', durationMultiplier: 2, initialKey: 'C' },
@@ -1511,16 +1445,7 @@
          * Gets the next Raga phrase from the available pool, ensuring non-repetition until all are played.
          * @returns {string} The name of the next Raga phrase.
          */
-        function getNextRagaPhrase() {
-            if (availableRagas.length === 0) {
-                availableRagas = [...ragaVerseOptions];
-                shuffleArray(availableRagas);
-                console.log("Raga pool reset and shuffled:", availableRagas);
-            }
-            const nextRaga = availableRagas.shift();
-            console.log("Next Raga:", nextRaga, "Remaining Ragas:", availableRagas);
-            return nextRaga;
-        }
+        // Removed `getNextRagaPhrase` as we are now explicitly calling `kirwani` section type.
 
         /**
          * Selects a random variation for a given normal verse base name.
@@ -1931,7 +1856,7 @@
                     const sampleRate = audioContext.sampleRate;
                     const impulseBuffer = audioContext.createBuffer(2, sampleRate * impulseLength, sampleRate);
                     const leftChannel = impulseBuffer.getChannelData(0);
-                    const rightChannel = impulseBuffer.getChannelData(1);
+                    const rightChannel = impulseBuffer.createChannelData(1); // Corrected: use createChannelData for new buffer
 
                     for (let i = 0; i < sampleRate * impulseLength; i++) {
                         leftChannel[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / (sampleRate * impulseLength), 2);
@@ -2461,30 +2386,30 @@
 
                     const semitonesToTranspose = keyToSemitoneOffsetFromC[currentKey] - keyToSemitoneOffsetFromC['C'];
 
-                    if (currentSectionType === 'verse' && verseIterationCount % 2 === 0) {
-                        const selectedRagaName = selectTimeAppropriateRaga();
-                        currentSectionName = `raga${selectedRagaName.charAt(0).toUpperCase() + selectedRagaName.slice(1)}Phrase`;
-                        
-                        const selectedRagaScale = ragaScales[selectedRagaName];
-
-                        if (selectedRagaScale && Array.isArray(selectedRagaScale) && selectedRagaScale.length > 0) {
-                            const transposedRagaScale = transposeNotes(selectedRagaScale, semitonesToTranspose);
-                            phraseToUse = generateRagaMelody(transposedRagaScale, 8, humanizationFactor);
-                        } else {
-                            console.error(`Invalid or empty Raga scale found for name: ${selectedRagaName}. Falling back to a default verse.`);
-                            currentSectionName = getRandomNormalVerseVariation('verse1');
-                            phraseToUse = musicalPhrases[currentSectionName].map(step => ({
+                    // Handle new section types
+                    if (currentSectionType === 'kirwani') {
+                        currentSectionName = 'kirwaniMelody';
+                        const transposedKirwaniScale = transposeNotes(kirwaniScale, semitonesToTranspose);
+                        phraseToUse = generateKirwaniMelody(transposedKirwaniScale, 8, humanizationFactor); // Generate a new phrase each time
+                    } else if (currentSectionType === 'dazedAndConfused') {
+                        currentSectionName = 'dazedAndConfused';
+                        phraseToUse = musicalPhrases.dazedAndConfused.map(step => ({
+                            ...step,
+                            bass: transposeNotes(step.bass, semitonesToTranspose),
+                            synth: transposeNotes(step.synth, semitonesToTranspose)
+                        }));
+                    } else if (currentSectionType === 'verse') {
+                        currentSectionName = getRandomNormalVerseVariation(nextSectionDef.baseName);
+                        const basePhrase = musicalPhrases[currentSectionName];
+                        if (basePhrase && Array.isArray(basePhrase)) {
+                             phraseToUse = basePhrase.map(step => ({
                                 ...step,
                                 bass: transposeNotes(step.bass, semitonesToTranspose),
                                 synth: transposeNotes(step.synth, semitonesToTranspose)
                             }));
                         }
                     } else {
-                        if (currentSectionType === 'verse') {
-                            currentSectionName = getRandomNormalVerseVariation(nextSectionDef.baseName);
-                        } else {
-                            currentSectionName = nextSectionDef.type;
-                        }
+                        currentSectionName = nextSectionDef.type;
                         const basePhrase = musicalPhrases[currentSectionName];
                         if (basePhrase && Array.isArray(basePhrase)) {
                              phraseToUse = basePhrase.map(step => ({
@@ -2576,16 +2501,26 @@
             let initialPhraseToUse = [];
             const semitonesToTranspose = keyToSemitoneOffsetFromC[currentKey] - keyToSemitoneOffsetFromC['C'];
 
-            if (currentSectionType === 'verse' && verseIterationCount % 2 === 0) {
-                verseIterationCount = 1;
-                currentSectionName = initialSectionDef.baseName + '_A';
+            // Handle new section types for initial start
+            if (currentSectionType === 'kirwani') {
+                currentSectionName = 'kirwaniMelody';
+                const transposedKirwaniScale = transposeNotes(kirwaniScale, semitonesToTranspose);
+                initialPhraseToUse = generateKirwaniMelody(transposedKirwaniScale, 8, humanizationFactor);
+            } else if (currentSectionType === 'dazedAndConfused') {
+                currentSectionName = 'dazedAndConfused';
+                initialPhraseToUse = musicalPhrases.dazedAndConfused.map(step => ({
+                    ...step,
+                    bass: transposeNotes(step.bass, semitonesToTranspose),
+                    synth: transposeNotes(step.synth, semitonesToTranspose)
+                }));
+            } else if (currentSectionType === 'verse') {
+                currentSectionName = initialSectionDef.baseName + '_A'; // Start with A variation
                 const basePhrase = musicalPhrases[currentSectionName];
                 initialPhraseToUse = basePhrase.map(step => ({
                     ...step,
                     bass: transposeNotes(step.bass, semitonesToTranspose),
                     synth: transposeNotes(step.synth, semitonesToTranspose)
                 }));
-                console.log(`Forcing initial verse to start with: ${currentSectionName} in ${currentKey} Major`);
             } else {
                 currentSectionName = initialSectionDef.type;
                 const basePhrase = musicalPhrases[currentSectionName];
@@ -2597,8 +2532,6 @@
             }
 
             currentSectionPhrase = initialPhraseToUse;
-
-            shuffleArray(availableRagas);
 
             currentPhraseIndex = 0;
             stepsPlayedInCurrentSection = 0;
@@ -2659,9 +2592,6 @@
                         showMessage("Music stopped.");
                     }
                 }, 1000);
-            } else {
-                console.log("AudioContext or masterGainNode not available for smooth stop.");
-                showMessage("Music stopped.");
             }
             
             document.getElementById('startButton').disabled = false;
