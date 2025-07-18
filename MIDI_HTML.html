@@ -1598,7 +1598,8 @@
             } catch (e) { /* ignore */ }
 
             if (isReverbBypassed) {
-                // No need to connect dryGainNode or reverbGainNode if bypassed
+                // If bypassed, ensure dry signal goes directly to compressor
+                preCompressorGain.connect(compressorNode);
             } else {
                 dryGainNode.gain.setValueAtTime(1 - reverbMix, audioContext.currentTime);
                 reverbGainNode.gain.setValueAtTime(reverbMix, audioContext.currentTime);
@@ -1763,6 +1764,7 @@
                 }
             }
             showMessage(transitionMessage, 2500);
+            console.log(`Key change: from ${currentKey} to ${nextKey}.`);
             return nextKey;
         }
 
@@ -1879,12 +1881,17 @@
                     updatePhaserBypassConnection();
                     updateChorusBypassConnection();
 
-                    preCompressorGain.connect(compressorNode);
+                    // Connect the main signal path to the compressor
+                    // The reverb bypass function will handle connecting preCompressorGain to compressorNode
+                    // either directly or via dryGainNode/reverbGainNode/convolverNode.
+                    // So, we don't connect preCompressorGain to compressorNode here directly.
+                    // Instead, we ensure updateReverbBypassConnection is called after all nodes are created.
+                    
                     compressorNode.connect(analyserNode);
                     analyserNode.connect(audioContext.destination);
 
                     preCompressorGain.connect(delaySendGain);
-                    updateReverbBypassConnection();
+                    updateReverbBypassConnection(); // Call this after all nodes are created and initial connections are set
 
                     audioVisualizerCanvas = document.getElementById('audioVisualizer');
                     audioVisualizerCtx = audioVisualizerCanvas.getContext('2d');
@@ -2288,8 +2295,9 @@
                 
                 if (!currentStep || typeof currentStep !== 'object' || !Array.isArray(currentStep.synth) || !Array.isArray(currentStep.bass) || typeof currentStep.percussion !== 'object' || currentStep.percussion === null) {
                     console.error(`Invalid or malformed currentStep at index ${currentPhraseIndex}:`, currentStep);
+                    // If a step is malformed, skip to the next section to prevent infinite loops or errors
                     currentPhraseIndex = 0;
-                    stepsPlayedInCurrentSection = currentSectionTotalSteps;
+                    stepsPlayedInCurrentSection = currentSectionTotalSteps; // Force section transition
                     continue;
                 }
 
@@ -2354,7 +2362,7 @@
                 }
 
                 if (stepsPlayedInCurrentSection >= currentSectionTotalSteps) {
-                    console.log(`End of section '${currentSectionName}' reached.`);
+                    console.log(`End of section '${currentSectionName}' reached. Steps played: ${stepsPlayedInCurrentSection}/${currentSectionTotalSteps}`);
                     currentPhraseIndex = 0;
                     stepsPlayedInCurrentSection = 0;
                     currentSongSectionIndex++;
@@ -2378,19 +2386,21 @@
                     if (sectionsSinceLastKeyChange >= sectionsPerKeyChange) {
                         currentKey = selectNextKey(previousKey);
                         sectionsSinceLastKeyChange = 0;
-                        sectionsPerKeyChange = Math.floor(Math.random() * 3) + 2;
+                        sectionsPerKeyChange = Math.floor(Math.random() * 3) + 2; // Randomize next key change interval
                         console.log(`Next key change will happen in ${sectionsPerKeyChange} sections.`);
                     } else {
                         showMessage(`Staying in ${currentKey} Major.`, 2500);
                     }
 
                     const semitonesToTranspose = keyToSemitoneOffsetFromC[currentKey] - keyToSemitoneOffsetFromC['C'];
+                    console.log(`Transposing by ${semitonesToTranspose} semitones for key ${currentKey}.`);
 
                     // Handle new section types
                     if (currentSectionType === 'kirwani') {
                         currentSectionName = 'kirwaniMelody';
                         const transposedKirwaniScale = transposeNotes(kirwaniScale, semitonesToTranspose);
                         phraseToUse = generateKirwaniMelody(transposedKirwaniScale, 8, humanizationFactor); // Generate a new phrase each time
+                        console.log("Generated new Kirwani melody:", phraseToUse);
                     } else if (currentSectionType === 'dazedAndConfused') {
                         currentSectionName = 'dazedAndConfused';
                         phraseToUse = musicalPhrases.dazedAndConfused.map(step => ({
@@ -2398,6 +2408,7 @@
                             bass: transposeNotes(step.bass, semitonesToTranspose),
                             synth: transposeNotes(step.synth, semitonesToTranspose)
                         }));
+                        console.log("Using Dazed and Confused phrase, transposed:", phraseToUse);
                     } else if (currentSectionType === 'verse') {
                         currentSectionName = getRandomNormalVerseVariation(nextSectionDef.baseName);
                         const basePhrase = musicalPhrases[currentSectionName];
@@ -2408,6 +2419,7 @@
                                 synth: transposeNotes(step.synth, semitonesToTranspose)
                             }));
                         }
+                        console.log(`Using verse variation '${currentSectionName}', transposed:`, phraseToUse);
                     } else {
                         currentSectionName = nextSectionDef.type;
                         const basePhrase = musicalPhrases[currentSectionName];
@@ -2425,14 +2437,17 @@
                                 bass: transposeNotes(step.bass, semitonesToTranspose),
                                 synth: transposeNotes(step.synth, semitonesToTranspose)
                             }));
+                            currentKey = songStructure[0].initialKey || 'C'; // Reset key to C if falling back
                         }
+                        console.log(`Using section '${currentSectionName}', transposed:`, phraseToUse);
                     }
                     
                     currentSectionPhrase = phraseToUse;
 
                     if (!currentSectionPhrase || currentSectionPhrase.length === 0) {
-                        console.warn(`Section '${currentSectionName}' resulted in an empty phrase. Falling back to intro.`);
+                        console.warn(`Section '${currentSectionName}' resulted in an empty phrase after generation/transposition. Falling back to intro.`);
                         currentSectionName = 'intro';
+                        // Re-transpose intro to the current key in case of fallback
                         currentSectionPhrase = musicalPhrases.intro.map(step => ({
                                 ...step,
                                 bass: transposeNotes(step.bass, semitonesToTranspose),
@@ -2498,14 +2513,35 @@
             currentSectionType = initialSectionDef.type;
             currentKey = initialSectionDef.initialKey || 'C';
 
+            // Ensure dynamic parameters have initial values if not loaded from autosave
+            targetDetune = targetDetune ?? 0;
+            targetFilterFrequency = targetFilterFrequency ?? 1000;
+            targetFilterQ = targetFilterQ ?? 1;
+            targetBaseNoteDuration = targetBaseNoteDuration ?? 0.5;
+            targetHumanizationFactor = targetHumanizationFactor ?? 0.5;
+            targetDelayTimeValue = targetDelayTimeValue ?? 0.3;
+            targetDelayFeedbackValue = targetDelayFeedbackValue ?? 0.4;
+
+            currentDetune = targetDetune;
+            currentFilterFrequency = targetFilterFrequency;
+            currentFilterQ = targetFilterQ;
+            baseNoteDuration = targetBaseNoteDuration;
+            humanizationFactor = targetHumanizationFactor;
+            delayTimeValue = targetDelayTimeValue;
+            delayFeedbackValue = targetDelayFeedbackValue;
+
+
             let initialPhraseToUse = [];
             const semitonesToTranspose = keyToSemitoneOffsetFromC[currentKey] - keyToSemitoneOffsetFromC['C'];
+            console.log(`Initial start: Transposing by ${semitonesToTranspose} semitones for key ${currentKey}.`);
+
 
             // Handle new section types for initial start
             if (currentSectionType === 'kirwani') {
                 currentSectionName = 'kirwaniMelody';
                 const transposedKirwaniScale = transposeNotes(kirwaniScale, semitonesToTranspose);
                 initialPhraseToUse = generateKirwaniMelody(transposedKirwaniScale, 8, humanizationFactor);
+                console.log("Initial Kirwani melody generated:", initialPhraseToUse);
             } else if (currentSectionType === 'dazedAndConfused') {
                 currentSectionName = 'dazedAndConfused';
                 initialPhraseToUse = musicalPhrases.dazedAndConfused.map(step => ({
@@ -2513,6 +2549,7 @@
                     bass: transposeNotes(step.bass, semitonesToTranspose),
                     synth: transposeNotes(step.synth, semitonesToTranspose)
                 }));
+                console.log("Initial Dazed and Confused phrase, transposed:", initialPhraseToUse);
             } else if (currentSectionType === 'verse') {
                 currentSectionName = initialSectionDef.baseName + '_A'; // Start with A variation
                 const basePhrase = musicalPhrases[currentSectionName];
@@ -2521,6 +2558,7 @@
                     bass: transposeNotes(step.bass, semitonesToTranspose),
                     synth: transposeNotes(step.synth, semitonesToTranspose)
                 }));
+                console.log(`Initial verse variation '${currentSectionName}', transposed:`, initialPhraseToUse);
             } else {
                 currentSectionName = initialSectionDef.type;
                 const basePhrase = musicalPhrases[currentSectionName];
@@ -2529,6 +2567,7 @@
                     bass: transposeNotes(step.bass, semitonesToTranspose),
                     synth: transposeNotes(step.synth, semitonesToTranspose)
                 }));
+                console.log(`Initial section '${currentSectionName}', transposed:`, initialPhraseToUse);
             }
 
             currentSectionPhrase = initialPhraseToUse;
@@ -3001,88 +3040,90 @@
          * @param {Object} settings - An object containing settings to apply.
          */
         function applySettings(settings) {
-            document.getElementById('masterVolume').value = settings.masterVolume;
+            // Use nullish coalescing operator (??) to provide default values if settings properties are null or undefined
+            document.getElementById('masterVolume').value = settings.masterVolume ?? 0.55;
             document.getElementById('masterVolume').dispatchEvent(new Event('input'));
 
-            document.getElementById('tempo').value = settings.tempo;
+            document.getElementById('tempo').value = settings.tempo ?? 420;
             document.getElementById('tempo').dispatchEvent(new Event('input'));
 
-            document.getElementById('bassVolume').value = settings.bassVolume;
+            document.getElementById('bassVolume').value = settings.bassVolume ?? 0.03;
             document.getElementById('bassVolume').dispatchEvent(new Event('input'));
 
-            document.getElementById('synthVolume').value = settings.synthVolume;
+            document.getElementById('synthVolume').value = settings.synthVolume ?? 0.08;
             document.getElementById('synthVolume').dispatchEvent(new Event('input'));
 
-            document.getElementById('kickVolume').value = settings.kickVolume;
+            document.getElementById('kickVolume').value = settings.kickVolume ?? 0.89;
             document.getElementById('kickVolume').dispatchEvent(new Event('input'));
 
-            document.getElementById('snareVolume').value = settings.snareVolume;
+            document.getElementById('snareVolume').value = settings.snareVolume ?? 0.21;
             document.getElementById('snareVolume').dispatchEvent(new Event('input'));
 
-            document.getElementById('hihatVolume').value = settings.hihatVolume;
+            document.getElementById('hihatVolume').value = settings.hihatVolume ?? 0.21;
             document.getElementById('hihatVolume').dispatchEvent(new Event('input'));
 
-            document.getElementById('bassOscillatorType').value = settings.bassOscillatorType;
-            bassOscillatorType = settings.bassOscillatorType;
-            document.getElementById('synthOscillatorType').value = settings.synthOscillatorType;
-            synthOscillatorType = settings.synthOscillatorType;
+            document.getElementById('bassOscillatorType').value = settings.bassOscillatorType ?? 'sine';
+            bassOscillatorType = settings.bassOscillatorType ?? 'sine';
+            document.getElementById('synthOscillatorType').value = settings.synthOscillatorType ?? 'square';
+            synthOscillatorType = settings.synthOscillatorType ?? 'square';
             
-            document.getElementById('synthArpeggiator').checked = settings.isSynthArpeggiatorActive;
-            isSynthArpeggiatorActive = settings.isSynthArpeggiatorActive;
+            document.getElementById('synthArpeggiator').checked = settings.isSynthArpeggiatorActive ?? false;
+            isSynthArpeggiatorActive = settings.isSynthArpeggiatorActive ?? false;
 
-            document.getElementById('delayTime').value = settings.delayTime;
+            document.getElementById('delayTime').value = settings.delayTime ?? 0.3;
             document.getElementById('delayTime').dispatchEvent(new Event('input'));
 
-            document.getElementById('delayFeedback').value = settings.delayFeedback;
+            document.getElementById('delayFeedback').value = settings.delayFeedback ?? 0.4;
             document.getElementById('delayFeedback').dispatchEvent(new Event('input'));
 
-            document.getElementById('delaySendLevel').value = settings.delaySendLevel;
+            document.getElementById('delaySendLevel').value = settings.delaySendLevel ?? 0.5;
             document.getElementById('delaySendLevel').dispatchEvent(new Event('input'));
 
-            document.getElementById('chorusDepth').value = settings.chorusDepth;
+            document.getElementById('chorusDepth').value = settings.chorusDepth ?? 0.002;
             document.getElementById('chorusDepth').dispatchEvent(new Event('input'));
             
-            document.getElementById('chorusBypass').checked = settings.isChorusBypassed;
+            document.getElementById('chorusBypass').checked = settings.isChorusBypassed ?? true;
             document.getElementById('chorusBypass').dispatchEvent(new Event('change'));
 
-            document.getElementById('compThreshold').value = settings.compThreshold;
+            document.getElementById('compThreshold').value = settings.compThreshold ?? -24;
             document.getElementById('compThreshold').dispatchEvent(new Event('input'));
 
-            document.getElementById('compRatio').value = settings.compRatio;
+            document.getElementById('compRatio').value = settings.compRatio ?? 12;
             document.getElementById('compRatio').dispatchEvent(new Event('input'));
             
-            document.getElementById('reverbMix').value = settings.reverbMix;
+            document.getElementById('reverbMix').value = settings.reverbMix ?? 0.5;
             document.getElementById('reverbMix').dispatchEvent(new Event('input'));
 
-            document.getElementById('reverbBypass').checked = settings.isReverbBypassed;
+            document.getElementById('reverbBypass').checked = settings.isReverbBypassed ?? true;
             document.getElementById('reverbBypass').dispatchEvent(new Event('change'));
 
-            document.getElementById('distortionAmount').value = settings.distortionAmount;
+            document.getElementById('distortionAmount').value = settings.distortionAmount ?? 0;
             document.getElementById('distortionAmount').dispatchEvent(new Event('input'));
-            document.getElementById('distortionBypass').checked = settings.isDistortionBypassed;
+            document.getElementById('distortionBypass').checked = settings.isDistortionBypassed ?? true;
             document.getElementById('distortionBypass').dispatchEvent(new Event('change'));
 
-            document.getElementById('phaserRate').value = settings.phaserRate;
+            document.getElementById('phaserRate').value = settings.phaserRate ?? 1;
             document.getElementById('phaserRate').dispatchEvent(new Event('input'));
-            document.getElementById('phaserDepth').value = settings.phaserDepth;
+            document.getElementById('phaserDepth').value = settings.phaserDepth ?? 0.5;
             document.getElementById('phaserDepth').dispatchEvent(new Event('input'));
-            document.getElementById('phaserBypass').checked = settings.isPhaserBypassed;
+            document.getElementById('phaserBypass').checked = settings.isPhaserBypassed ?? true;
             document.getElementById('phaserBypass').dispatchEvent(new Event('change'));
 
-            currentDetune = settings.currentDetune;
-            currentFilterFrequency = settings.currentFilterFrequency;
-            currentFilterQ = settings.currentFilterQ;
-            baseNoteDuration = settings.baseNoteDuration;
-            humanizationFactor = settings.humanizationFactor;
+            // Apply dynamic parameters directly to their current values
+            currentDetune = settings.targetDetune ?? 0;
+            currentFilterFrequency = settings.targetFilterFrequency ?? 1000;
+            currentFilterQ = settings.targetFilterQ ?? 1;
+            baseNoteDuration = settings.targetBaseNoteDuration ?? 0.5;
+            humanizationFactor = settings.targetHumanizationFactor ?? 0.5;
 
-            targetDetune = settings.targetDetune;
-            targetFilterFrequency = settings.targetFilterFrequency;
-            targetFilterQ = settings.targetFilterQ;
-            targetBaseNoteDuration = settings.targetBaseNoteDuration;
-            targetHumanizationFactor = settings.targetHumanizationFactor;
-            targetDelayTimeValue = settings.targetDelayTimeValue;
-            targetDelayFeedbackValue = settings.targetDelayFeedbackValue;
-
+            // Also update the target values for subtle changes
+            targetDetune = settings.targetDetune ?? 0;
+            targetFilterFrequency = settings.targetFilterFrequency ?? 1000;
+            targetFilterQ = settings.targetFilterQ ?? 1;
+            targetBaseNoteDuration = settings.targetBaseNoteDuration ?? 0.5;
+            targetHumanizationFactor = settings.targetHumanizationFactor ?? 0.5;
+            targetDelayTimeValue = settings.targetDelayTimeValue ?? 0.3;
+            targetDelayFeedbackValue = settings.targetDelayFeedbackValue ?? 0.4;
 
             showMessage("Preset loaded successfully!");
             console.log("Settings applied:", settings);
