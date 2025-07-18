@@ -1856,7 +1856,7 @@
                     const sampleRate = audioContext.sampleRate;
                     const impulseBuffer = audioContext.createBuffer(2, sampleRate * impulseLength, sampleRate);
                     const leftChannel = impulseBuffer.getChannelData(0);
-                    const rightChannel = impulseBuffer.createChannelData(1); // Corrected: use createChannelData for new buffer
+                    const rightChannel = impulseBuffer.getChannelData(1); // Corrected: use getChannelData for existing buffer
 
                     for (let i = 0; i < sampleRate * impulseLength; i++) {
                         leftChannel[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / (sampleRate * impulseLength), 2);
