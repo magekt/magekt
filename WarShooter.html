@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>War Zone Tactical Shooter – Ultimate Enhanced Third Person (v3)</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #000; }
+    /* HUD Styling */
+    #hud {
+      position: absolute; top: 10px; left: 10px; z-index: 20;
+      color: #fff; font-family: Arial, sans-serif;
+      font-size: 1rem;
+    }
+    #hud button {
+      padding: 0.5rem 1rem; margin-top: 0.5rem; font-size: 1rem;
+    }
+    #playerHealthBar {
+      width: 150px; height: 15px; background: #555; margin-top: 0.5rem;
+    }
+    #playerHealthFill {
+      height: 100%; background: #0f0; width: 100%;
+    }
+    #killFeed { 
+      position: absolute; top: 80px; left: 10px; z-index: 20;
+      font-size: 0.9rem; line-height: 1.2; max-height: 150px; overflow: hidden;
+    }
+    /* Crosshair */
+    #crosshair {
+      position: absolute; top: 50%; left: 50%;
+      width: 20px; height: 20px; margin-left: -10px; margin-top: -10px;
+      pointer-events: none; z-index: 25;
+      background: url('crosshair.png') no-repeat center center;
+    }
+    /* Overlays */
+    #message, #instructions, #pauseOverlay {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      color: #fff; font-family: Arial, sans-serif; text-align: center;
+      z-index: 30; cursor: pointer;
+    }
+    #message { font-size: 2rem; display: none; }
+    #instructions { font-size: 1.5rem; display: block; }
+    #pauseOverlay {
+      font-size: 2rem; background: rgba(0,0,0,0.7); padding: 20px;
+      display: none;
+    }
+    /* Mini-map */
+    #minimap {
+      position: absolute; top: 10px; right: 10px;
+      border: 1px solid #fff; z-index: 30; background: rgba(0,0,0,0.5);
+    }
+    /* Mobile Virtual Joystick */
+    #moveJoystick {
+      position: absolute; left: 10px; bottom: 10px;
+      width: 80px; height: 80px; border-radius: 50%;
+      background: rgba(255,255,255,0.2); display: none; pointer-events: none;
+      z-index: 20;
+    }
+    #moveJoystickInner {
+      position: absolute; width: 40px; height: 40px; border-radius: 50%;
+      background: rgba(255,255,255,0.5); top: 20px; left: 20px;
+    }
+    /* Mobile Shoot Button */
+    #shootBtn {
+      position: absolute; right: 20px; bottom: 100px; z-index: 20;
+      padding: 15px 20px; font-size: 1.2rem; border: none; border-radius: 5px;
+      background: rgba(255,0,0,0.8); color: #fff;
+    }
+    /* Damage Flash Overlay */
+    #damageFlash {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: red; opacity: 0; pointer-events: none;
+      z-index: 40;
+      transition: opacity 0.5s ease;
+    }
+    /* Mobile Media Query */
+    @media (max-width: 600px) {
+      #hud { top: 5px; left: 5px; font-size: 0.8rem; }
+      #hud button { padding: 0.3rem 0.6rem; margin-top: 0.3rem; font-size: 0.8rem; }
+      #playerHealthBar { width: 100px; height: 10px; }
+      #killFeed { font-size: 0.8rem; max-height: 100px; }
+      #crosshair { width: 15px; height: 15px; margin-left: -7.5px; margin-top: -7.5px; }
+      #moveJoystick { width: 60px; height: 60px; }
+      #moveJoystickInner { width: 30px; height: 30px; top: 15px; left: 15px; }
+      #shootBtn { padding: 10px 15px; font-size: 1rem; right: 10px; bottom: 20px; }
+      #message, #instructions, #pauseOverlay { font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+  <!-- HUD -->
+  <div id="hud">
+    <div>Score: <span id="scoreText">0</span> | Enemies: <span id="enemyCount">0</span> | Time: <span id="gameTimer">0</span>s | Level: <span id="playerLevel">1</span></div>
+    <div>High Score: <span id="highScoreText">0</span></div>
+    <div id="playerHealthBar"><div id="playerHealthFill"></div></div>
+    <button id="pauseBtn">Pause</button>
+    <button id="muteBtn">Mute</button>
+    <div id="killFeed"></div>
+  </div>
+  <!-- Crosshair -->
+  <div id="crosshair"></div>
+  <!-- Damage Flash -->
+  <div id="damageFlash"></div>
+  <!-- Overlays -->
+  <div id="message">Game Over! Tap to Restart</div>
+  <div id="instructions">
+    <p>Welcome to the War Zone!</p>
+    <p>Desktop: Use WASD to move; the camera stays fixed behind your character.</p>
+    <p>Mobile: Use the left joystick to move; the camera follows you automatically.</p>
+    <p>Your friendly town (blue) heals you, while enemy territory hurts you if you stray.</p>
+    <p>Collect power-ups: shield, health, rapid fire, slow motion, damage boost (spread shot), and INVINCIBILITY!</p>
+    <p>Defeat enemies and bosses to gain experience and level up!</p>
+    <p>Good luck!</p>
+    <p>TAP to START</p>
+  </div>
+  <!-- Pause Overlay -->
+  <div id="pauseOverlay">
+    Paused<br>
+    <button id="resumeBtn">Resume</button><br>
+    <button id="restartBtn">Restart</button>
+  </div>
+  <!-- Mini-map -->
+  <canvas id="minimap" width="200" height="200"></canvas>
+  <!-- Mobile Controls -->
+  <div id="moveJoystick"><div id="moveJoystickInner"></div></div>
+  <button id="shootBtn">Shoot</button>
+  <!-- Include Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // ===================== Constants (Magic Numbers) =====================
+    const WORLD_BOUNDARY = 100;
+    const WORLD_MIN = -100;
+    const OBSTACLE_COLLISION_RADIUS_OFFSET = 0.3;
+    const OBSTACLE_DAMAGE = 20;
+    // Increased collision distance for better hit detection:
+    const BULLET_COLLISION_DISTANCE = 2.0;
+    const ENEMY_BULLET_DAMAGE = 10;
+    const BASE_MOVE_SPEED = 10;
+  
+    // ===================== Spatial Grid Helpers =====================
+    function buildSpatialGrid(objects, cellSize, minX, minZ) {
+      const grid = {};
+      objects.forEach(obj => {
+        const i = Math.floor((obj.position.x - minX) / cellSize);
+        const j = Math.floor((obj.position.z - minZ) / cellSize);
+        const key = i + "," + j;
+        if (!grid[key]) grid[key] = [];
+        grid[key].push(obj);
+      });
+      return grid;
+    }
+    function getNearbyObjects(grid, position, cellSize, minX, minZ) {
+      const i = Math.floor((position.x - minX) / cellSize);
+      const j = Math.floor((position.z - minZ) / cellSize);
+      let nearby = [];
+      for (let di = -1; di <= 1; di++) {
+        for (let dj = -1; dj <= 1; dj++) {
+          const key = (i + di) + "," + (j + dj);
+          if (grid[key]) nearby = nearby.concat(grid[key]);
+        }
+      }
+      return nearby;
+    }
+  
+    // ===================== Bullet Helpers =====================
+    function updateBullet(bullet, delta) {
+      bullet.position.addScaledVector(bullet.userData.direction, bullet.userData.speed * delta * 60);
+    }
+    function checkBulletObstacleCollision(bullet, obstacleGrid, cellSize, minX, minZ) {
+      const nearbyObstacles = getNearbyObjects(obstacleGrid, bullet.position, cellSize, minX, minZ);
+      for (const obs of nearbyObstacles) {
+        if (bullet.position.distanceTo(obs.position) < (obs.radius + OBSTACLE_COLLISION_RADIUS_OFFSET)) {
+          obs.health -= OBSTACLE_DAMAGE;
+          return true;
+        }
+      }
+      return false;
+    }
+    function checkBulletEnemyCollision(bullet, enemies) {
+      for (let j = enemies.length - 1; j >= 0; j--) {
+        if (bullet.position.distanceTo(enemies[j].position) < BULLET_COLLISION_DISTANCE) {
+          enemies[j].health -= bullet.userData.damage;
+          spawnDamageNumber(bullet.userData.damage, enemies[j].position);
+          return true;
+        }
+      }
+      return false;
+    }
+    function checkBulletPlayerCollision(bullet, player, cachedPlayerPos) {
+      if (bullet.position.distanceTo(cachedPlayerPos) < BULLET_COLLISION_DISTANCE) {
+        if (!player.invincible && !player.shieldActive) {
+          player.health -= ENEMY_BULLET_DAMAGE;
+        }
+        return true;
+      }
+      return false;
+    }
+  
+    // ===================== Entity Classes =====================
+    class Player {
+      constructor() {
+        this.mesh = new THREE.Mesh(
+          new THREE.BoxGeometry(2, 2, 2),
+          new THREE.MeshPhongMaterial({ color: 0x0000ff })
+        );
+        this.mesh.position.set(-10, 1, 0);
+        this.health = 100;
+        this.shieldActive = false;
+        this.invincible = false;
+        this.level = 1;
+        this.exp = 0;
+        this.damageBoostTimer = 0;
+        this.invincibilityTimer = 0;
+        this.shieldTimer = 0;
+      }
+      get position() { return this.mesh.position; }
+      addToScene(scene) { scene.add(this.mesh); }
+    }
+    class Enemy {
+      constructor(position, speedFactor, health) {
+        this.mesh = new THREE.Mesh(
+          new THREE.BoxGeometry(2, 2, 2),
+          new THREE.MeshPhongMaterial({ color: 0xff0000 })
+        );
+        this.mesh.position.copy(position);
+        this.health = health;
+        this.maxHealth = health;
+        this.speedFactor = speedFactor;
+        this.lastShotTime = performance.now();
+      }
+      get position() { return this.mesh.position; }
+      addToScene(scene) { scene.add(this.mesh); }
+    }
+    class Obstacle {
+      constructor(position, width, height, depth, health) {
+        this.mesh = new THREE.Mesh(
+          new THREE.BoxGeometry(width, height, depth),
+          new THREE.MeshPhongMaterial({ color: 0x333333 })
+        );
+        this.mesh.position.copy(position);
+        this.health = health;
+        this.radius = Math.max(width, depth) / 2;
+      }
+      get position() { return this.mesh.position; }
+      addToScene(scene) { scene.add(this.mesh); }
+    }
+  
+    // ===================== Game Config & Globals =====================
+    const gameConfig = {
+      enemyShotInterval: 2000,
+      penaltyRate: 2,
+      regenRate: 10,
+      damageBoostDuration: 10, // seconds
+      invincibilityDuration: 5,  // seconds
+      hazardDamageRate: 5,
+      hazardZoneDuration: 20,
+      extraPowerUpInterval: 15,
+      powerUpInterval: 10,
+      enemyWaveInterval: 30,
+      bossSpawnInterval: 60
+    };
+    let scene, camera, renderer, clock;
+    let player;
+    let enemies = [];
+    let obstacles = [];
+    let powerUps = [];
+    let explosionParticles = [];
+    let keys = {};
+    let gameOver = false, paused = false;
+    let score = 0, totalTime = 0;
+    let damageBoostActive = false;
+    let rapidFireActive = false, rapidFireTimer = 0;
+    let slowMotionActive = false, slowMotionTimer = 0;
+    let muted = false;
+    let lastKillTime = 0, comboMultiplier = 1;
+    const friendlySafeZoneCenter = new THREE.Vector3(-60, 1, 0);
+    const enemySafeZoneCenter = new THREE.Vector3(60, 1, 0);
+    const safeZoneRadius = 20;
+    const hazardZoneRadius = 15;
+    let shakeIntensity = 0, shakeTime = 0;
+    let lastExtraPowerUp = 0, lastPowerUp = 0, lastEnemyWave = 0, lastBossSpawn = 0, lastHazardZoneTime = 0;
+    let hazardZone = null;
+    let hazardZoneCenter = new THREE.Vector3();
+    let killFeed = [], damageNumbers = [];
+    const cachedPlayerPos = new THREE.Vector3();
+  
+    // ===================== DOM Elements =====================
+    const scoreText = document.getElementById('scoreText');
+    const enemyCountText = document.getElementById('enemyCount');
+    const highScoreText = document.getElementById('highScoreText');
+    const playerHealthFill = document.getElementById('playerHealthFill');
+    const gameTimerText = document.getElementById('gameTimer');
+    const killFeedEl = document.getElementById('killFeed');
+    const messageEl = document.getElementById('message');
+    const instructionsEl = document.getElementById('instructions');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const muteBtn = document.getElementById('muteBtn');
+    const pauseOverlay = document.getElementById('pauseOverlay');
+    const resumeBtn = document.getElementById('resumeBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const minimap = document.getElementById('minimap');
+    const miniCtx = minimap.getContext('2d');
+    const shootBtn = document.getElementById('shootBtn');
+    const crosshair = document.getElementById('crosshair');
+    const playerLevelText = document.getElementById('playerLevel');
+    const damageFlash = document.getElementById('damageFlash');
+    const moveJoystickEl = document.getElementById('moveJoystick');
+    const moveJoystickInnerEl = document.getElementById('moveJoystickInner');
+    let moveJoystick = { active: false, touchId: null, startX: 0, startY: 0, dx: 0, dy: 0 };
+    let levelClearedFlag = false;
+  
+    // ===================== Audio =====================
+    const shootSound = new Audio("shoot.mp3");
+    const explosionSound = new Audio("explosion.mp3");
+    const powerupSound = new Audio("powerup.mp3");
+    const gameOverSound = new Audio("gameover.mp3");
+    const bgMusic = new Audio("bg_music.mp3");
+    bgMusic.loop = true;
+    let currentHighScore = Number(localStorage.getItem("highScore")) || 0;
+  
+    // ===================== Bullet Manager Class =====================
+    class BulletManager {
+      constructor(scene) {
+        this.scene = scene;
+        this.playerBullets = [];
+        this.enemyBullets = [];
+        this.playerBulletPool = [];
+        this.enemyBulletPool = [];
+      }
+      getBullet(isPlayer) {
+        const pool = isPlayer ? this.playerBulletPool : this.enemyBulletPool;
+        if (pool.length > 0) {
+          const bullet = pool.pop();
+          bullet.visible = true;
+          return bullet;
+        }
+        const geometry = new THREE.SphereGeometry(0.3, 8, 8);
+        const material = new THREE.MeshBasicMaterial({ color: isPlayer ? 0x00ffff : 0xffff00 });
+        return new THREE.Mesh(geometry, material);
+      }
+      releaseBullet(bullet, isPlayer) {
+        bullet.visible = false;
+        const pool = isPlayer ? this.playerBulletPool : this.enemyBulletPool;
+        pool.push(bullet);
+      }
+      addBullet(isPlayer, bullet) {
+        if (isPlayer) { this.playerBullets.push(bullet); }
+        else { this.enemyBullets.push(bullet); }
+        this.scene.add(bullet);
+      }
+      update(delta, obstacles, enemies, player, cachedPlayerPos) {
+        const cellSize = 20;
+        const obstacleGrid = buildSpatialGrid(obstacles, cellSize, WORLD_MIN, WORLD_MIN);
+        const updateBulletArray = (bulletArray, isPlayer) => {
+          for (let i = bulletArray.length - 1; i >= 0; i--) {
+            const bullet = bulletArray[i];
+            updateBullet(bullet, delta);
+            if (bullet.position.length() > WORLD_BOUNDARY) {
+              this.scene.remove(bullet);
+              this.releaseBullet(bullet, isPlayer);
+              bulletArray.splice(i, 1);
+              continue;
+            }
+            if (checkBulletObstacleCollision(bullet, obstacleGrid, cellSize, WORLD_MIN, WORLD_MIN)) {
+              this.scene.remove(bullet);
+              this.releaseBullet(bullet, isPlayer);
+              bulletArray.splice(i, 1);
+              continue;
+            }
+            if (isPlayer) {
+              if (checkBulletEnemyCollision(bullet, enemies)) {
+                this.scene.remove(bullet);
+                this.releaseBullet(bullet, isPlayer);
+                bulletArray.splice(i, 1);
+                continue;
+              }
+            } else {
+              if (checkBulletPlayerCollision(bullet, player, cachedPlayerPos)) {
+                this.scene.remove(bullet);
+                this.releaseBullet(bullet, isPlayer);
+                bulletArray.splice(i, 1);
+                continue;
+              }
+            }
+          }
+        };
+        updateBulletArray(this.playerBullets, true);
+        updateBulletArray(this.enemyBullets, false);
+      }
+    }
+    let bulletManager;
+  
+    // ===================== Event Listeners & Audio Mute =====================
+    muteBtn.addEventListener('click', () => {
+      muted = !muted;
+      [bgMusic, shootSound, explosionSound, powerupSound, gameOverSound].forEach(a => a.muted = muted);
+      muteBtn.textContent = muted ? "Unmute" : "Mute";
+    });
+  
+    // ===================== UI Helper Functions =====================
+    function addKillFeed(msg) {
+      killFeed.push({ text: msg, time: performance.now() });
+      if (killFeed.length > 5) killFeed.shift();
+    }
+    function updateKillFeed() {
+      killFeedEl.innerHTML = "";
+      const now = performance.now();
+      killFeed.forEach(feed => {
+        const alpha = Math.max(1 - (now - feed.time) / 3000, 0);
+        const div = document.createElement("div");
+        div.style.opacity = alpha;
+        div.textContent = feed.text;
+        killFeedEl.appendChild(div);
+      });
+    }
+  
+    function spawnDamageNumber(damage, position) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 128; canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      ctx.font = "bold 32px Arial";
+      ctx.fillStyle = "red"; ctx.textAlign = "center";
+      ctx.fillText(damage, 64, 40);
+      const texture = new THREE.CanvasTexture(canvas);
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true }));
+      sprite.position.copy(position);
+      sprite.scale.set(10, 5, 1);
+      damageNumbers.push({ sprite: sprite, lifetime: 1.0 });
+      scene.add(sprite);
+    }
+    function updateDamageNumbers(delta) {
+      for (let i = damageNumbers.length - 1; i >= 0; i--) {
+        const dmgObj = damageNumbers[i];
+        dmgObj.lifetime -= delta;
+        dmgObj.sprite.material.opacity = Math.max(dmgObj.lifetime, 0);
+        dmgObj.sprite.position.y += delta * 5;
+        if (dmgObj.lifetime <= 0) {
+          scene.remove(dmgObj.sprite);
+          damageNumbers.splice(i, 1);
+        }
+      }
+    }
+    function flashDamage() { damageFlash.style.opacity = 0.5; }
+    function updateDamageFlash(delta) {
+      damageFlash.style.opacity = Math.max(parseFloat(damageFlash.style.opacity) - delta * 2, 0);
+    }
+    function updateGameTimer(delta) { totalTime += delta; }
+    function enforceBoundaries(obj) {
+      obj.position.x = Math.max(WORLD_MIN, Math.min(obj.position.x, WORLD_BOUNDARY));
+      obj.position.z = Math.max(WORLD_MIN, Math.min(obj.position.z, WORLD_BOUNDARY));
+    }
+    function updateHazardEffect(delta) {
+      if (hazardZone) {
+        if (player.position.distanceTo(hazardZoneCenter) < hazardZoneRadius) {
+          player.health -= gameConfig.hazardDamageRate * delta;
+        }
+      }
+    }
+    function spawnHazardZone() {
+      if (hazardZone) { scene.remove(hazardZone); hazardZone = null; }
+      const x = (Math.random() - 0.5) * 160;
+      const z = (Math.random() - 0.5) * 160;
+      hazardZoneCenter.set(x, 0.1, z);
+      const geometry = new THREE.CircleGeometry(hazardZoneRadius, 32);
+      const material = new THREE.MeshBasicMaterial({ color: 0xff0000, opacity: 0.4, transparent: true, side: THREE.DoubleSide });
+      hazardZone = new THREE.Mesh(geometry, material);
+      hazardZone.rotation.x = -Math.PI / 2;
+      hazardZone.position.copy(hazardZoneCenter);
+      scene.add(hazardZone);
+      lastHazardZoneTime = totalTime;
+    }
+    function clearMapAndRegenerate() {
+      while (obstacles.length) { 
+        let obs = obstacles.pop();
+        scene.remove(obs.mesh);
+      }
+      while (bulletManager.enemyBullets.length) { 
+        let b = bulletManager.enemyBullets.pop();
+        scene.remove(b);
+        bulletManager.releaseBullet(b, false);
+      }
+      while (bulletManager.playerBullets.length) { 
+        let b = bulletManager.playerBullets.pop();
+        scene.remove(b);
+        bulletManager.releaseBullet(b, true);
+      }
+      while (powerUps.length) { 
+        let pu = powerUps.pop();
+        scene.remove(pu);
+      }
+      while (explosionParticles.length) { 
+        let exp = explosionParticles.pop();
+        scene.remove(exp);
+      }
+      while (enemies.length) { 
+        let en = enemies.pop();
+        scene.remove(en.mesh);
+      }
+      while (damageNumbers.length) { scene.remove(damageNumbers.pop().sprite); }
+      if (hazardZone) { scene.remove(hazardZone); hazardZone = null; }
+      generateWarZone();
+      spawnEnemyWave();
+      spawnHazardZone();
+      lastExtraPowerUp = lastPowerUp = lastEnemyWave = lastBossSpawn = totalTime;
+      player.level++;
+      playerLevelText.textContent = player.level;
+      addKillFeed("Level Cleared! New Level: " + player.level);
+      levelClearedFlag = false;
+    }
+  
+    // ===================== Initialization =====================
+    function init() {
+      scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x555555, 0.0025);
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+      clock = new THREE.Clock();
+      bulletManager = new BulletManager(scene);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight.position.set(0, 50, 50);
+      scene.add(dirLight);
+      const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(200, 200),
+        new THREE.MeshPhongMaterial({ color: 0x555555 })
+      );
+      ground.rotation.x = -Math.PI / 2;
+      scene.add(ground);
+      generateWarZone();
+      createTargetZone();
+      createSafeZone(friendlySafeZoneCenter, safeZoneRadius, 0x0000ff);
+      createSafeZone(enemySafeZoneCenter, safeZoneRadius, 0x00ff00);
+      drawBoundaries();
+      player = new Player();
+      player.addToScene(scene);
+      camera.position.set(player.position.x, player.position.y + 30, player.position.z + 40);
+      camera.lookAt(player.position);
+      spawnEnemyWave();
+      spawnHazardZone();
+      window.addEventListener('resize', onWindowResize, false);
+      window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
+      window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+      if (!('ontouchstart' in window)) window.addEventListener('click', shootPlayerBullet);
+      window.addEventListener('touchstart', onTouchStart, { passive: false });
+      window.addEventListener('touchmove', onTouchMove, { passive: false });
+      window.addEventListener('touchend', onTouchEnd, { passive: false });
+      window.addEventListener('touchcancel', onTouchEnd, { passive: false });
+      messageEl.addEventListener('click', restartGame);
+      messageEl.addEventListener('touchstart', restartGame, { passive: false });
+      pauseBtn.addEventListener('click', togglePause);
+      resumeBtn.addEventListener('click', togglePause);
+      restartBtn.addEventListener('click', restartGame);
+      shootBtn.addEventListener('click', shootPlayerBullet);
+      shootBtn.addEventListener('touchstart', e => { e.stopPropagation(); shootPlayerBullet(); }, { passive: false });
+      setTimeout(() => { instructionsEl.style.display = 'none'; }, 5000);
+      highScoreText.textContent = currentHighScore;
+      bgMusic.play();
+    }
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    function drawBoundaries() {
+      const material = new THREE.LineBasicMaterial({ color: 0xffffff });
+      const points = [
+        new THREE.Vector3(WORLD_MIN, 0.2, WORLD_MIN),
+        new THREE.Vector3(WORLD_BOUNDARY, 0.2, WORLD_MIN),
+        new THREE.Vector3(WORLD_BOUNDARY, 0.2, WORLD_BOUNDARY),
+        new THREE.Vector3(WORLD_MIN, 0.2, WORLD_BOUNDARY),
+        new THREE.Vector3(WORLD_MIN, 0.2, WORLD_MIN)
+      ];
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const line = new THREE.Line(geometry, material);
+      scene.add(line);
+    }
+    function generateWarZone() {
+      const numObstacles = 15;
+      for (let i = 0; i < numObstacles; i++) {
+        const width = Math.random() * 5 + 2;
+        const height = Math.random() * 3 + 1;
+        const depth = Math.random() * 5 + 2;
+        const x = (Math.random() - 0.5) * 180;
+        const z = (Math.random() - 0.5) * 180;
+        const health = Math.floor(Math.random() * 40 + 30);
+        const obstacle = new Obstacle(new THREE.Vector3(x, height / 2, z), width, height, depth, health);
+        obstacles.push(obstacle);
+        obstacle.addToScene(scene);
+      }
+    }
+    function createTargetZone() {
+      const geometry = new THREE.PlaneGeometry(100, 200);
+      const material = new THREE.MeshBasicMaterial({ color: 0xff0000, opacity: 0.2, transparent: true });
+      const targetZone = new THREE.Mesh(geometry, material);
+      targetZone.rotation.x = -Math.PI / 2;
+      targetZone.position.set(50, 0.1, 0);
+      scene.add(targetZone);
+    }
+    function createSafeZone(center, radius, color) {
+      const geometry = new THREE.CircleGeometry(radius, 32);
+      const material = new THREE.MeshBasicMaterial({ color: color, opacity: 0.3, transparent: true, side: THREE.DoubleSide });
+      const circle = new THREE.Mesh(geometry, material);
+      circle.rotation.x = -Math.PI / 2;
+      circle.position.copy(center);
+      scene.add(circle);
+      for (let i = 0; i < 5; i++) {
+        const bGeom = new THREE.BoxGeometry(3, Math.random() * 4 + 3, 3);
+        const building = new THREE.Mesh(bGeom, new THREE.MeshPhongMaterial({ color: 0x888888 }));
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * (radius - 3);
+        building.position.set(center.x + Math.cos(angle) * dist, bGeom.parameters.height / 2, center.z + Math.sin(angle) * dist);
+        scene.add(building);
+      }
+    }
+    function spawnBossEnemy() {
+      const boss = new Enemy(new THREE.Vector3(Math.random() * 20 + 30, 3, (Math.random() - 0.5) * 80), 0.5, 500);
+      boss.mesh.material.color.set(0xff8800);
+      boss.mesh.userData.isBoss = true;
+      addHealthBar(boss);
+      enemies.push(boss);
+      boss.addToScene(scene);
+      addKillFeed("Boss Appeared!");
+    }
+    function getValidSpawnPosition() {
+      let pos;
+      let tries = 0;
+      do {
+        pos = new THREE.Vector3(Math.random() * 40 + 10, 1, (Math.random() - 0.5) * 100);
+        tries++;
+      } while (enemies.some(e => e.position.distanceTo(pos) < 5) && tries < 10);
+      return pos;
+    }
+    function spawnEnemy() {
+      const r = Math.random();
+      const speedFactor = r < 0.3 ? 1.5 : (r < 0.5 ? 0.7 : 1);
+      const health = r < 0.3 ? 70 : (r < 0.5 ? 150 : 100);
+      const enemyUnit = new Enemy(getValidSpawnPosition(), speedFactor, health);
+      enemyUnit.lastShotTime = performance.now();
+      addHealthBar(enemyUnit);
+      enemies.push(enemyUnit);
+      enemyUnit.addToScene(scene);
+    }
+    function spawnEnemyWave() {
+      for (let i = 0; i < 3; i++) { spawnEnemy(); }
+    }
+    function addHealthBar(entity) {
+      const barWidth = 2, barHeight = 0.3;
+      const bgGeom = new THREE.PlaneGeometry(barWidth, barHeight);
+      bgGeom.translate(-barWidth / 2, 0, 0);
+      const bgBar = new THREE.Mesh(bgGeom, new THREE.MeshBasicMaterial({ color: 0x555555, side: THREE.DoubleSide }));
+      const fgGeom = new THREE.PlaneGeometry(barWidth, barHeight);
+      fgGeom.translate(-barWidth / 2, 0, 0);
+      const fgBar = new THREE.Mesh(fgGeom, new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide }));
+      const healthBar = new THREE.Group();
+      healthBar.add(bgBar); healthBar.add(fgBar);
+      healthBar.position.set(0, 2.5, 0.1);
+      entity.mesh.add(healthBar);
+      entity.healthBar = fgBar;
+    }
+    // ===================== Updated Scoring: Increased Bullet Damage =====================
+    function shootPlayerBullet() {
+      if (gameOver) return;
+      shootSound.currentTime = 0; shootSound.play();
+      const configs = (damageBoostActive && player.spreadShotActive)
+        ? [{ offset: -0.2 }, { offset: -0.1 }, { offset: 0 }, { offset: 0.1 }, { offset: 0.2 }]
+        : [{ offset: 0 }];
+      const origin = player.mesh.getWorldPosition(new THREE.Vector3());
+      configs.forEach(conf => {
+        const bullet = bulletManager.getBullet(true);
+        bullet.position.copy(origin);
+        let target = null, minDist = Infinity;
+        for (let j = 0; j < enemies.length; j++) {
+          const enemyUnit = enemies[j];
+          const d = bullet.position.distanceTo(enemyUnit.position);
+          if (d < minDist) { minDist = d; target = enemyUnit; }
+        }
+        const direction = target 
+          ? new THREE.Vector3().subVectors(target.position, origin).normalize()
+          : new THREE.Vector3(1, 0, 0);
+        if (conf.offset !== 0) direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), conf.offset);
+        // Increased damage: default bullet now deals 30 damage (60 if boosted)
+        bullet.userData = { direction: direction, speed: 0.5, damage: damageBoostActive ? 60 : 30 };
+        bulletManager.addBullet(true, bullet);
+      });
+    }
+    function shootEnemyBullet(enemyUnit) {
+      if (gameOver) return;
+      const bullet = bulletManager.getBullet(false);
+      bullet.position.copy(enemyUnit.position);
+      const direction = new THREE.Vector3().subVectors(cachedPlayerPos, enemyUnit.position).normalize();
+      bullet.userData = { direction: direction, speed: 0.5 };
+      bulletManager.addBullet(false, bullet);
+    }
+    function updateBullets(delta) {
+      bulletManager.update(delta, obstacles, enemies, player, cachedPlayerPos);
+    }
+    function updateObstacles() {
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        if (obstacles[i].health <= 0) {
+          scene.remove(obstacles[i].mesh);
+          obstacles.splice(i, 1);
+        }
+      }
+    }
+    function updatePowerUps() {
+      for (let i = powerUps.length - 1; i >= 0; i--) {
+        const pu = powerUps[i];
+        if (pu.position.distanceTo(cachedPlayerPos) < 2) {
+          powerupSound.currentTime = 0; powerupSound.play();
+          if (pu.userData.type === "health") player.health = Math.min(100, player.health + 20);
+          else if (pu.userData.type === "shield") activateShield();
+          else if (pu.userData.type === "damage") activateDamageBoost();
+          else if (pu.userData.type === "rapid") { rapidFireActive = true; rapidFireTimer = gameConfig.damageBoostDuration; addKillFeed("Rapid Fire Activated!"); }
+          else if (pu.userData.type === "slowmo") { slowMotionActive = true; slowMotionTimer = gameConfig.damageBoostDuration; addKillFeed("Slow Motion Activated!"); }
+          else if (pu.userData.type === "invincible") { activateInvincibility(); addKillFeed("Invincibility Activated!"); }
+          scene.remove(pu);
+          powerUps.splice(i, 1);
+        }
+      }
+    }
+    function spawnPowerUp() {
+      if (gameOver) return;
+      const typeProb = Math.random();
+      const type = typeProb < 0.35 ? "health" : (typeProb < 0.7 ? "shield" : "damage");
+      const color = type === "health" ? 0x00ff00 : (type === "shield" ? 0x00ffff : 0x9900ff);
+      const pu = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 12), new THREE.MeshPhongMaterial({ color }));
+      pu.position.set((Math.random() - 0.5) * 100, 1, (Math.random() - 0.5) * 100);
+      pu.userData = { type };
+      powerUps.push(pu);
+      scene.add(pu);
+    }
+    function spawnExtraPowerUp() {
+      if (gameOver) return;
+      const typeProb = Math.random();
+      let type, color;
+      if (typeProb < 0.33) { type = "rapid"; color = 0xffaa00; }
+      else if (typeProb < 0.66) { type = "slowmo"; color = 0x00aaff; }
+      else { type = "invincible"; color = 0xffdd00; }
+      const pu = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 12), new THREE.MeshPhongMaterial({ color }));
+      pu.position.set((Math.random() - 0.5) * 100, 1, (Math.random() - 0.5) * 100);
+      pu.userData = { type };
+      powerUps.push(pu);
+      scene.add(pu);
+    }
+    function activateShield() {
+      if (player.shieldActive) return;
+      player.shieldActive = true;
+      player.shieldTimer = 5;
+      const shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(2.5, 16, 16),
+        new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, side: THREE.DoubleSide }));
+      player.shieldMesh = shieldMesh;
+      scene.add(shieldMesh);
+    }
+    function activateDamageBoost() {
+      damageBoostActive = true;
+      player.spreadShotActive = true;
+      player.mesh.material.color.set(0xff00ff);
+      player.damageBoostTimer = gameConfig.damageBoostDuration;
+    }
+    function activateInvincibility() {
+      player.invincible = true;
+      player.mesh.material.emissive = new THREE.Color(0xffff00);
+      player.invincibilityTimer = gameConfig.invincibilityDuration;
+    }
+    function updatePowerUpTimers(delta) {
+      if (rapidFireActive) { rapidFireTimer -= delta; if (rapidFireTimer <= 0) rapidFireActive = false; }
+      if (slowMotionActive) { slowMotionTimer -= delta; if (slowMotionTimer <= 0) slowMotionActive = false; }
+      if (player.damageBoostTimer > 0) { 
+        player.damageBoostTimer -= delta; 
+        if (player.damageBoostTimer <= 0) { 
+          damageBoostActive = false; 
+          player.spreadShotActive = false; 
+          player.mesh.material.color.set(0x0000ff); 
+        }
+      }
+      if (player.invincibilityTimer > 0) { 
+        player.invincibilityTimer -= delta; 
+        if (player.invincibilityTimer <= 0) { 
+          player.invincible = false; 
+          player.mesh.material.emissive.set(0x000000); 
+        }
+      }
+      if (player.shieldActive) { 
+        player.shieldTimer -= delta; 
+        if (player.shieldTimer <= 0) { 
+          player.shieldActive = false; 
+          scene.remove(player.shieldMesh); 
+          player.shieldMesh = null; 
+        }
+      }
+    }
+    function spawnExplosion(pos) {
+      explosionSound.currentTime = 0; explosionSound.play();
+      shakeIntensity = 0.5; shakeTime = 0.3;
+      for (let i = 0; i < 10; i++) {
+        const particle = new THREE.Mesh(new THREE.SphereGeometry(0.2, 6, 6),
+          new THREE.MeshBasicMaterial({ color: 0xffa500, transparent: true }));
+        particle.position.copy(pos);
+        particle.userData = { 
+          velocity: new THREE.Vector3((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2), 
+          lifetime: 1.0 
+        };
+        explosionParticles.push(particle);
+        scene.add(particle);
+      }
+    }
+    function updateExplosions(delta) {
+      for (let i = explosionParticles.length - 1; i >= 0; i--) {
+        const p = explosionParticles[i];
+        p.position.addScaledVector(p.userData.velocity, delta * 10);
+        p.userData.lifetime -= delta;
+        p.material.opacity = Math.max(p.userData.lifetime, 0);
+        if (p.userData.lifetime <= 0) {
+          scene.remove(p);
+          explosionParticles.splice(i, 1);
+        }
+      }
+    }
+    function updatePlayer(delta) {
+      let effectiveDelta = slowMotionActive ? delta * 0.5 : delta;
+      const moveSpeed = BASE_MOVE_SPEED * effectiveDelta;
+      if (moveJoystick.active) {
+        let dx = moveJoystick.dx, dy = moveJoystick.dy;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        if (len > 0) { dx /= len; dy /= len; }
+        let moveVec = new THREE.Vector3(dx, 0, dy);
+        player.position.addScaledVector(moveVec, moveSpeed * 2);
+        player.mesh.rotation.y = Math.atan2(dx, dy);
+        moveJoystickEl.style.left = (moveJoystick.startX - 40) + "px";
+        moveJoystickEl.style.top = (moveJoystick.startY - 40) + "px";
+        moveJoystickInnerEl.style.transform = `translate(${Math.min(Math.max(dx * 20, -20), 20)}px, ${Math.min(Math.max(dy * 20, -20), 20)}px)`;
+      } else {
+        let keyboardVec = new THREE.Vector3();
+        if (keys['w'] || keys['arrowup']) keyboardVec.z -= 1;
+        if (keys['s'] || keys['arrowdown']) keyboardVec.z += 1;
+        if (keys['a'] || keys['arrowleft']) keyboardVec.x -= 1;
+        if (keys['d'] || keys['arrowright']) keyboardVec.x += 1;
+        if (keyboardVec.lengthSq() > 0) {
+          keyboardVec.normalize();
+          player.position.addScaledVector(keyboardVec, moveSpeed * 2);
+          player.mesh.rotation.y = Math.atan2(keyboardVec.x, keyboardVec.z);
+        }
+      }
+      player.position.y = 1;
+      if (player.shieldActive && player.shieldMesh) player.shieldMesh.position.copy(player.position);
+      enforceBoundaries(player);
+      if (player.position.distanceTo(friendlySafeZoneCenter) < safeZoneRadius)
+        player.health = Math.min(100, player.health + gameConfig.regenRate * delta);
+      else if (player.position.x >= 0 && player.position.distanceTo(enemySafeZoneCenter) > safeZoneRadius)
+        player.health -= gameConfig.penaltyRate * delta;
+      updateHazardEffect(delta);
+    }
+    function updateEnemies(delta) {
+      const dir = new THREE.Vector3();
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const enemyUnit = enemies[i];
+        if (enemyUnit.health <= 0) {
+          const now = performance.now();
+          comboMultiplier = (now - lastKillTime < 3000) ? comboMultiplier + 1 : 1;
+          lastKillTime = now;
+          score += 10 * comboMultiplier;
+          if (comboMultiplier >= 5) addKillFeed("Combo Master!");
+          spawnExplosion(enemyUnit.position);
+          scene.remove(enemyUnit.mesh);
+          enemies.splice(i, 1);
+          continue;
+        }
+        const targetPos = enemyUnit.health < 50 ? (findNearestObstacle(enemyUnit) || cachedPlayerPos) : cachedPlayerPos;
+        dir.subVectors(targetPos, enemyUnit.position).normalize();
+        const speedFactor = enemyUnit.speedFactor || 1;
+        const distanceToPlayer = enemyUnit.position.distanceTo(cachedPlayerPos);
+        if (enemyUnit.health < 0.3 * enemyUnit.maxHealth && distanceToPlayer < 10) {
+          dir.subVectors(enemyUnit.position, cachedPlayerPos).normalize();
+          enemyUnit.position.addScaledVector(dir, 2 * speedFactor * delta);
+        } else {
+          enemyUnit.position.addScaledVector(dir, 2 * speedFactor * delta);
+        }
+        enemyUnit.position.y = 1;
+        enforceBoundaries(enemyUnit);
+        if (enemyUnit.position.distanceTo(enemySafeZoneCenter) < safeZoneRadius) {
+          let boundaryVec = new THREE.Vector3().copy(enemyUnit.position).sub(enemySafeZoneCenter).normalize();
+          enemyUnit.position.copy(enemySafeZoneCenter.clone().addScaledVector(boundaryVec, safeZoneRadius + 1));
+        }
+        if (performance.now() - enemyUnit.lastShotTime > gameConfig.enemyShotInterval) {
+          shootEnemyBullet(enemyUnit);
+          enemyUnit.lastShotTime = performance.now();
+        }
+        if (enemyUnit.healthBar) {
+          enemyUnit.healthBar.scale.x = enemyUnit.health / enemyUnit.maxHealth;
+        }
+      }
+    }
+    function findNearestObstacle(enemyUnit) {
+      let nearest = null, minDist = Infinity;
+      for (let i = 0; i < obstacles.length; i++) {
+        const d = enemyUnit.position.distanceTo(obstacles[i].position);
+        if (d < minDist) { minDist = d; nearest = obstacles[i]; }
+      }
+      return nearest;
+    }
+    function updateMinimap() {
+      miniCtx.clearRect(0, 0, minimap.width, minimap.height);
+      miniCtx.strokeStyle = "#fff";
+      miniCtx.strokeRect(0, 0, minimap.width, minimap.height);
+      const worldToMap = pos => ({
+        x: ((pos.x + WORLD_BOUNDARY) / (WORLD_BOUNDARY - WORLD_MIN)) * minimap.width,
+        y: ((WORLD_BOUNDARY - pos.z) / (WORLD_BOUNDARY - WORLD_MIN)) * minimap.height
+      });
+      const pMap = worldToMap(cachedPlayerPos);
+      miniCtx.fillStyle = "#00f";
+      miniCtx.beginPath();
+      miniCtx.arc(pMap.x, pMap.y, 5, 0, Math.PI * 2);
+      miniCtx.fill();
+      for (let i = 0; i < enemies.length; i++) {
+        const eMap = worldToMap(enemies[i].position);
+        miniCtx.fillStyle = "#f00";
+        miniCtx.beginPath();
+        miniCtx.arc(eMap.x, eMap.y, 5, 0, Math.PI * 2);
+        miniCtx.fill();
+      }
+      for (let i = 0; i < obstacles.length; i++) {
+        const oMap = worldToMap(obstacles[i].position);
+        miniCtx.fillStyle = "#888";
+        miniCtx.fillRect(oMap.x - 3, oMap.y - 3, 6, 6);
+      }
+      const friendlyMap = worldToMap(friendlySafeZoneCenter);
+      miniCtx.strokeStyle = "#00f";
+      miniCtx.beginPath();
+      miniCtx.arc(friendlyMap.x, friendlyMap.y, (safeZoneRadius / (WORLD_BOUNDARY - WORLD_MIN)) * minimap.width, 0, Math.PI * 2);
+      miniCtx.stroke();
+      const enemyMap = worldToMap(enemySafeZoneCenter);
+      miniCtx.strokeStyle = "#0f0";
+      miniCtx.beginPath();
+      miniCtx.arc(enemyMap.x, enemyMap.y, (safeZoneRadius / (WORLD_BOUNDARY - WORLD_MIN)) * minimap.width, 0, Math.PI * 2);
+      miniCtx.stroke();
+    }
+    function updateHUD() {
+      scoreText.textContent = score;
+      enemyCountText.textContent = enemies.length;
+      gameTimerText.textContent = Math.floor(totalTime);
+      playerHealthFill.style.width = `${player.health}%`;
+      playerLevelText.textContent = player.level;
+      if (score > currentHighScore) {
+        currentHighScore = score;
+        localStorage.setItem("highScore", currentHighScore);
+      }
+      highScoreText.textContent = currentHighScore;
+      updateMinimap();
+      updateKillFeed();
+    }
+    function togglePause() {
+      paused = !paused;
+      pauseBtn.textContent = paused ? "Resume" : "Pause";
+      pauseOverlay.style.display = paused ? "block" : "none";
+    }
+    function checkGameOver() {
+      if (player.health <= 0 || score >= 1000) {
+        gameOver = true;
+        gameOverSound.currentTime = 0; gameOverSound.play();
+        messageEl.style.display = 'block';
+        messageEl.textContent = player.health <= 0 ? "Game Over! Tap to Restart" : "Victory! Tap to Restart";
+      }
+      if (enemies.length === 0 && !gameOver && !levelClearedFlag) {
+        levelClearedFlag = true;
+        clearMapAndRegenerate();
+      }
+    }
+    function restartGame() {
+      player.health = 100;
+      player.position.set(-10, 1, 0);
+      player.level = 1;
+      player.exp = 0;
+      if (player.shieldActive && player.shieldMesh) {
+        scene.remove(player.shieldMesh);
+        player.shieldActive = false;
+      }
+      const arrays = [bulletManager.playerBullets, bulletManager.enemyBullets, explosionParticles, powerUps, obstacles, enemies];
+      for (let k = 0; k < arrays.length; k++) {
+        while (arrays[k].length) { 
+          let item = arrays[k].pop();
+          if(item.mesh) scene.remove(item.mesh);
+          else scene.remove(item);
+        }
+      }
+      while (damageNumbers.length) { scene.remove(damageNumbers.pop().sprite); }
+      if (hazardZone) { scene.remove(hazardZone); hazardZone = null; }
+      generateWarZone();
+      spawnEnemyWave();
+      spawnHazardZone();
+      score = 0;
+      totalTime = 0;
+      gameOver = false;
+      messageEl.style.display = 'none';
+      lastExtraPowerUp = lastPowerUp = lastEnemyWave = lastBossSpawn = totalTime;
+      levelClearedFlag = false;
+      updateHUD();
+    }
+    function onTouchStart(e) {
+      e.preventDefault();
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        if (touch.clientX < window.innerWidth / 2 && !moveJoystick.active) {
+          moveJoystick.active = true;
+          moveJoystick.touchId = touch.identifier;
+          moveJoystick.startX = touch.clientX;
+          moveJoystick.startY = touch.clientY;
+          moveJoystick.dx = moveJoystick.dy = 0;
+          moveJoystickEl.style.display = 'block';
+          moveJoystickEl.style.left = (touch.clientX - 40) + 'px';
+          moveJoystickEl.style.top = (touch.clientY - 40) + 'px';
+        }
+      }
+    }
+    function onTouchMove(e) {
+      e.preventDefault();
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        if (moveJoystick.active && touch.identifier === moveJoystick.touchId) {
+          moveJoystick.dx = touch.clientX - moveJoystick.startX;
+          moveJoystick.dy = touch.clientY - moveJoystick.startY;
+        }
+      }
+    }
+    function onTouchEnd(e) {
+      e.preventDefault();
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        if (moveJoystick.active && touch.identifier === moveJoystick.touchId) {
+          moveJoystick.active = false;
+          moveJoystick.dx = moveJoystick.dy = 0;
+          moveJoystickEl.style.display = 'none';
+        }
+      }
+    }
+    function animate() {
+      const delta = clock.getDelta();
+      player.mesh.getWorldPosition(cachedPlayerPos);
+      if (totalTime - lastHazardZoneTime >= gameConfig.hazardZoneDuration) { spawnHazardZone(); }
+      if (!gameOver && !paused) {
+        updatePlayer(delta);
+        updateEnemies(delta);
+        updateBullets(delta);
+        updatePowerUps();
+        updateExplosions(delta);
+        updateObstacles();
+        updateGameTimer(delta);
+        updatePowerUpTimers(delta);
+        updateDamageNumbers(delta);
+        updateDamageFlash(delta);
+        if (totalTime - lastExtraPowerUp >= gameConfig.extraPowerUpInterval) { spawnExtraPowerUp(); lastExtraPowerUp = totalTime; }
+        if (totalTime - lastPowerUp >= gameConfig.powerUpInterval) { spawnPowerUp(); lastPowerUp = totalTime; }
+        if (totalTime - lastEnemyWave >= gameConfig.enemyWaveInterval) { spawnEnemyWave(); lastEnemyWave = totalTime; }
+        if (totalTime - lastBossSpawn >= gameConfig.bossSpawnInterval) { spawnBossEnemy(); lastBossSpawn = totalTime; }
+      }
+      if (shakeTime > 0) {
+        camera.position.x += (Math.random() - 0.5) * shakeIntensity;
+        camera.position.y += (Math.random() - 0.5) * shakeIntensity;
+        shakeTime -= delta;
+      } else { shakeIntensity = 0; }
+      updateHUD();
+      checkGameOver();
+      camera.position.set(player.position.x, player.position.y + 30, player.position.z + 40);
+      camera.lookAt(player.position);
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+    init();
+    animate();
+  </script>
+</body>
+</html>
