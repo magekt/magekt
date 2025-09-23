@@ -1,0 +1,2757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAYS POS - Complete Content Strategy Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #f8fafc;
+            --accent-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--secondary-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            background: white;
+            border-right: 1px solid var(--border-color);
+            box-shadow: var(--card-shadow);
+            position: fixed;
+            width: 280px;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 2rem 1.5rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: var(--gradient-bg);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-menu {
+            padding: 1rem 0;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-item:hover {
+            background: var(--secondary-color);
+            border-left-color: var(--primary-color);
+        }
+
+        .nav-item.active {
+            background: #eff6ff;
+            border-left-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            opacity: 0.7;
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            margin-left: 280px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .content-section {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-header {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            background: var(--gradient-bg);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-description {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Card Styles */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .card-content {
+            color: var(--text-secondary);
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 0.5rem 0;
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Interactive Elements */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .tab:hover {
+            background: var(--secondary-color);
+        }
+
+        .tab.active {
+            border-bottom-color: var(--primary-color);
+            color: var(--primary-color);
+            background: #eff6ff;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Progress Bars */
+        .progress-bar {
+            background: var(--border-color);
+            border-radius: 6px;
+            height: 8px;
+            margin: 0.5rem 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 1s ease-in-out;
+        }
+
+        /* Interactive Calculator */
+        .calculator {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--card-shadow);
+            margin: 2rem 0;
+        }
+
+        .input-group {
+            margin: 1rem 0;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .button {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .button:hover {
+            background: #1d4ed8;
+        }
+
+        .button-secondary {
+            background: var(--secondary-color);
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+        }
+
+        .button-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        /* Charts and Visualizations */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 2rem 0;
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .tab {
+                flex: 1;
+                min-width: 120px;
+            }
+        }
+
+        /* Utility Classes */
+        .text-center { text-align: center; }
+        .text-success { color: var(--accent-color); }
+        .text-warning { color: var(--warning-color); }
+        .text-danger { color: var(--danger-color); }
+        .bg-success { background-color: var(--accent-color); }
+        .bg-warning { background-color: var(--warning-color); }
+        .bg-danger { background-color: var(--danger-color); }
+        .bg-primary { background-color: var(--primary-color); }
+
+        /* Additional Interactive Elements */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table th {
+            background: var(--secondary-color);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .data-table tr:hover {
+            background: var(--secondary-color);
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">PAYS POS Strategy</div>
+                <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.5rem;">Complete Content Strategy Dashboard</p>
+            </div>
+            
+            <nav class="nav-menu">
+                <div class="nav-item active" onclick="showSection('overview')">
+                    <span class="nav-icon">📊</span>
+                    <span>Overview</span>
+                </div>
+                <div class="nav-item" onclick="showSection('business')">
+                    <span class="nav-icon">🏢</span>
+                    <span>Business Understanding</span>
+                </div>
+                <div class="nav-item" onclick="showSection('intent')">
+                    <span class="nav-icon">🎯</span>
+                    <span>Intent & Lead Gen</span>
+                </div>
+                <div class="nav-item" onclick="showSection('segments')">
+                    <span class="nav-icon">👥</span>
+                    <span>Target Segments</span>
+                </div>
+                <div class="nav-item" onclick="showSection('channels')">
+                    <span class="nav-icon">📱</span>
+                    <span>Marketing Channels</span>
+                </div>
+                <div class="nav-item" onclick="showSection('communication')">
+                    <span class="nav-icon">💬</span>
+                    <span>Communication Strategy</span>
+                </div>
+                <div class="nav-item" onclick="showSection('budget')">
+                    <span class="nav-icon">💰</span>
+                    <span>Budget Allocation</span>
+                </div>
+                <div class="nav-item" onclick="showSection('optimization')">
+                    <span class="nav-icon">⚡</span>
+                    <span>Optimization</span>
+                </div>
+                <div class="nav-item" onclick="showSection('calculator')">
+                    <span class="nav-icon">🧮</span>
+                    <span>ROI Calculator</span>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Overview Section -->
+            <div id="overview" class="content-section active">
+                <div class="section-header">
+                    <h1 class="section-title">Strategy Overview</h1>
+                    <p class="section-description">Complete performance marketing strategy dashboard for PAYS POS lead generation</p>
+                </div>
+
+                <div class="cards-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon bg-primary">📈</div>
+                            <div>
+                                <div class="card-title">Target Monthly Leads</div>
+                                <div class="metric-value">200+</div>
+                                <div class="metric-label">Qualified Demo Requests</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon bg-success">💰</div>
+                            <div>
+                                <div class="card-title">Revenue Goal</div>
+                                <div class="metric-value">$2M</div>
+                                <div class="metric-label">Annual Recurring Revenue</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon bg-warning">🎯</div>
+                            <div>
+                                <div class="card-title">Target CAC</div>
+                                <div class="metric-value">$1,500</div>
+                                <div class="metric-label">Customer Acquisition Cost</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon bg-danger">⚡</div>
+                            <div>
+                                <div class="card-title">Minimum ROAS</div>
+                                <div class="metric-value">3:1</div>
+                                <div class="metric-label">Return on Ad Spend</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem;">Channel Performance Overview</h3>
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <span>Google Ads (40%)</span>
+                            <span class="text-success">4:1 ROAS</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill bg-primary" style="width: 40%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <span>Meta Ads (25%)</span>
+                            <span class="text-warning">3:1 ROAS</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill bg-success" style="width: 25%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <span>LinkedIn Ads (20%)</span>
+                            <span class="text-success">5:1 ROAS</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill bg-warning" style="width: 20%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <span>Content/SEO (15%)</span>
+                            <span class="text-success">6:1 ROAS</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill bg-danger" style="width: 15%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Business Understanding Section -->
+            <div id="business" class="content-section">
+                <div class="section-header">
+                    <h1 class="section-title">Business Understanding</h1>
+                    <p class="section-description">Comprehensive overview of PAYS POS business model and market position</p>
+                </div>
+
+                <div class="cards-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon bg-primary">🏪</div>
+                            <div class="card-title">Business Model</div>
+                        </div>
+                        <div class="card-content">
+                            <p><strong>Product:</strong> All-in-one restaurant POS ecosystem</p>
+                            <p><strong>Revenue:</strong> SaaS subscriptions + hardware + processing</p>
+                            <p><strong>Position:</strong> Premium alternative to Square/Toast</p>
+                            <p><strong>USP:</strong> Better pricing + 24/7 support</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon bg-success">🎯</div>
+                            <div class="card-title">Primary Goals</div>
+                        </div>
+                        <div class="card-content">
+                            <ul style="list-style: none; padding: 0;">
+                                <li>✅ 200+ qualified demo requests monthly</li>
+                                <li>✅ $2M ARR growth through new acquisition</li>
+                                <li>✅ Expand US restaurant market share</li>
+                                <li>✅ Reduce CAC while improving lead quality</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon bg-warning">⚠️</div>
+                            <div class="card-title">Key Challenges</div>
+                        </div>
+                        <div class="card-content">
+                            <ul style="list-style: none; padding: 0;">
+                                <li>🔴 High competition (Square, Toast, Clover)</li>
+                                <li>🔴 Long sales cycles (30-90 days)</li>
+                                <li>🔴 Trust-building requirement</li>
+                                <li>🔴 Fragmented restaurant market</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon bg-danger">💡</div>
+                            <div class="card-title">Competitive Advantages</div>
+                        </div>
+                        <div class="card-content">
+                            <p><strong>"Beat any price" guarantee</strong></p>
+                            <p><strong>85% reduction in delivery fees</strong></p>
+                            <p><strong>15-35% revenue increase proven</strong></p>
+                            <p><strong>24/7 customer support</strong></p>
+                            <p><strong>Flexible for all restaurant types</strong></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem;">PAYS Product Suite Overview</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Product Component</th>
+                                <th>Primary Function</th>
+                                <th>Key Benefit</th>
+                                <th>Target User</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Point of Sale</strong></td>
+                                <td>Order processing & payments</td>
+                                <td>Streamlined operations</td>
+                                <td>All restaurants</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Self-Order Kiosk</strong></td>
+                                <td>Customer self-service</td>
+                                <td>Reduced labor costs</td>
+                                <td>Fast-casual, QSR</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Kitchen Display</strong></td>
+                                <td>Order management</td>
+                                <td>Eliminate order gaps</td>
+                                <td>High-volume kitchens</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Online Ordering</strong></td>
+                                <td>Digital storefront</td>
+                                <td>Direct customer orders</td>
+                                <td>All restaurant types</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Third-Party Integration</strong></td>
+                                <td>Delivery service sync</td>
+                                <td>Centralized management</td>
+                                <td>Delivery-focused</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Marketing & Analytics</strong></td>
+                                <td>Data-driven insights</td>
+                                <td>Growth optimization</td>
+                                <td>Data-conscious owners</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Intent & Lead Generation Section -->
+            <div id="intent" class="content-section">
+                <div class="section-header">
+                    <h1 class="section-title">Intent Understanding & Lead Generation</h1>
+                    <p class="section-description">Comprehensive lead generation funnel strategy and intent mapping</p>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab active" onclick="showTab('awareness')">Awareness Stage</div>
+                    <div class="tab" onclick="showTab('consideration')">Consideration</div>
+                    <div class="tab" onclick="showTab('decision')">Decision</div>
+                    <div class="tab" onclick="showTab('leadProfile')">Ideal Lead Profile</div>
+                </div>
+
+                <div id="awareness" class="tab-content active">
+                    <div class="cards-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-primary">📢</div>
+                                <div class="card-title">Content Strategy</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Problem-Focused Content</h4>
+                                <ul>
+                                    <li>High delivery fees killing profits</li>
+                                    <li>Inefficient kitchen operations</li>
+                                    <li>Lost orders and customer complaints</li>
+                                    <li>Lack of business insights</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-success">📚</div>
+                                <div class="card-title">Educational Content</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Industry Insights</h4>
+                                <ul>
+                                    <li>Restaurant technology trends 2024</li>
+                                    <li>POS system buying guides</li>
+                                    <li>Cost reduction strategies</li>
+                                    <li>Digital transformation benefits</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-warning">🎥</div>
+                                <div class="card-title">Content Formats</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Multi-Channel Approach</h4>
+                                <ul>
+                                    <li>Blog articles & guides</li>
+                                    <li>Video testimonials</li>
+                                    <li>Webinars & demos</li>
+                                    <li>Social media content</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="consideration" class="tab-content">
+                    <div class="cards-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-primary">⚖️</div>
+                                <div class="card-title">Comparison Content</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Competitive Analysis</h4>
+                                <ul>
+                                    <li>PAYS vs. Square comparison</li>
+                                    <li>PAYS vs. Toast feature matrix</li>
+                                    <li>Price comparison charts</li>
+                                    <li>ROI calculators</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-success">📊</div>
+                                <div class="card-title">Proof Points</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Social Proof & Results</h4>
+                                <ul>
+                                    <li>Customer case studies</li>
+                                    <li>Success metrics & testimonials</li>
+                                    <li>Industry certifications</li>
+                                    <li>Award recognitions</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-warning">🎬</div>
+                                <div class="card-title">Interactive Content</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Engagement Tools</h4>
+                                <ul>
+                                    <li>Product demo videos</li>
+                                    <li>Virtual restaurant tours</li>
+                                    <li>Live Q&A sessions</li>
+                                    <li>Free trial offers</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="decision" class="tab-content">
+                    <div class="cards-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-primary">🚀</div>
+                                <div class="card-title">Conversion Content</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Decision Support</h4>
+                                <ul>
+                                    <li>Free demo scheduling</li>
+                                    <li>Personalized ROI reports</li>
+                                    <li>Implementation timelines</li>
+                                    <li>Onboarding previews</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-success">🛡️</div>
+                                <div class="card-title">Risk Reduction</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Trust Building</h4>
+                                <ul>
+                                    <li>Money-back guarantees</li>
+                                    <li>Free trial periods</li>
+                                    <li>24/7 support commitment</li>
+                                    <li>Data migration assistance</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-warning">⏰</div>
+                                <div class="card-title">Urgency Tactics</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Action Drivers</h4>
+                                <ul>
+                                    <li>Limited-time pricing offers</li>
+                                    <li>Implementation discounts</li>
+                                    <li>Exclusive feature previews</li>
+                                    <li>Priority support packages</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="leadProfile" class="tab-content">
+                    <div class="card">
+                        <h3 style="margin-bottom: 1rem;">Ideal Lead Profile Matrix</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Criteria</th>
+                                    <th>Ideal Profile</th>
+                                    <th>Qualification Score</th>
+                                    <th>Lead Priority</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Business Type</strong></td>
+                                    <td>Independent restaurants, small chains</td>
+                                    <td><span class="status-badge status-active">High</span></td>
+                                    <td>Priority A</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Location Count</strong></td>
+                                    <td>1-50 locations</td>
+                                    <td><span class="status-badge status-active">High</span></td>
+                                    <td>Priority A</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Annual Revenue</strong></td>
+                                    <td>$500K - $10M</td>
+                                    <td><span class="status-badge status-active">High</span></td>
+                                    <td>Priority A</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Current POS Issues</strong></td>
+                                    <td>Outdated system, high fees, poor support</td>
+                                    <td><span class="status-badge status-active">High</span></td>
+                                    <td>Priority A</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Decision Authority</strong></td>
+                                    <td>Owner, GM, or strong influence</td>
+                                    <td><span class="status-badge status-pending">Medium</span></td>
+                                    <td>Priority B</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Geographic Location</strong></td>
+                                    <td>Target US markets</td>
+                                    <td><span class="status-badge status-pending">Medium</span></td>
+                                    <td>Priority B</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Technology Readiness</strong></td>
+                                    <td>Open to digital solutions</td>
+                                    <td><span class="status-badge status-inactive">Low</span></td>
+                                    <td>Priority C</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Target Segments Section -->
+            <div id="segments" class="content-section">
+                <div class="section-header">
+                    <h1 class="section-title">Target Audience Segments</h1>
+                    <p class="section-description">Detailed breakdown of primary customer segments and targeting strategies</p>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab active" onclick="showTab('independent')">Independent Restaurants</div>
+                    <div class="tab" onclick="showTab('chains')">Small Chains</div>
+                    <div class="tab" onclick="showTab('fastcasual')">Fast-Casual & QSR</div>
+                    <div class="tab" onclick="showTab('nightlife')">Bars & Nightlife</div>
+                </div>
+
+                <div id="independent" class="tab-content active">
+                    <div class="cards-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-primary">👤</div>
+                                <div class="card-title">Demographics</div>
+                            </div>
+                            <div class="card-content">
+                                <p><strong>Age:</strong> 35-55 years old</p>
+                                <p><strong>Role:</strong> Restaurant owner/operator</p>
+                                <p><strong>Experience:</strong> 5-20 years in food service</p>
+                                <p><strong>Location:</strong> Local community focused</p>
+                                <p><strong>Revenue:</strong> $500K - $2M annually</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-danger">⚠️</div>
+                                <div class="card-title">Pain Points</div>
+                            </div>
+                            <div class="card-content">
+                                <ul>
+                                    <li>🔴 High delivery app commission fees (20-30%)</li>
+                                    <li>🔴 Outdated, unreliable POS systems</li>
+                                    <li>🔴 Poor customer support from vendors</li>
+                                    <li>🔴 Limited business analytics and insights</li>
+                                    <li>🔴 Difficulty managing multiple ordering channels</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-success">📈</div>
+                                <div class="card-title">Content Strategy</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Key Messaging:</h4>
+                                <p><strong>"Stop losing money to delivery apps"</strong></p>
+                                
+                                <h4>Content Types:</h4>
+                                <ul>
+                                    <li>Cost-saving calculators</li>
+                                    <li>Local success stories</li>
+                                    <li>Simple ROI explanations</li>
+                                    <li>Family business testimonials</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-warning">🎯</div>
+                                <div class="card-title">Targeting Strategy</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Google Ads Keywords:</h4>
+                                <ul>
+                                    <li>"reduce delivery fees restaurant"</li>
+                                    <li>"affordable POS system"</li>
+                                    <li>"restaurant profit margins"</li>
+                                    <li>"Square alternative restaurant"</li>
+                                </ul>
+                                
+                                <h4>Meta Targeting:</h4>
+                                <ul>
+                                    <li>Small business owners</li>
+                                    <li>Restaurant management interests</li>
+                                    <li>Local business groups</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="chains" class="tab-content">
+                    <div class="cards-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-primary">👥</div>
+                                <div class="card-title">Demographics</div>
+                            </div>
+                            <div class="card-content">
+                                <p><strong>Age:</strong> 40-60 years old</p>
+                                <p><strong>Role:</strong> Multi-unit owner/operator</p>
+                                <p><strong>Experience:</strong> 10+ years, growth-focused</p>
+                                <p><strong>Locations:</strong> 2-10 restaurant locations</p>
+                                <p><strong>Revenue:</strong> $2M - $10M annually</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-danger">⚠️</div>
+                                <div class="card-title">Pain Points</div>
+                            </div>
+                            <div class="card-content">
+                                <ul>
+                                    <li>🔴 Inconsistent operations across locations</li>
+                                    <li>🔴 Lack of centralized reporting</li>
+                                    <li>🔴 Difficulty standardizing processes</li>
+                                    <li>🔴 Complex inventory management</li>
+                                    <li>🔴 Training staff across multiple sites</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-success">📈</div>
+                                <div class="card-title">Content Strategy</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Key Messaging:</h4>
+                                <p><strong>"Standardize operations across all locations"</strong></p>
+                                
+                                <h4>Content Types:</h4>
+                                <ul>
+                                    <li>Multi-location management guides</li>
+                                    <li>Scalability success stories</li>
+                                    <li>Centralized analytics demos</li>
+                                    <li>Chain operator testimonials</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-warning">🎯</div>
+                                <div class="card-title">Targeting Strategy</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>LinkedIn Targeting:</h4>
+                                <ul>
+                                    <li>Restaurant chain owners</li>
+                                    <li>Operations directors</li>
+                                    <li>Multi-unit managers</li>
+                                    <li>Franchise owners</li>
+                                </ul>
+                                
+                                <h4>Keywords:</h4>
+                                <ul>
+                                    <li>"multi-location POS system"</li>
+                                    <li>"restaurant chain management"</li>
+                                    <li>"centralized restaurant reporting"</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="fastcasual" class="tab-content">
+                    <div class="cards-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-primary">⚡</div>
+                                <div class="card-title">Demographics</div>
+                            </div>
+                            <div class="card-content">
+                                <p><strong>Age:</strong> 30-50 years old</p>
+                                <p><strong>Role:</strong> Franchise owner/manager</p>
+                                <p><strong>Focus:</strong> Speed and efficiency</p>
+                                <p><strong>Type:</strong> Fast-casual, QSR, franchises</p>
+                                <p><strong>Volume:</strong> High transaction count</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-danger">⚠️</div>
+                                <div class="card-title">Pain Points</div>
+                            </div>
+                            <div class="card-content">
+                                <ul>
+                                    <li>🔴 Slow service during peak hours</li>
+                                    <li>🔴 Order accuracy issues</li>
+                                    <li>🔴 High labor costs</li>
+                                    <li>🔴 Long customer wait times</li>
+                                    <li>🔴 Limited self-service options</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-success">📈</div>
+                                <div class="card-title">Content Strategy</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Key Messaging:</h4>
+                                <p><strong>"Serve more customers faster"</strong></p>
+                                
+                                <h4>Content Types:</h4>
+                                <ul>
+                                    <li>Speed improvement metrics</li>
+                                    <li>Kiosk efficiency demos</li>
+                                    <li>Labor cost reduction case studies</li>
+                                    <li>Peak hour management tips</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-warning">🎯</div>
+                                <div class="card-title">Targeting Strategy</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Keywords:</h4>
+                                <ul>
+                                    <li>"fast casual POS system"</li>
+                                    <li>"restaurant kiosk ordering"</li>
+                                    <li>"QSR automation"</li>
+                                    <li>"reduce labor costs restaurant"</li>
+                                </ul>
+                                
+                                <h4>Video Content:</h4>
+                                <ul>
+                                    <li>Before/after kitchen efficiency</li>
+                                    <li>Kiosk ordering demonstrations</li>
+                                    <li>Peak hour success stories</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="nightlife" class="tab-content">
+                    <div class="cards-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-primary">🌙</div>
+                                <div class="card-title">Demographics</div>
+                            </div>
+                            <div class="card-content">
+                                <p><strong>Age:</strong> 28-45 years old</p>
+                                <p><strong>Role:</strong> Bar/club owner</p>
+                                <p><strong>Focus:</strong> Experience and atmosphere</p>
+                                <p><strong>Type:</strong> Bars, nightclubs, pubs</p>
+                                <p><strong>Hours:</strong> Late night operations</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-danger">⚠️</div>
+                                <div class="card-title">Pain Points</div>
+                            </div>
+                            <div class="card-content">
+                                <ul>
+                                    <li>🔴 Complex inventory tracking (alcohol)</li>
+                                    <li>🔴 Late-night support needs</li>
+                                    <li>🔴 Theft and shrinkage prevention</li>
+                                    <li>🔴 Cash management security</li>
+                                    <li>🔴 Compliance and age verification</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-success">📈</div>
+                                <div class="card-title">Content Strategy</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Key Messaging:</h4>
+                                <p><strong>"Built for the nightlife hustle"</strong></p>
+                                
+                                <h4>Content Types:</h4>
+                                <ul>
+                                    <li>24/7 support testimonials</li>
+                                    <li>Inventory control features</li>
+                                    <li>Security and loss prevention</li>
+                                    <li>Nightlife industry success stories</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-warning">🎯</div>
+                                <div class="card-title">Targeting Strategy</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Keywords:</h4>
+                                <ul>
+                                    <li>"bar POS system"</li>
+                                    <li>"nightclub point of sale"</li>
+                                    <li>"liquor inventory tracking"</li>
+                                    <li>"24/7 POS support"</li>
+                                </ul>
+                                
+                                <h4>Timing:</h4>
+                                <ul>
+                                    <li>Late night/early morning ads</li>
+                                    <li>Weekend focused campaigns</li>
+                                    <li>Industry publication targeting</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Marketing Channels Section -->
+            <div id="channels" class="content-section">
+                <div class="section-header">
+                    <h1 class="section-title">Marketing Channels Strategy</h1>
+                    <p class="section-description">Comprehensive multi-channel approach for maximum lead generation impact</p>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab active" onclick="showTab('google')">Google Ads</div>
+                    <div class="tab" onclick="showTab('meta')">Meta Ads</div>
+                    <div class="tab" onclick="showTab('linkedin')">LinkedIn</div>
+                    <div class="tab" onclick="showTab('content')">Content/SEO</div>
+                    <div class="tab" onclick="showTab('email')">Email Marketing</div>
+                </div>
+
+                <div id="google" class="tab-content active">
+                    <div class="cards-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-primary">🔍</div>
+                                <div class="card-title">Search Campaigns (60%)</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>High-Intent Keywords:</h4>
+                                <ul>
+                                    <li>"restaurant POS system"</li>
+                                    <li>"best POS for restaurants"</li>
+                                    <li>"POS system demo"</li>
+                                    <li>"Square alternative restaurant"</li>
+                                    <li>"Toast POS competitor"</li>
+                                </ul>
+                                
+                                <h4>Expected Performance:</h4>
+                                <p><strong>CTR:</strong> 8-12% | <strong>CVR:</strong> 15-25% | <strong>ROAS:</strong> 4:1</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-success">🛍️</div>
+                                <div class="card-title">Shopping Campaigns (20%)</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Product Focus:</h4>
+                                <ul>
+                                    <li>POS hardware bundles</li>
+                                    <li>Tablet kiosk systems</li>
+                                    <li>Kitchen display screens</li>
+                                    <li>Payment processing terminals</li>
+                                </ul>
+                                
+                                <h4>Strategy:</h4>
+                                <p>Showcase competitive pricing and bundle deals with visual product ads</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-warning">🎯</div>
+                                <div class="card-title">Display Remarketing (20%)</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Audience Segments:</h4>
+                                <ul>
+                                    <li>Website visitors (1-30 days)</li>
+                                    <li>Video watchers (demo viewers)</li>
+                                    <li>Similar audiences to customers</li>
+                                    <li>Industry website visitors</li>
+                                </ul>
+                                
+                                <h4>Creative Strategy:</h4>
+                                <p>Feature customer testimonials, ROI benefits, and limited-time offers</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="margin-bottom: 1rem;">Google Ads Campaign Structure</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Campaign Type</th>
+                                    <th>Budget Allocation</th>
+                                    <th>Target CPA</th>
+                                    <th>Key Metrics</th>
+                                    <th>Optimization Focus</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Search - Brand</strong></td>
+                                    <td>15%</td>
+                                    <td>$75</td>
+                                    <td>CTR: 15%+, CVR: 30%+</td>
+                                    <td>Brand protection</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Search - Competitors</strong></td>
+                                    <td>25%</td>
+                                    <td>$120</td>
+                                    <td>CTR: 10%+, CVR: 20%+</td>
+                                    <td>Market capture</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Search - Generic</strong></td>
+                                    <td>20%</td>
+                                    <td>$150</td>
+                                    <td>CTR: 8%+, CVR: 15%+</td>
+                                    <td>Volume scaling</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Shopping</strong></td>
+                                    <td>20%</td>
+                                    <td>$180</td>
+                                    <td>CTR: 5%+, CVR: 12%+</td>
+                                    <td>Product visibility</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Display Remarketing</strong></td>
+                                    <td>20%</td>
+                                    <td>$200</td>
+                                    <td>CTR: 2%+, CVR: 8%+</td>
+                                    <td>Conversion recovery</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="meta" class="tab-content">
+                    <div class="cards-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-primary">👁️</div>
+                                <div class="card-title">Prospecting Campaigns (60%)</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Audience Targeting:</h4>
+                                <ul>
+                                    <li>Lookalike audiences (existing customers)</li>
+                                    <li>Interest-based (restaurant management)</li>
+                                    <li>Behavioral (small business software)</li>
+                                    <li>Custom combinations</li>
+                                </ul>
+                                
+                                <h4>Creative Strategy:</h4>
+                                <p>Video testimonials, before/after kitchen demos, carousel product showcases</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-success">🔄</div>
+                                <div class="card-title">Retargeting Campaigns (40%)</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Audience Segments:</h4>
+                                <ul>
+                                    <li>Website visitors (1-7 days)</li>
+                                    <li>Video view audiences</li>
+                                    <li>Engagement audiences</li>
+                                    <li>Cart abandoners</li>
+                                </ul>
+                                
+                                <h4>Message Strategy:</h4>
+                                <p>Urgency messaging, social proof, special offers, objection handling</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-warning">📱</div>
+                                <div class="card-title">Platform Distribution</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Facebook (70%):</h4>
+                                <p>Primary platform for restaurant owner demographics</p>
+                                
+                                <h4>Instagram (30%):</h4>
+                                <p>Visual content, younger restaurant entrepreneurs</p>
+                                
+                                <h4>Messenger:</h4>
+                                <p>Direct response campaigns and customer service</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="margin-bottom: 1rem;">Meta Ads Creative Testing Framework</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                            <div style="border: 1px solid var(--border-color); padding: 1rem; border-radius: 8px;">
+                                <h4>Video Content</h4>
+                                <ul style="font-size: 0.9rem;">
+                                    <li>Customer testimonials (30-60 sec)</li>
+                                    <li>Kitchen efficiency demos</li>
+                                    <li>Before/after comparisons</li>
+                                    <li>Product feature highlights</li>
+                                </ul>
+                            </div>
+                            <div style="border: 1px solid var(--border-color); padding: 1rem; border-radius: 8px;">
+                                <h4>Image Content</h4>
+                                <ul style="font-size: 0.9rem;">
+                                    <li>POS system in action</li>
+                                    <li>Happy restaurant owners</li>
+                                    <li>ROI statistics overlays</li>
+                                    <li>Comparison charts</li>
+                                </ul>
+                            </div>
+                            <div style="border: 1px solid var(--border-color); padding: 1rem; border-radius: 8px;">
+                                <h4>Carousel Ads</h4>
+                                <ul style="font-size: 0.9rem;">
+                                    <li>Product suite overview</li>
+                                    <li>Step-by-step setup process</li>
+                                    <li>Feature benefit highlights</li>
+                                    <li>Customer success stories</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="linkedin" class="tab-content">
+                    <div class="cards-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-primary">💼</div>
+                                <div class="card-title">Sponsored Content (60%)</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Content Types:</h4>
+                                <ul>
+                                    <li>Industry trend articles</li>
+                                    <li>Case study promotions</li>
+                                    <li>Thought leadership posts</li>
+                                    <li>Webinar invitations</li>
+                                </ul>
+                                
+                                <h4>Targeting Strategy:</h4>
+                                <p>Job titles, company size, industry vertical, and seniority level</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-success">💌</div>
+                                <div class="card-title">Message Ads (25%)</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Message Strategy:</h4>
+                                <ul>
+                                    <li>Personalized outreach</li>
+                                    <li>Free consultation offers</li>
+                                    <li>Industry-specific solutions</li>
+                                    <li>Demo booking direct</li>
+                                </ul>
+                                
+                                <h4>Response Rate Target:</h4>
+                                <p><strong>8-15%</strong> response rate with quality targeting</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-warning">🎯</div>
+                                <div class="card-title">Lead Gen Forms (15%)</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Form Types:</h4>
+                                <ul>
+                                    <li>Demo request forms</li>
+                                    <li>ROI calculator downloads</li>
+                                    <li>Industry report access</li>
+                                    <li>Consultation booking</li>
+                                </ul>
+                                
+                                <h4>Pre-filled Benefits:</h4>
+                                <p>Higher conversion rates with LinkedIn profile data integration</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="content" class="tab-content">
+                    <div class="cards-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-primary">📝</div>
+                                <div class="card-title">Blog Content (40%)</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Topic Categories:</h4>
+                                <ul>
+                                    <li>Restaurant industry trends</li>
+                                    <li>POS buying guides</li>
+                                    <li>Cost reduction strategies</li>
+                                    <li>Technology implementation</li>
+                                </ul>
+                                
+                                <h4>SEO Strategy:</h4>
+                                <p>Target long-tail keywords with commercial intent</p>
+                            </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-success">📚</div>
+                                <div class="card-title">Resource Center (35%)</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Downloadable Assets:</h4>
+                                <ul>
+                                    <li>POS system comparison guide</li>
+                                    <li>Restaurant ROI calculator</li>
+                                    <li>Implementation checklist</li>
+                                    <li>Cost reduction playbook</li>
+                                </ul>
+                                
+                                <h4>Lead Capture:</h4>
+                                <p>Gated content with progressive profiling forms</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-warning">🎥</div>
+                                <div class="card-title">Video Content (25%)</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Content Types:</h4>
+                                <ul>
+                                    <li>Product demo videos</li>
+                                    <li>Customer success stories</li>
+                                    <li>Industry expert interviews</li>
+                                    <li>How-to tutorials</li>
+                                </ul>
+                                
+                                <h4>Distribution:</h4>
+                                <p>YouTube, embedded on website, social media, email campaigns</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="margin-bottom: 1rem;">Content Calendar & SEO Strategy</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Content Type</th>
+                                    <th>Frequency</th>
+                                    <th>Primary Keywords</th>
+                                    <th>Lead Gen Goal</th>
+                                    <th>Success Metric</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Blog Articles</strong></td>
+                                    <td>3x/week</td>
+                                    <td>"restaurant POS guide", "reduce delivery fees"</td>
+                                    <td>10 leads/month</td>
+                                    <td>Organic traffic growth</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Case Studies</strong></td>
+                                    <td>2x/month</td>
+                                    <td>"POS ROI", "restaurant success story"</td>
+                                    <td>15 leads/month</td>
+                                    <td>Download conversions</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Video Content</strong></td>
+                                    <td>1x/week</td>
+                                    <td>"POS demo", "restaurant technology"</td>
+                                    <td>20 leads/month</td>
+                                    <td>View completion rate</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Webinars</strong></td>
+                                    <td>1x/month</td>
+                                    <td>"restaurant profit optimization"</td>
+                                    <td>50 leads/month</td>
+                                    <td>Registration rate</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Downloadable Guides</strong></td>
+                                    <td>2x/month</td>
+                                    <td>"POS buying guide", "cost calculator"</td>
+                                    <td>30 leads/month</td>
+                                    <td>Download rate</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="email" class="tab-content">
+                    <div class="cards-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-primary">📧</div>
+                                <div class="card-title">Lead Nurturing (50%)</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Welcome Series (7 emails over 14 days):</h4>
+                                <ul>
+                                    <li>Day 1: Welcome + PAYS overview</li>
+                                    <li>Day 3: Cost savings calculator</li>
+                                    <li>Day 5: Customer success story</li>
+                                    <li>Day 7: Product demo invitation</li>
+                                    <li>Day 10: Competitor comparison</li>
+                                    <li>Day 12: Implementation timeline</li>
+                                    <li>Day 14: Special offer + urgency</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-success">🔄</div>
+                                <div class="card-title">Automated Workflows (30%)</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Behavioral Triggers:</h4>
+                                <ul>
+                                    <li>Demo request follow-up</li>
+                                    <li>Website behavior scoring</li>
+                                    <li>Content engagement tracking</li>
+                                    <li>Trial user onboarding</li>
+                                </ul>
+                                
+                                <h4>Lead Scoring:</h4>
+                                <p>Points based on email opens, clicks, website visits, and demo requests</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-warning">📊</div>
+                                <div class="card-title">Newsletter & Updates (20%)</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Monthly Newsletter:</h4>
+                                <ul>
+                                    <li>Industry news and trends</li>
+                                    <li>Customer spotlight features</li>
+                                    <li>New feature announcements</li>
+                                    <li>Upcoming webinar invitations</li>
+                                </ul>
+                                
+                                <h4>Segmentation:</h4>
+                                <p>By restaurant type, location, and engagement level</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Communication Strategy Section -->
+            <div id="communication" class="content-section">
+                <div class="section-header">
+                    <h1 class="section-title">Communication Strategy</h1>
+                    <p class="section-description">Unified messaging framework across all channels and touchpoints</p>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem;">Core Value Propositions</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                        <div style="border-left: 4px solid var(--primary-color); padding: 1rem; background: #eff6ff;">
+                            <h4 style="color: var(--primary-color);">Cost Reduction</h4>
+                            <p>"Stop paying 30% to delivery apps"</p>
+                            <p><strong>Proof:</strong> 85% reduction in delivery fees</p>
+                        </div>
+                        <div style="border-left: 4px solid var(--accent-color); padding: 1rem; background: #f0fdf4;">
+                            <h4 style="color: var(--accent-color);">Revenue Growth</h4>
+                            <p>"Increase revenue by 15-35%"</p>
+                            <p><strong>Proof:</strong> Customer performance data</p>
+                        </div>
+                        <div style="border-left: 4px solid var(--warning-color); padding: 1rem; background: #fefbf2;">
+                            <h4 style="color: var(--warning-color);">Operational Excellence</h4>
+                            <p>"Eliminate order mistakes, increase speed"</p>
+                            <p><strong>Proof:</strong> Kitchen efficiency metrics</p>
+                        </div>
+                        <div style="border-left: 4px solid var(--danger-color); padding: 1rem; background: #fef7f7;">
+                            <h4 style="color: var(--danger-color);">Reliable Support</h4>
+                            <p>"24/7 support when you need it most"</p>
+                            <p><strong>Proof:</strong> Customer satisfaction scores</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab active" onclick="showTab('messaging')">Channel Messaging</div>
+                    <div class="tab" onclick="showTab('tone')">Tone & Voice</div>
+                    <div class="tab" onclick="showTab('objections')">Objection Handling</div>
+                    <div class="tab" onclick="showTab('personalization')">Personalization</div>
+                </div>
+
+                <div id="messaging" class="tab-content active">
+                    <div class="cards-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-primary">🔍</div>
+                                <div class="card-title">Google Ads Messaging</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Tone:</h4>
+                                <p>Direct, benefit-focused, urgency-driven</p>
+                                
+                                <h4>Key Headlines:</h4>
+                                <ul>
+                                    <li>"Beat Any POS Price - Guaranteed"</li>
+                                    <li>"Stop Losing 30% to Delivery Apps"</li>
+                                    <li>"24/7 Support That Actually Answers"</li>
+                                    <li>"See Why 1,000+ Restaurants Choose PAYS"</li>
+                                </ul>
+                                
+                                <h4>CTA Strategy:</h4>
+                                <p>"Get Free Demo", "Calculate Savings", "Compare Prices"</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-success">📱</div>
+                                <div class="card-title">Meta Ads Messaging</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Tone:</h4>
+                                <p>Conversational, story-driven, community-focused</p>
+                                
+                                <h4>Content Themes:</h4>
+                                <ul>
+                                    <li>Real customer success stories</li>
+                                    <li>"From struggling to thriving"</li>
+                                    <li>Community of successful restaurants</li>
+                                    <li>Family business support</li>
+                                </ul>
+                                
+                                <h4>Engagement Strategy:</h4>
+                                <p>Questions, polls, before/after transformations</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-warning">💼</div>
+                                <div class="card-title">LinkedIn Messaging</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Tone:</h4>
+                                <p>Professional, data-driven, industry expertise</p>
+                                
+                                <h4>Content Themes:</h4>
+                                <ul>
+                                    <li>Industry trends and insights</li>
+                                    <li>Operational efficiency data</li>
+                                    <li>Technology adoption benefits</li>
+                                    <li>Competitive market analysis</li>
+                                </ul>
+                                
+                                <h4>Authority Building:</h4>
+                                <p>Thought leadership, industry reports, expert commentary</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-danger">📧</div>
+                                <div class="card-title">Email Messaging</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Tone:</h4>
+                                <p>Helpful, educational, relationship-building</p>
+                                
+                                <h4>Content Strategy:</h4>
+                                <ul>
+                                    <li>Educational newsletter content</li>
+                                    <li>Personalized recommendations</li>
+                                    <li>Exclusive offers and previews</li>
+                                    <li>Customer success celebrations</li>
+                                </ul>
+                                
+                                <h4>Segmentation:</h4>
+                                <p>By restaurant type, engagement level, sales stage</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tone" class="tab-content">
+                    <div class="card">
+                        <h3 style="margin-bottom: 1rem;">Brand Voice Guidelines</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                            <div>
+                                <h4 style="color: var(--accent-color); margin-bottom: 1rem;">✅ DO's</h4>
+                                <ul>
+                                    <li><strong>Be authentic:</strong> Speak like a fellow restaurant owner</li>
+                                    <li><strong>Be confident:</strong> Back claims with real data</li>
+                                    <li><strong>Be supportive:</strong> Understand restaurant challenges</li>
+                                    <li><strong>Be clear:</strong> Avoid technical jargon</li>
+                                    <li><strong>Be urgent:</strong> Emphasize cost of inaction</li>
+                                    <li><strong>Be proof-driven:</strong> Always include evidence</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 style="color: var(--danger-color); margin-bottom: 1rem;">❌ DON'T's</h4>
+                                <ul>
+                                    <li><strong>Don't oversell:</strong> Avoid pushy sales language</li>
+                                    <li><strong>Don't generic:</strong> Avoid one-size-fits-all messaging</li>
+                                    <li><strong>Don't negative:</strong> Don't attack competitors directly</li>
+                                    <li><strong>Don't complex:</strong> Avoid technical specifications</li>
+                                    <li><strong>Don't promise:</strong> Avoid unrealistic guarantees</li>
+                                    <li><strong>Don't ignore:</strong> Address concerns directly</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="margin-bottom: 1rem;">Voice Personality Matrix</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Trait</th>
+                                    <th>Description</th>
+                                    <th>Example</th>
+                                    <th>Avoid</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Knowledgeable</strong></td>
+                                    <td>Deep restaurant industry understanding</td>
+                                    <td>"We know peak hours kill your margins"</td>
+                                    <td>Generic business advice</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Supportive</strong></td>
+                                    <td>Genuinely wants restaurants to succeed</td>
+                                    <td>"Your success is our success"</td>
+                                    <td>Pushy sales tactics</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Confident</strong></td>
+                                    <td>Believes in product superiority</td>
+                                    <td>"We'll beat any price, guaranteed"</td>
+                                    <td>Arrogant or dismissive tone</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Practical</strong></td>
+                                    <td>Focuses on real business impact</td>
+                                    <td>"Save $2,000/month in delivery fees"</td>
+                                    <td>Theoretical or abstract benefits</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Accessible</strong></td>
+                                    <td>Easy to understand and relate to</td>
+                                    <td>"No BS, just results"</td>
+                                    <td>Technical jargon or complexity</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="objections" class="tab-content">
+                    <div class="cards-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-danger">💰</div>
+                                <div class="card-title">Price Objections</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Common Objection:</h4>
+                                <p><em>"Your system is too expensive"</em></p>
+                                
+                                <h4>Response Strategy:</h4>
+                                <ul>
+                                    <li><strong>Reframe:</strong> "Let's look at total cost, not just price"</li>
+                                    <li><strong>Prove ROI:</strong> "Save $2,000/month = $24,000/year"</li>
+                                    <li><strong>Guarantee:</strong> "We'll beat any competitor's price"</li>
+                                    <li><strong>Value Stack:</strong> "Hardware + software + support + training"</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-warning">🔧</div>
+                                <div class="card-title">Implementation Concerns</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Common Objection:</h4>
+                                <p><em>"Too complicated to switch systems"</em></p>
+                                
+                                <h4>Response Strategy:</h4>
+                                <ul>
+                                    <li><strong>Simplify:</strong> "We handle 100% of the setup"</li>
+                                    <li><strong>Timeline:</strong> "Most restaurants live in 48 hours"</li>
+                                    <li><strong>Support:</strong> "24/7 help during transition"</li>
+                                    <li><strong>Social Proof:</strong> "1,000+ successful migrations"</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-primary">🏆</div>
+                                <div class="card-title">Competitor Loyalty</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Common Objection:</h4>
+                                <p><em>"We're happy with our current system"</em></p>
+                                
+                                <h4>Response Strategy:</h4>
+                                <ul>
+                                    <li><strong>Probe:</strong> "What do you like most about it?"</li>
+                                    <li><strong>Compare:</strong> "Here's what others found better"</li>
+                                    <li><strong>Risk-Free:</strong> "Try us for 30 days, no commitment"</li>
+                                    <li><strong>Future Focus:</strong> "What about your growth plans?"</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-success">⏰</div>
+                                <div class="card-title">Timing Objections</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Common Objection:</h4>
+                                <p><em>"Not the right time to change"</em></p>
+                                
+                                <h4>Response Strategy:</h4>
+                                <ul>
+                                    <li><strong>Cost Focus:</strong> "Every month costs you $X"</li>
+                                    <li><strong>Seasonal:</strong> "Best to switch during slow season"</li>
+                                    <li><strong>Urgency:</strong> "Special pricing ends soon"</li>
+                                    <li><strong>Future Pain:</strong> "Competition is upgrading now"</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="personalization" class="tab-content">
+                    <div class="card">
+                        <h3 style="margin-bottom: 1rem;">Personalization Matrix by Restaurant Type</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Restaurant Type</th>
+                                    <th>Key Pain Point</th>
+                                    <th>Primary Message</th>
+                                    <th>Proof Point</th>
+                                    <th>CTA</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Pizza Shop</strong></td>
+                                    <td>High delivery fees</td>
+                                    <td>"Stop paying 30% to delivery apps"</td>
+                                    <td>"Save $1,500/month on commissions"</td>
+                                    <td>"Calculate Your Savings"</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Fast Casual</strong></td>
+                                    <td>Slow service</td>
+                                    <td>"Serve customers 2x faster"</td>
+                                    <td>"Reduce wait times by 40%"</td>
+                                    <td>"See Speed Demo"</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Fine Dining</strong></td>
+                                    <td>Order accuracy</td>
+                                    <td>"Never send wrong orders again"</td>
+                                    <td>"99.9% order accuracy rate"</td>
+                                    <td>"Book Consultation"</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Bar/Pub</strong></td>
+                                    <td>Late night support</td>
+                                    <td>"24/7 support when you need it"</td>
+                                    <td>"Average response: 2 minutes"</td>
+                                    <td>"Test Our Support"</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Cafe/Bakery</strong></td>
+                                    <td>Simple operations</td>
+                                    <td>"POS that's as simple as coffee"</td>
+                                    <td>"Setup in under 30 minutes"</td>
+                                    <td>"Try Free Demo"</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="cards-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-primary">🎯</div>
+                                <div class="card-title">Geographic Personalization</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Local Market Approach:</h4>
+                                <ul>
+                                    <li><strong>City-specific:</strong> "Join 50+ NYC restaurants using PAYS"</li>
+                                    <li><strong>Regional trends:</strong> "West Coast delivery fee crisis"</li>
+                                    <li><strong>Local events:</strong> "Prepare for festival season"</li>
+                                    <li><strong>Competitor density:</strong> Market-specific comparisons</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-success">📊</div>
+                                <div class="card-title">Behavioral Personalization</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Engagement-Based Messaging:</h4>
+                                <ul>
+                                    <li><strong>First-time visitors:</strong> Educational content focus</li>
+                                    <li><strong>Return visitors:</strong> Comparison and proof points</li>
+                                    <li><strong>Demo watchers:</strong> Pricing and next steps</li>
+                                    <li><strong>Email subscribers:</strong> Exclusive offers and updates</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-warning">🔄</div>
+                                <div class="card-title">Journey Stage Personalization</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Funnel-Based Content:</h4>
+                                <ul>
+                                    <li><strong>Awareness:</strong> Problem-focused, educational</li>
+                                    <li><strong>Consideration:</strong> Solution-focused, comparative</li>
+                                    <li><strong>Decision:</strong> Benefit-focused, urgent</li>
+                                    <li><strong>Retention:</strong> Success-focused, community</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Budget Allocation Section -->
+            <div id="budget" class="content-section">
+                <div class="section-header">
+                    <h1 class="section-title">Budget Allocation & ROI Planning</h1>
+                    <p class="section-description">Strategic budget distribution across channels with performance expectations</p>
+                </div>
+
+                <div class="cards-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon bg-primary">💰</div>
+                            <div class="card-title">Total Monthly Budget</div>
+                        </div>
+                        <div class="card-content">
+                            <div class="metric-value">$50,000</div>
+                            <div class="metric-label">Recommended Starting Budget</div>
+                            <p style="margin-top: 1rem;">Scalable based on performance and growth targets. Can adjust allocation based on channel performance.</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon bg-success">🎯</div>
+                            <div class="card-title">Target Leads</div>
+                        </div>
+                        <div class="card-content">
+                            <div class="metric-value">200+</div>
+                            <div class="metric-label">Qualified Leads/Month</div>
+                            <p style="margin-top: 1rem;">High-quality demo requests from qualified restaurant decision-makers.</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon bg-warning">📊</div>
+                            <div class="card-title">Blended CPL</div>
+                        </div>
+                        <div class="card-content">
+                            <div class="metric-value">$250</div>
+                            <div class="metric-label">Average Cost Per Lead</div>
+                            <p style="margin-top: 1rem;">Varies by channel, with Google Ads typically lower and LinkedIn higher.</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon bg-danger">🚀</div>
+                            <div class="card-title">Expected ROAS</div>
+                        </div>
+                        <div class="card-content">
+                            <div class="metric-value">4:1</div>
+                            <div class="metric-label">Minimum Return Target</div>
+                            <p style="margin-top: 1rem;">Conservative estimate based on average customer LTV and conversion rates.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem;">Budget Allocation by Channel</h3>
+                    <div style="margin-bottom: 2rem;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                            <div style="border: 2px solid var(--primary-color); border-radius: 12px; padding: 1.5rem;">
+                                <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 1rem;">
+                                    <h4 style="color: var(--primary-color);">Google Ads</h4>
+                                    <span style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color);">40%</span>
+                                </div>
+                                <p><strong>Budget:</strong> $20,000/month</p>
+                                <p><strong>Expected ROAS:</strong> 4:1</p>
+                                <p><strong>Target CPL:</strong> $100-200</p>
+                                <p><strong>Lead Volume:</strong> 100-120/month</p>
+                                <div class="progress-bar" style="margin-top: 1rem;">
+                                    <div class="progress-fill bg-primary" style="width: 40%;"></div>
+                                </div>
+                            </div>
+
+                            <div style="border: 2px solid var(--accent-color); border-radius: 12px; padding: 1.5rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                    <h4 style="color: var(--accent-color);">Meta Ads</h4>
+                                    <span style="font-size: 1.5rem; font-weight: bold; color: var(--accent-color);">25%</span>
+                                </div>
+                                <p><strong>Budget:</strong> $12,500/month</p>
+                                <p><strong>Expected ROAS:</strong> 3:1</p>
+                                <p><strong>Target CPL:</strong> $150-250</p>
+                                <p><strong>Lead Volume:</strong> 50-65/month</p>
+                                <div class="progress-bar" style="margin-top: 1rem;">
+                                    <div class="progress-fill bg-success" style="width: 25%;"></div>
+                                </div>
+---
+<td>Video 50% view</td>
+                                            <td>Retargeting audience add</td>
+                                            <td>Real-time</td>
+                                        </tr>
+                                        <tr>
+                                            <td>No engagement 7 days</td>
+                                            <td>Re-engagement sequence</td>
+                                            <td>Weekly</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="reporting" class="tab-content">
+                    <div class="cards-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-primary">📊</div>
+                                <div class="card-title">Executive Dashboard</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Key Metrics (Weekly):</h4>
+                                <ul>
+                                    <li><strong>Total Leads:</strong> Qualified demo requests</li>
+                                    <li><strong>Cost Per Lead:</strong> Blended across channels</li>
+                                    <li><strong>ROAS:</strong> Revenue attributed to marketing</li>
+                                    <li><strong>Pipeline Value:</strong> Total opportunity value</li>
+                                </ul>
+                                
+                                <h4>Format:</h4>
+                                <p>Visual dashboard with trend analysis and executive summary</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-success">🎯</div>
+                                <div class="card-title">Campaign Performance</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Daily Monitoring:</h4>
+                                <ul>
+                                    <li><strong>Spend Pacing:</strong> Budget utilization vs. target</li>
+                                    <li><strong>Lead Volume:</strong> Daily lead generation trends</li>
+                                    <li><strong>Quality Scores:</strong> Ad relevance and performance</li>
+                                    <li><strong>Conversion Rates:</strong> Funnel optimization opportunities</li>
+                                </ul>
+                                
+                                <h4>Alerts:</h4>
+                                <p>Automated notifications for performance anomalies</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-warning">📈</div>
+                                <div class="card-title">Attribution Analysis</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Monthly Deep Dive:</h4>
+                                <ul>
+                                    <li><strong>Customer Journeys:</strong> Multi-touch path analysis</li>
+                                    <li><strong>Channel Contribution:</strong> Assist vs. last-click value</li>
+                                    <li><strong>Audience Insights:</strong> Demographics and behavior patterns</li>
+                                    <li><strong>Creative Performance:</strong> Message and format effectiveness</li>
+                                </ul>
+                                
+                                <h4>Actionable Insights:</h4>
+                                <p>Recommendations for budget reallocation and optimization</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon bg-danger">🎨</div>
+                                <div class="card-title">Creative Performance</div>
+                            </div>
+                            <div class="card-content">
+                                <h4>Creative Analytics:</h4>
+                                <ul>
+                                    <li><strong>Ad Fatigue:</strong> CTR decline tracking</li>
+                                    <li><strong>Message Testing:</strong> A/B test results</li>
+                                    <li><strong>Visual Performance:</strong> Image vs. video effectiveness</li>
+                                    <li><strong>Audience Resonance:</strong> Creative-audience fit analysis</li>
+                                </ul>
+                                
+                                <h4>Refresh Schedule:</h4>
+                                <p>Data-driven creative rotation recommendations</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="margin-bottom: 1rem;">Reporting Schedule & Stakeholder Matrix</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Report Type</th>
+                                    <th>Frequency</th>
+                                    <th>Audience</th>
+                                    <th>Key Metrics</th>
+                                    <th>Format</th>
+                                    <th>Action Items</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Daily Performance</strong></td>
+                                    <td>Daily</td>
+                                    <td>Marketing Team</td>
+                                    <td>Spend, Leads, CPL, ROAS</td>
+                                    <td>Slack/Email Alert</td>
+                                    <td>Budget adjustments</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Weekly Summary</strong></td>
+                                    <td>Weekly</td>
+                                    <td>Management</td>
+                                    <td>Lead volume, Quality, Pipeline</td>
+                                    <td>Dashboard + Email</td>
+                                    <td>Strategy adjustments</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Campaign Deep Dive</strong></td>
+                                    <td>Bi-weekly</td>
+                                    <td>Marketing Team</td>
+                                    <td>Channel performance, Testing results</td>
+                                    <td>Detailed Report</td>
+                                    <td>Optimization plans</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Executive Summary</strong></td>
+                                    <td>Monthly</td>
+                                    <td>C-Level</td>
+                                    <td>ROI, Growth, Market trends</td>
+                                    <td>Executive Presentation</td>
+                                    <td>Strategic decisions</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Attribution Analysis</strong></td>
+                                    <td>Monthly</td>
+                                    <td>Marketing + Sales</td>
+                                    <td>Customer journey, Channel value</td>
+                                    <td>Data Analysis Report</td>
+                                    <td>Budget reallocation</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Competitive Analysis</strong></td>
+                                    <td>Quarterly</td>
+                                    <td>Strategy Team</td>
+                                    <td>Market share, Positioning</td>
+                                    <td>Strategy Document</td>
+                                    <td>Competitive response</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ROI Calculator Section -->
+            <div id="calculator" class="content-section">
+                <div class="section-header">
+                    <h1 class="section-title">ROI Calculator & Performance Projections</h1>
+                    <p class="section-description">Interactive calculator to model campaign performance and ROI projections</p>
+                </div>
+
+                <div class="calculator">
+                    <h3 style="margin-bottom: 2rem; text-align: center;">Campaign ROI Calculator</h3>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                        <div>
+                            <h4 style="margin-bottom: 1rem;">Campaign Inputs</h4>
+                            
+                            <div class="input-group">
+                                <label class="input-label">Monthly Budget ($)</label>
+                                <input type="number" class="input-field" id="monthlyBudget" value="50000" oninput="calculateROI()">
+                            </div>
+                            
+                            <div class="input-group">
+                                <label class="input-label">Average Cost Per Lead ($)</label>
+                                <input type="number" class="input-field" id="costPerLead" value="250" oninput="calculateROI()">
+                            </div>
+                            
+                            <div class="input-group">
+                                <label class="input-label">Lead to Demo Conversion Rate (%)</label>
+                                <input type="number" class="input-field" id="leadToDemoRate" value="60" oninput="calculateROI()">
+                            </div>
+                            
+                            <div class="input-group">
+                                <label class="input-label">Demo to Close Rate (%)</label>
+                                <input type="number" class="input-field" id="demoToCloseRate" value="25" oninput="calculateROI()">
+                            </div>
+                            
+                            <div class="input-group">
+                                <label class="input-label">Average Customer LTV ($)</label>
+                                <input type="number" class="input-field" id="customerLTV" value="6000" oninput="calculateROI()">
+                            </div>
+                            
+                            <div class="input-group">
+                                <label class="input-label">Gross Margin (%)</label>
+                                <input type="number" class="input-field" id="grossMargin" value="60" oninput="calculateROI()">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 style="margin-bottom: 1rem;">Projected Results</h4>
+                            
+                            <div style="background: var(--secondary-color); padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <span>Monthly Leads:</span>
+                                    <span id="monthlyLeads" style="font-weight: bold;">200</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <span>Demo Requests:</span>
+                                    <span id="demoRequests" style="font-weight: bold;">120</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <span>New Customers:</span>
+                                    <span id="newCustomers" style="font-weight: bold;">30</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <span>Monthly Revenue:</span>
+                                    <span id="monthlyRevenue" style="font-weight: bold; color: var(--accent-color);">$180,000</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <span>Monthly Profit:</span>
+                                    <span id="monthlyProfit" style="font-weight: bold; color: var(--accent-color);">$108,000</span>
+                                </div>
+                                <hr style="margin: 1rem 0;">
+                                <div style="display: flex; justify-content: space-between; font-size: 1.2rem;">
+                                    <span><strong>ROI:</strong></span>
+                                    <span id="roi" style="font-weight: bold; color: var(--primary-color);">2.16:1</span>
+                                </div>
+                            </div>
+                            
+                            <div style="background: white; border: 2px solid var(--primary-color); padding: 1.5rem; border-radius: 8px;">
+                                <h4 style="color: var(--primary-color); margin-bottom: 1rem;">Key Insights</h4>
+                                <div id="insights">
+                                    <p>✅ ROI exceeds 2:1 minimum target</p>
+                                    <p>📈 Payback period: ~1.4 months</p>
+                                    <p>🎯 Cost per acquisition: $1,667</p>
+                                    <p>💰 Annual revenue potential: $2.16M</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 2rem;">
+                        <button class="button" onclick="resetCalculator()">Reset Values</button>
+                        <button class="button button-secondary" onclick="exportResults()" style="margin-left: 1rem;">Export Results</button>
+                    </div>
+                </div>
+
+                <div class="cards-grid" style="margin-top: 2rem;">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon bg-primary">📊</div>
+                            <div class="card-title">Scenario Planning</div>
+                        </div>
+                        <div class="card-content">
+                            <h4>Conservative Scenario:</h4>
+                            <ul>
+                                <li>CPL: $300 | Close Rate: 20%</li>
+                                <li>ROI: 1.8:1 | Payback: 1.7 months</li>
+                            </ul>
+                            
+                            <h4>Optimistic Scenario:</h4>
+                            <ul>
+                                <li>CPL: $200 | Close Rate: 30%</li>
+                                <li>ROI: 3.6:1 | Payback: 0.8 months</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon bg-success">🎯</div>
+                            <div class="card-title">Optimization Targets</div>
+                        </div>
+                        <div class="card-content">
+                            <h4>Priority Improvements:</h4>
+                            <ul>
+                                <li><strong>Reduce CPL to $200:</strong> +44% ROI improvement</li>
+                                <li><strong>Increase close rate to 30%:</strong> +20% ROI boost</li>
+                                <li><strong>Improve LTV to $7,000:</strong> +17% ROI increase</li>
+                            </ul>
+                            
+                            <h4>Break-even Analysis:</h4>
+                            <p><strong>Maximum CPL:</strong> $450 (at 25% close rate)</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon bg-warning">📈</div>
+                            <div class="card-title">Scaling Projections</div>
+                        </div>
+                        <div class="card-content">
+                            <h4>6-Month Growth Plan:</h4>
+                            <ul>
+                                <li><strong>Month 1-2:</strong> $50K budget, 200 leads</li>
+                                <li><strong>Month 3-4:</strong> $75K budget, 300 leads</li>
+                                <li><strong>Month 5-6:</strong> $100K budget, 400 leads</li>
+                            </ul>
+                            
+                            <h4>Expected Outcomes:</h4>
+                            <p><strong>Total Investment:</strong> $450K</p>
+                            <p><strong>Projected Revenue:</strong> $1.8M</p>
+                            <p><strong>ROI:</strong> 4:1</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon bg-danger">⚠️</div>
+                            <div class="card-title">Risk Factors</div>
+                        </div>
+                        <div class="card-content">
+                            <h4>Potential Challenges:</h4>
+                            <ul>
+                                <li><strong>Market Saturation:</strong> CPL increases over time</li>
+                                <li><strong>Competition:</strong> Increased bid competition</li>
+                                <li><strong>Seasonality:</strong> Restaurant decision cycles</li>
+                                <li><strong>Economic Factors:</strong> Restaurant spending cuts</li>
+                            </ul>
+                            
+                            <h4>Mitigation Strategies:</h4>
+                            <ul>
+                                <li>Diversify lead sources and channels</li>
+                                <li>Build strong brand differentiation</li>
+                                <li>Develop retention and upsell programs</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Menu Toggle -->
+    <div id="mobileMenuToggle" style="display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001;">
+        <button onclick="toggleMobileMenu()" style="background: var(--primary-color); color: white; border: none; padding: 0.5rem; border-radius: 4px;">☰</button>
+    </div>
+
+    <script>
+        // Navigation Functions
+        function showSection(sectionId) {
+            // Hide all sections
+            const sections = document.querySelectorAll('.content-section');
+            sections.forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Update active nav item
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.closest('.nav-item').classList.add('active');
+            
+            // Close mobile menu if open
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('mobile-open');
+            }
+        }
+
+        function showTab(tabId) {
+            // Get the parent section to scope tab switching
+            const activeSection = document.querySelector('.content-section.active');
+            
+            // Hide all tab contents in active section
+            const tabContents = activeSection.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            activeSection.querySelector(`#${tabId}`).classList.add('active');
+            
+            // Update active tab
+            const tabs = activeSection.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('mobile-open');
+        }
+
+        // ROI Calculator Functions
+        function calculateROI() {
+            const budget = parseFloat(document.getElementById('monthlyBudget').value) || 0;
+            const cpl = parseFloat(document.getElementById('costPerLead').value) || 0;
+            const leadToDemoRate = parseFloat(document.getElementById('leadToDemoRate').value) || 0;
+            const demoToCloseRate = parseFloat(document.getElementById('demoToCloseRate').value) || 0;
+            const ltv = parseFloat(document.getElementById('customerLTV').value) || 0;
+            const margin = parseFloat(document.getElementById('grossMargin').value) || 0;
+            
+            // Calculations
+            const monthlyLeads = budget / cpl;
+            const demoRequests = monthlyLeads * (leadToDemoRate / 100);
+            const newCustomers = demoRequests * (demoToCloseRate / 100);
+            const monthlyRevenue = newCustomers * ltv;
+            const monthlyProfit = monthlyRevenue * (margin / 100);
+            const roi = monthlyProfit / budget;
+            const cac = budget / newCustomers;
+            const paybackPeriod = cac / (ltv * (margin / 100) / 12);
+            
+            // Update display
+            document.getElementById('monthlyLeads').textContent = Math.round(monthlyLeads);
+            document.getElementById('demoRequests').textContent = Math.round(demoRequests);
+            document.getElementById('newCustomers').textContent = Math.round(newCustomers);
+            document.getElementById('monthlyRevenue').textContent = `$${Math.round(monthlyRevenue).toLocaleString()}`;
+            document.getElementById('monthlyProfit').textContent = `$${Math.round(monthlyProfit).toLocaleString()}`;
+            document.getElementById('roi').textContent = `${roi.toFixed(2)}:1`;
+            
+            // Update insights
+            const insights = document.getElementById('insights');
+            let insightHTML = '';
+            
+            if (roi >= 2) {
+                insightHTML += '<p>✅ ROI exceeds 2:1 minimum target</p>';
+            } else {
+                insightHTML += '<p>⚠️ ROI below 2:1 target - optimization needed</p>';
+            }
+            
+            insightHTML += `<p>📈 Payback period: ~${paybackPeriod.toFixed(1)} months</p>`;
+            insightHTML += `<p>🎯 Cost per acquisition: $${Math.round(cac).toLocaleString()}</p>`;
+            insightHTML += `<p>💰 Annual revenue potential: $${Math.round(monthlyRevenue * 12 / 1000000).toFixed(2)}M</p>`;
+            
+            insights.innerHTML = insightHTML;
+        }
+
+        function resetCalculator() {
+            document.getElementById('monthlyBudget').value = 50000;
+            document.getElementById('costPerLead').value = 250;
+            document.getElementById('leadToDemoRate').value = 60;
+            document.getElementById('demoToCloseRate').value = 25;
+            document.getElementById('customerLTV').value = 6000;
+            document.getElementById('grossMargin').value = 60;
+            calculateROI();
+        }
+
+        function exportResults() {
+            const results = {
+                budget: document.getElementById('monthlyBudget').value,
+                leads: document.getElementById('monthlyLeads').textContent,
+                demos: document.getElementById('demoRequests').textContent,
+                customers: document.getElementById('newCustomers').textContent,
+                revenue: document.getElementById('monthlyRevenue').textContent,
+                profit: document.getElementById('monthlyProfit').textContent,
+                roi: document.getElementById('roi').textContent
+            };
+            
+            alert('Results exported to console. In a real implementation, this would download a CSV or PDF report.');
+            console.log('ROI Calculator Results:', results);
+        }
+
+        // Responsive handling
+        function handleResize() {
+            const mobileToggle = document.getElementById('mobileMenuToggle');
+            if (window.innerWidth <= 768) {
+                mobileToggle.style.display = 'block';
+                document.getElementById('sidebar').classList.remove('mobile-open');
+            } else {
+                mobileToggle.style.display = 'none';
+                document.getElementById('sidebar').classList.remove('mobile-open');
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            calculateROI();
+            handleResize();
+            
+            // Animate progress bars
+            setTimeout(() => {
+                const progressBars = document.querySelectorAll('.progress-fill');
+                progressBars.forEach(bar => {
+                    const width = bar.style.width;
+                    bar.style.width = '0%';
+                    setTimeout(() => {
+                        bar.style.width = width;
+                    }, 100);
+                });
+            }, 500);
+        });
+
+        window.addEventListener('resize', handleResize);
+
+        // Add some interactivity to cards
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-4px)';
+                    this.style.boxShadow = '0 12px 30px -5px rgba(0, 0, 0, 0.15)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(-2px)';
+                    this.style.boxShadow = 'var(--card-shadow)';
+                });
+            });
+        });
+
+        // Add loading states for dynamic content
+        function showLoading(elementId) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = '<div style="text-align: center; padding: 2rem;"><div style="border: 3px solid #f3f3f3; border-top: 3px solid var(--primary-color); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto;"></div><p style="margin-top: 1rem; color: var(--text-secondary);">Loading...</p></div>';
+        }
+
+        // Add CSS for loading animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            
+            .fade-in {
+                animation: fadeIn 0.5s ease-in-out;
+            }
+            
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
