@@ -455,7 +455,199 @@
             background: #fee2e2;
             color: #991b1b;
         }
-    </style>
+    
+        /* Overview Section Styles */
+        .overview-summary {
+            margin-top: 2rem;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .key-highlights {
+            margin-top: 1.5rem;
+        }
+
+        .key-highlights ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-highlights li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .key-highlights li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        /* Optimization Section Styles */
+        .optimization-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .optimization-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+        }
+
+        .optimization-header {
+            background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+            color: white;
+            padding: 1rem 1.5rem;
+        }
+
+        .optimization-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .optimization-content {
+            padding: 1.5rem;
+        }
+
+        .optimization-content h4 {
+            margin: 0 0 1rem 0;
+            color: var(--text-primary);
+        }
+
+        .optimization-content ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .optimization-content li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .optimization-content li:last-child {
+            border-bottom: none;
+        }
+
+        .optimization-content li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        /* Timeline Styles */
+        .optimization-timeline {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 2rem;
+        }
+
+        .timeline {
+            position: relative;
+            margin-top: 2rem;
+        }
+
+        .timeline:before {
+            content: "";
+            position: absolute;
+            left: 100px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--primary-color);
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .timeline-marker {
+            flex: 0 0 180px;
+            background: var(--primary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .timeline-marker:after {
+            content: "";
+            position: absolute;
+            right: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border: 10px solid transparent;
+            border-left-color: var(--primary-color);
+        }
+
+        .timeline-content {
+            flex: 1;
+            margin-left: 2rem;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        .timeline-content h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text-primary);
+        }
+
+        .timeline-content p {
+            margin: 0;
+            color: var(--text-secondary);
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .optimization-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .timeline:before {
+                left: 20px;
+            }
+
+            .timeline-item {
+                flex-direction: column;
+            }
+
+            .timeline-marker {
+                flex: none;
+                width: fit-content;
+                margin-bottom: 1rem;
+            }
+
+            .timeline-marker:after {
+                display: none;
+            }
+
+            .timeline-content {
+                margin-left: 0;
+            }
+        }
+</style>
 </head>
 <body>
     <div class="dashboard">
@@ -515,95 +707,62 @@
                     <p class="section-description">Complete performance marketing strategy dashboard for PAYS POS lead generation</p>
                 </div>
 
-                <div class="cards-grid">
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-icon bg-primary">📈</div>
-                            <div>
-                                <div class="card-title">Target Monthly Leads</div>
-                                <div class="metric-value">200+</div>
-                                <div class="metric-label">Qualified Demo Requests</div>
-                            </div>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-icon">🎯</div>
+                        <div class="metric-content">
+                            <h3>Target Monthly Leads</h3>
+                            <div class="metric-value">200+</div>
+                            <p class="metric-description">Qualified demo requests</p>
                         </div>
                     </div>
 
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-icon bg-success">💰</div>
-                            <div>
-                                <div class="card-title">Revenue Goal</div>
-                                <div class="metric-value">$2M</div>
-                                <div class="metric-label">Annual Recurring Revenue</div>
-                            </div>
+                    <div class="metric-card">
+                        <div class="metric-icon">💰</div>
+                        <div class="metric-content">
+                            <h3>Revenue Goal</h3>
+                            <div class="metric-value">$2M</div>
+                            <p class="metric-description">Annual recurring revenue</p>
                         </div>
                     </div>
 
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-icon bg-warning">🎯</div>
-                            <div>
-                                <div class="card-title">Target CAC</div>
-                                <div class="metric-value">$1,500</div>
-                                <div class="metric-label">Customer Acquisition Cost</div>
-                            </div>
+                    <div class="metric-card">
+                        <div class="metric-icon">💳</div>
+                        <div class="metric-content">
+                            <h3>Target CAC</h3>
+                            <div class="metric-value">$1,500</div>
+                            <p class="metric-description">Customer acquisition cost</p>
                         </div>
                     </div>
 
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-icon bg-danger">⚡</div>
-                            <div>
-                                <div class="card-title">Minimum ROAS</div>
-                                <div class="metric-value">3:1</div>
-                                <div class="metric-label">Return on Ad Spend</div>
-                            </div>
+                    <div class="metric-card">
+                        <div class="metric-icon">📈</div>
+                        <div class="metric-content">
+                            <h3>Minimum ROAS</h3>
+                            <div class="metric-value">3:1</div>
+                            <p class="metric-description">Return on ad spend</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="card">
-                    <h3 style="margin-bottom: 1rem;">Channel Performance Overview</h3>
-                    <div style="margin-bottom: 1rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                            <span>Google Ads (40%)</span>
-                            <span class="text-success">4:1 ROAS</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill bg-primary" style="width: 40%;"></div>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-bottom: 1rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                            <span>Meta Ads (25%)</span>
-                            <span class="text-warning">3:1 ROAS</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill bg-success" style="width: 25%;"></div>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-bottom: 1rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                            <span>LinkedIn Ads (20%)</span>
-                            <span class="text-success">5:1 ROAS</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill bg-warning" style="width: 20%;"></div>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-bottom: 1rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                            <span>Content/SEO (15%)</span>
-                            <span class="text-success">6:1 ROAS</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill bg-danger" style="width: 15%;"></div>
-                        </div>
+                <div class="overview-summary">
+                    <h2>Strategy Summary</h2>
+                    <p>This comprehensive marketing strategy focuses on lead generation for PAYS POS restaurant technology solution. The approach combines multi-channel digital marketing with educational content to attract restaurant owners seeking to improve operations and reduce costs.</p>
+
+                    <div class="key-highlights">
+                        <h3>Key Highlights</h3>
+                        <ul>
+                            <li><strong>Problem-Focused Content:</strong> Addressing high delivery fees, inefficient operations, and customer complaints</li>
+                            <li><strong>Educational Approach:</strong> Industry insights, buying guides, and cost reduction strategies</li>
+                            <li><strong>Multi-Channel Strategy:</strong> Google Ads, Meta Ads, LinkedIn Ads, and content marketing</li>
+                            <li><strong>Competitive Advantages:</strong> "Best-in-price" guarantee, 15-20% revenue increase promise, 24/7 support</li>
+                        </ul>
                     </div>
                 </div>
             </div>
+
+            <!-- Overview Section -->
+            
 
             <!-- Business Understanding Section -->
             <div id="business" class="content-section">
@@ -2373,6 +2532,114 @@
                     </div>
                 </div>
             </div>
+            <!-- Optimization Section -->
+            <div id="optimization" class="content-section">
+                <div class="section-header">
+                    <h1 class="section-title">Performance Optimization</h1>
+                    <p class="section-description">Strategies and recommendations for optimizing campaign performance and ROI</p>
+                </div>
+
+                <div class="optimization-grid">
+                    <div class="optimization-card">
+                        <div class="optimization-header">
+                            <h3>📊 Performance Monitoring</h3>
+                        </div>
+                        <div class="optimization-content">
+                            <h4>Key Metrics to Track</h4>
+                            <ul>
+                                <li>Cost Per Lead (CPL) by channel</li>
+                                <li>Lead Quality Score (demo conversion rate)</li>
+                                <li>Customer Lifetime Value (LTV)</li>
+                                <li>Return on Ad Spend (ROAS)</li>
+                                <li>Attribution across touchpoints</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="optimization-card">
+                        <div class="optimization-header">
+                            <h3>🎯 A/B Testing Strategy</h3>
+                        </div>
+                        <div class="optimization-content">
+                            <h4>Testing Priorities</h4>
+                            <ul>
+                                <li>Ad creatives and messaging</li>
+                                <li>Landing page variations</li>
+                                <li>Audience targeting segments</li>
+                                <li>Bidding strategies</li>
+                                <li>Call-to-action buttons</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="optimization-card">
+                        <div class="optimization-header">
+                            <h3>🔄 Campaign Optimization</h3>
+                        </div>
+                        <div class="optimization-content">
+                            <h4>Continuous Improvements</h4>
+                            <ul>
+                                <li>Negative keyword management</li>
+                                <li>Audience refinement</li>
+                                <li>Budget reallocation</li>
+                                <li>Creative refresh cycles</li>
+                                <li>Conversion tracking optimization</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="optimization-card">
+                        <div class="optimization-header">
+                            <h3>📈 Scaling Strategies</h3>
+                        </div>
+                        <div class="optimization-content">
+                            <h4>Growth Acceleration</h4>
+                            <ul>
+                                <li>Lookalike audience expansion</li>
+                                <li>High-performing campaign duplication</li>
+                                <li>Cross-channel attribution modeling</li>
+                                <li>Advanced targeting combinations</li>
+                                <li>Seasonal campaign adjustments</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="optimization-timeline">
+                    <h2>Optimization Timeline</h2>
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker">Week 1-2</div>
+                            <div class="timeline-content">
+                                <h4>Initial Setup & Baseline</h4>
+                                <p>Campaign launch, conversion tracking setup, baseline metrics establishment</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-marker">Week 3-4</div>
+                            <div class="timeline-content">
+                                <h4>First Optimization Round</h4>
+                                <p>Initial A/B tests, audience refinement, budget adjustments based on early data</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-marker">Week 5-8</div>
+                            <div class="timeline-content">
+                                <h4>Performance Enhancement</h4>
+                                <p>Creative optimization, advanced targeting, negative keyword expansion</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-marker">Week 9+</div>
+                            <div class="timeline-content">
+                                <h4>Scale & Expand</h4>
+                                <p>Successful campaign scaling, new channel testing, advanced attribution modeling</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
 
             <!-- ROI Calculator Section -->
             <div id="calculator" class="content-section">
@@ -2568,19 +2835,33 @@
                 section.classList.remove('active');
             });
             
-            // Show selected section
-            document.getElementById(sectionId).classList.add('active');
+            // Show selected section - add null check
+            const targetSection = document.getElementById(sectionId);
+            if (targetSection) {
+                targetSection.classList.add('active');
+            } else {
+                console.error(`Section with id '${sectionId}' not found`);
+                return; // Exit early if section doesn't exist
+            }
             
             // Update active nav item
             const navItems = document.querySelectorAll('.nav-item');
             navItems.forEach(item => {
                 item.classList.remove('active');
             });
-            event.target.closest('.nav-item').classList.add('active');
+            if (event && event.target) {
+                const navItem = event.target.closest('.nav-item');
+                if (navItem) {
+                    navItem.classList.add('active');
+                }
+            }
             
             // Close mobile menu if open
             if (window.innerWidth <= 768) {
-                document.getElementById('sidebar').classList.remove('mobile-open');
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar) {
+                    sidebar.classList.remove('mobile-open');
+                }
             }
         }
 
@@ -2685,10 +2966,16 @@
             const mobileToggle = document.getElementById('mobileMenuToggle');
             if (window.innerWidth <= 768) {
                 mobileToggle.style.display = 'block';
-                document.getElementById('sidebar').classList.remove('mobile-open');
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar) {
+                    sidebar.classList.remove('mobile-open');
+                }
             } else {
                 mobileToggle.style.display = 'none';
-                document.getElementById('sidebar').classList.remove('mobile-open');
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar) {
+                    sidebar.classList.remove('mobile-open');
+                }
             }
         }
 
