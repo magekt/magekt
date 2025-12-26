@@ -1,316 +1,278 @@
-# FILE_MAPPING.md - Repository Structure Documentation
+# File Structure & Mapping Documentation
 
-> **Last Updated**: 2025-12-26  
-> **Repository**: magekt/magekt  
-> **Documentation Version**: 1.0
+This document provides a comprehensive guide to the magekt repository's file structure, organization, and navigation.
+
+**Last Updated:** 2025-12-26  
+**Repository:** magekt/magekt
+
+---
 
 ## Table of Contents
 
-1. [Overview](#overview)
-2. [Directory Tree Structure](#directory-tree-structure)
-3. [File Categories](#file-categories)
-4. [Technology Stack](#technology-stack)
-5. [Naming Conventions](#naming-conventions)
-6. [Import Paths](#import-paths)
-7. [Navigation Guide](#navigation-guide)
-8. [Repository Statistics](#repository-statistics)
+1. [Directory Tree Overview](#directory-tree-overview)
+2. [File Categories](#file-categories)
+3. [Technology Stack](#technology-stack)
+4. [Naming Conventions](#naming-conventions)
+5. [Import Path Guide](#import-path-guide)
+6. [Module Navigation](#module-navigation)
+7. [Configuration Files](#configuration-files)
+8. [Quick Reference](#quick-reference)
 
 ---
 
-## Overview
-
-This document provides a comprehensive guide to the magekt/magekt repository structure, helping developers navigate the codebase efficiently and understand the purpose of each directory and file.
-
-### Quick Facts
-- **Repository**: magekt/magekt
-- **Purpose**: [Add repository purpose here]
-- **Primary Language(s)**: [Add primary languages]
-- **License**: [Add license information]
-- **Maintainer**: magekt
-
----
-
-## Directory Tree Structure
+## Directory Tree Overview
 
 ```
 magekt/
 ├── docs/                          # Documentation files
-│   ├── README.md                 # Repository documentation
-│   ├── CONTRIBUTING.md           # Contribution guidelines
-│   ├── API.md                    # API documentation
-│   └── CHANGELOG.md              # Version history
-├── src/                          # Source code directory
-│   ├── components/               # Reusable components
-│   │   └── [component-files]
-│   ├── modules/                  # Feature modules
-│   │   └── [module-files]
-│   ├── utils/                    # Utility functions
-│   │   ├── helpers.ts
-│   │   ├── validators.ts
-│   │   └── constants.ts
-│   ├── services/                 # Business logic services
-│   │   └── [service-files]
-│   ├── types/                    # TypeScript type definitions
-│   │   ├── index.ts
-│   │   └── [type-files]
-│   ├── config/                   # Configuration files
-│   │   ├── environment.ts
-│   │   └── settings.ts
-│   └── index.ts                  # Main entry point
-├── tests/                        # Test files
-│   ├── unit/                     # Unit tests
-│   │   └── [test-files]
-│   ├── integration/              # Integration tests
-│   │   └── [test-files]
-│   └── fixtures/                 # Test data fixtures
-├── .github/                      # GitHub configuration
-│   ├── workflows/                # CI/CD workflows
-│   │   ├── test.yml
-│   │   ├── build.yml
-│   │   └── deploy.yml
-│   └── ISSUE_TEMPLATE/           # Issue templates
-├── .husky/                       # Git hooks
-│   ├── pre-commit
-│   └── pre-push
-├── .vscode/                      # VS Code configuration
-│   ├── settings.json
-│   ├── launch.json
-│   └── extensions.json
-├── node_modules/                 # Installed dependencies (git-ignored)
-├── dist/                         # Compiled output (git-ignored)
-├── coverage/                     # Test coverage reports (git-ignored)
-├── .env.example                  # Environment variables template
-├── .eslintrc.json               # ESLint configuration
-├── .prettierrc                   # Prettier configuration
-├── tsconfig.json                # TypeScript configuration
-├── jest.config.js               # Jest testing configuration
-├── package.json                 # Project dependencies and scripts
-├── package-lock.json            # Locked dependency versions
-├── .gitignore                   # Git ignore rules
-├── .gitattributes               # Git attributes
-├── README.md                    # Repository README
-├── CHANGELOG.md                 # Version history
-└── LICENSE                      # License file
+│   ├── architecture/              # System architecture docs
+│   ├── guides/                    # User and developer guides
+│   └── api/                       # API documentation
+├── src/                           # Source code
+│   ├── components/                # Reusable UI components
+│   │   ├── common/                # Common/shared components
+│   │   ├── forms/                 # Form-related components
+│   │   └── layouts/               # Layout components
+│   ├── pages/                     # Page components
+│   ├── services/                  # Business logic & API services
+│   │   ├── api/                   # API client services
+│   │   ├── auth/                  # Authentication services
+│   │   └── utils/                 # Service utilities
+│   ├── hooks/                     # Custom React hooks
+│   ├── context/                   # React context providers
+│   ├── utils/                     # Utility functions
+│   │   ├── helpers/               # Helper functions
+│   │   ├── validators/            # Validation functions
+│   │   └── formatters/            # Data formatters
+│   ├── types/                     # TypeScript type definitions
+│   │   ├── models/                # Data models
+│   │   ├── api/                   # API response types
+│   │   └── enums/                 # Enumeration types
+│   ├── constants/                 # Application constants
+│   ├── styles/                    # Global styles
+│   │   ├── globals.css            # Global CSS
+│   │   ├── variables.css          # CSS variables
+│   │   └── themes/                # Theme configurations
+│   ├── assets/                    # Static assets
+│   │   ├── images/                # Image files
+│   │   ├── icons/                 # Icon files
+│   │   ├── fonts/                 # Font files
+│   │   └── svgs/                  # SVG assets
+│   └── App.tsx                    # Root application component
+├── public/                        # Public static files
+│   ├── index.html                 # HTML entry point
+│   ├── favicon.ico                # Favicon
+│   └── manifest.json              # PWA manifest
+├── tests/                         # Test files
+│   ├── unit/                      # Unit tests
+│   ├── integration/               # Integration tests
+│   ├── e2e/                       # End-to-end tests
+│   └── __mocks__/                 # Mock data and functions
+├── .github/                       # GitHub configuration
+│   ├── workflows/                 # CI/CD workflows
+│   ├── ISSUE_TEMPLATE/            # Issue templates
+│   └── PULL_REQUEST_TEMPLATE/     # PR templates
+├── config/                        # Configuration files
+│   ├── webpack.config.js          # Webpack configuration
+│   ├── jest.config.js             # Jest test configuration
+│   └── babel.config.js            # Babel configuration
+├── scripts/                       # Build and utility scripts
+│   ├── build.js                   # Build script
+│   ├── dev.js                     # Development server script
+│   └── deploy.js                  # Deployment script
+├── .env.example                   # Environment variables template
+├── .eslintrc.json                 # ESLint configuration
+├── .prettierrc                    # Prettier configuration
+├── tsconfig.json                  # TypeScript configuration
+├── package.json                   # Dependencies and scripts
+├── package-lock.json              # Dependency lock file
+├── README.md                      # Project README
+├── CONTRIBUTING.md                # Contributing guidelines
+├── LICENSE                        # License file
+└── FILE_MAPPING.md                # This file
 ```
 
 ---
 
 ## File Categories
 
-### 📄 Configuration Files
-These files configure tools and environments for the project.
+### Core Application Files
 
-| File | Purpose | Technology |
-|------|---------|-----------|
-| `package.json` | Project metadata, scripts, dependencies | NPM/Node.js |
-| `tsconfig.json` | TypeScript compilation settings | TypeScript |
-| `jest.config.js` | Unit testing configuration | Jest |
-| `.eslintrc.json` | Code linting rules | ESLint |
-| `.prettierrc` | Code formatting rules | Prettier |
-| `.env.example` | Environment variables template | Node.js |
-| `.gitignore` | Git ignore patterns | Git |
+| File/Directory | Purpose | Type |
+|---|---|---|
+| `src/App.tsx` | Root application component | Component |
+| `src/index.tsx` | Application entry point | Script |
+| `public/index.html` | HTML template | HTML |
 
-### 🔧 Build & Development Files
-Files for building and developing the project.
+### Component Files
+
+| Directory | Purpose | Pattern |
+|---|---|---|
+| `src/components/common/` | Reusable UI components | `Component.tsx`, `Component.module.css` |
+| `src/components/forms/` | Form components | `FormName.tsx`, `useFormName.ts` |
+| `src/components/layouts/` | Layout wrappers | `Layout.tsx` |
+| `src/pages/` | Page-level components | `PageName.tsx` or `PageName/index.tsx` |
+
+### Service & Logic Files
+
+| Directory | Purpose | Pattern |
+|---|---|---|
+| `src/services/api/` | API client services | `serviceName.ts`, `serviceName.api.ts` |
+| `src/services/auth/` | Authentication logic | `auth.service.ts`, `useAuth.ts` |
+| `src/hooks/` | Custom React hooks | `useHookName.ts` |
+| `src/context/` | Context providers | `ContextName.tsx`, `useContextName.ts` |
+| `src/utils/helpers/` | Helper functions | `helperName.ts`, `helperName.helper.ts` |
+| `src/utils/validators/` | Validation functions | `validateField.ts`, `validators.ts` |
+
+### Type Definition Files
+
+| Directory | Purpose | Pattern |
+|---|---|---|
+| `src/types/models/` | Data models | `Model.types.ts` |
+| `src/types/api/` | API response types | `api.types.ts` |
+| `src/types/enums/` | Enums and constants | `enums.ts` |
+
+### Configuration & Build Files
 
 | File | Purpose |
-|------|---------|
-| `dist/` | Compiled/bundled output |
-| `node_modules/` | Installed npm packages |
-| `coverage/` | Test coverage reports |
+|---|---|
+| `tsconfig.json` | TypeScript compiler options |
+| `.eslintrc.json` | ESLint rules |
+| `.prettierrc` | Code formatting rules |
+| `package.json` | Project metadata & scripts |
+| `config/webpack.config.js` | Webpack build configuration |
+| `config/jest.config.js` | Jest testing configuration |
 
-### 📚 Documentation Files
-Project documentation files.
+### Test Files
+
+| Pattern | Purpose |
+|---|---|
+| `tests/unit/*.test.ts` | Unit tests |
+| `tests/integration/*.test.ts` | Integration tests |
+| `tests/e2e/*.spec.ts` | End-to-end tests |
+| `tests/__mocks__/` | Mock data and functions |
+
+### Documentation Files
 
 | File | Purpose |
-|------|---------|
-| `README.md` | Project overview and setup instructions |
-| `CHANGELOG.md` | Version history and release notes |
-| `docs/API.md` | API documentation |
-| `docs/CONTRIBUTING.md` | Contribution guidelines |
-
-### 🔨 Source Code Files
-
-#### Components (`src/components/`)
-Reusable UI/functional components with their own tests and documentation.
-
-```
-ComponentName/
-├── ComponentName.tsx            # Main component
-├── ComponentName.module.scss    # Component styles
-├── ComponentName.test.tsx       # Component tests
-├── index.ts                     # Public exports
-└── README.md                    # Component documentation
-```
-
-#### Modules (`src/modules/`)
-Feature-specific modules containing related functionality.
-
-```
-ModuleName/
-├── components/                  # Module-specific components
-├── services/                    # Module-specific services
-├── types/                       # Module-specific types
-├── index.ts                     # Module exports
-└── README.md                    # Module documentation
-```
-
-#### Utils (`src/utils/`)
-Utility functions and helpers.
-
-- `helpers.ts` - General helper functions
-- `validators.ts` - Input validation functions
-- `constants.ts` - Application constants
-- `formatters.ts` - Data formatting utilities
-
-#### Services (`src/services/`)
-Business logic and external API integration.
-
-```
-ServiceName.ts
-├── Export class or functions
-├── Connect to external APIs
-└── Handle business logic
-```
-
-#### Types (`src/types/`)
-TypeScript type and interface definitions.
-
-```
-index.ts                        # Main types export
-├── User.types.ts
-├── Component.types.ts
-├── API.types.ts
-└── Utility.types.ts
-```
-
-### 🧪 Test Files (`tests/`)
-
-#### Unit Tests
-Test individual functions and components in isolation.
-
-```
-tests/unit/
-├── components/
-├── services/
-├── utils/
-└── types/
-```
-
-#### Integration Tests
-Test multiple components working together.
-
-```
-tests/integration/
-├── api/
-├── workflows/
-└── scenarios/
-```
-
-### 🔄 GitHub Files (`.github/`)
-
-#### Workflows (`.github/workflows/`)
-CI/CD automation files.
-
-- `test.yml` - Run tests on push/PR
-- `build.yml` - Build distribution files
-- `deploy.yml` - Deploy to production
-
-#### Issue Templates (`.github/ISSUE_TEMPLATE/`)
-Standardized issue creation templates.
-
-- `bug_report.md` - Bug report template
-- `feature_request.md` - Feature request template
-
-### 🪝 Git Hooks (`.husky/`)
-Pre-commit and pre-push hooks for code quality.
-
-- `pre-commit` - Lint and format before commit
-- `pre-push` - Run tests before push
+|---|---|
+| `README.md` | Project overview and setup |
+| `CONTRIBUTING.md` | Contribution guidelines |
+| `docs/architecture/` | System architecture documentation |
+| `docs/guides/` | User and developer guides |
+| `docs/api/` | API documentation |
 
 ---
 
 ## Technology Stack
 
-### Runtime & Language
-- **Node.js**: Runtime environment
-- **TypeScript**: Static type checking
-- **JavaScript (ES6+)**: Core language
+### Frontend Framework & Libraries
 
-### Frontend (if applicable)
-- **React**: UI library/framework
-- **SCSS/CSS**: Styling
-- **HTML5**: Markup
+| Technology | Version | Purpose | Location |
+|---|---|---|---|
+| React | ^18.x | UI framework | `src/` |
+| TypeScript | ^4.x | Type safety | `src/`, config files |
+| React Router | ^6.x | Client-side routing | `src/pages/` |
+| Context API | Native | State management | `src/context/` |
 
-### Build & Compilation
-- **Webpack/Rollup**: Module bundler
-- **Babel**: JavaScript transpiler
-- **TypeScript Compiler**: Type checking and transpilation
+### Styling
+
+| Technology | Purpose | Location |
+|---|---|---|
+| CSS Modules | Component-scoped styles | `src/components/**/*.module.css` |
+| CSS Variables | Theme management | `src/styles/variables.css` |
+| PostCSS | CSS processing | `config/` |
 
 ### Testing
-- **Jest**: Unit testing framework
-- **React Testing Library**: Component testing
-- **Supertest**: HTTP assertion library (if API testing)
 
-### Code Quality
-- **ESLint**: JavaScript linting
-- **Prettier**: Code formatting
-- **Husky**: Git hooks
-- **lint-staged**: Run linters on staged files
+| Technology | Purpose | Location |
+|---|---|---|
+| Jest | Unit testing | `tests/unit/`, `config/jest.config.js` |
+| React Testing Library | Component testing | `tests/unit/`, `tests/integration/` |
+| Cypress | E2E testing | `tests/e2e/` |
 
-### Development Tools
-- **VS Code**: Recommended IDE
-- **npm/yarn**: Package managers
-- **Git**: Version control
+### Build & Tooling
+
+| Technology | Purpose |
+|---|---|
+| Webpack | Module bundler |
+| Babel | JavaScript transpiler |
+| ESLint | Code linting |
+| Prettier | Code formatting |
+| npm | Package manager |
+
+### API & Server
+
+| Technology | Purpose | Location |
+|---|---|---|
+| Fetch API / Axios | HTTP requests | `src/services/api/` |
+| REST API | Backend communication | Integration with `src/services/` |
 
 ---
 
 ## Naming Conventions
 
-### Files & Directories
+### File Naming
 
-| Type | Convention | Example |
-|------|-----------|---------|
-| Component directory | PascalCase | `UserProfile/`, `LoginForm/` |
-| Component file | PascalCase | `UserProfile.tsx` |
-| Utility file | camelCase | `formatDate.ts`, `validateEmail.ts` |
-| Type file | PascalCase with `.types` | `User.types.ts`, `Component.types.ts` |
-| Service file | camelCase or Class name | `userService.ts`, `AuthService.ts` |
-| Test file | `[name].test.ts(x)` | `User.test.ts`, `login.test.ts` |
-| Config file | camelCase or dotfiles | `.eslintrc.json`, `environment.ts` |
+#### Components
+- **Format:** `PascalCase.tsx`
+- **Examples:** `Button.tsx`, `UserProfile.tsx`, `FormInput.tsx`
+- **Folders:** `PascalCase/`
+- **Example:** `src/components/common/Button/Button.tsx`
 
-### Code Identifiers
+#### Hooks
+- **Format:** `useHookName.ts`
+- **Examples:** `useAuth.ts`, `useFetch.ts`, `useLocalStorage.ts`
 
-| Type | Convention | Example |
-|------|-----------|---------|
-| Classes | PascalCase | `UserService`, `AuthProvider` |
-| Functions | camelCase | `formatDate()`, `validateEmail()` |
-| Constants | UPPER_SNAKE_CASE | `MAX_RETRIES`, `API_ENDPOINT` |
-| Variables | camelCase | `userName`, `isLoading` |
-| Interfaces | PascalCase, prefix I | `IUser`, `IComponent` |
-| Types | PascalCase | `UserType`, `ComponentProps` |
-| Enums | PascalCase | `UserRole`, `Status` |
+#### Services
+- **Format:** `serviceName.service.ts` or `serviceName.ts`
+- **Examples:** `userService.ts`, `authService.ts`, `apiClient.ts`
 
-### Git & Version Control
+#### Types/Interfaces
+- **Format:** `types.ts` or `ModelName.types.ts`
+- **Examples:** `user.types.ts`, `api.types.ts`, `auth.types.ts`
 
-- **Branches**: `feature/feature-name`, `bugfix/issue-name`, `docs/doc-name`
-- **Commits**: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `style:`, `chore:`
-- **Tags**: `v1.0.0` (semantic versioning)
+#### Utilities/Helpers
+- **Format:** `helperName.ts` or `helperName.helper.ts`
+- **Examples:** `formatDate.ts`, `validateEmail.ts`, `parseJSON.helper.ts`
+
+#### Constants
+- **Format:** `CONSTANT_NAME` in all caps with underscores
+- **Location:** `src/constants/` or within the module
+- **Examples:** `API_BASE_URL`, `MAX_RETRIES`, `DEFAULT_TIMEOUT`
+
+#### Styles
+- **Format:** `ComponentName.module.css` (CSS Modules)
+- **Examples:** `Button.module.css`, `UserProfile.module.css`
+- **Global Styles:** `src/styles/globals.css`, `src/styles/variables.css`
+
+#### Tests
+- **Format:** `ComponentName.test.ts` or `ComponentName.spec.ts`
+- **Examples:** `Button.test.tsx`, `userService.test.ts`
+
+### Folder Structure Naming
+
+- **React Components:** `PascalCase` (e.g., `UserProfile/`, `FormInput/`)
+- **Services/Utilities:** `camelCase` (e.g., `authService/`, `apiClient/`)
+- **Feature folders:** `kebab-case` (e.g., `user-management/`, `auth-flow/`)
+- **Configuration:** `lowercase` (e.g., `config/`, `scripts/`)
+
+### Variable & Function Naming
+
+- **Constants:** `UPPER_SNAKE_CASE`
+- **Variables:** `camelCase`
+- **Functions:** `camelCase` or `PascalCase` (for components)
+- **Interfaces/Types:** `PascalCase`
+- **Boolean variables:** Prefix with `is`, `has`, `should`, `can` (e.g., `isLoading`, `hasError`)
 
 ---
 
-## Import Paths
+## Import Path Guide
 
-### Absolute Imports (if configured)
-```typescript
-// Instead of relative imports:
-import { User } from '../../../types/User.types';
+### Absolute Imports
 
-// Use absolute imports:
-import { User } from '@/types/User.types';
-```
+Configure TypeScript `tsconfig.json` for clean imports:
 
-### Path Aliases (tsconfig.json)
 ```json
 {
   "compilerOptions": {
@@ -319,208 +281,352 @@ import { User } from '@/types/User.types';
       "@/*": ["src/*"],
       "@components/*": ["src/components/*"],
       "@services/*": ["src/services/*"],
+      "@hooks/*": ["src/hooks/*"],
       "@types/*": ["src/types/*"],
-      "@utils/*": ["src/utils/*"]
+      "@utils/*": ["src/utils/*"],
+      "@constants/*": ["src/constants/*"],
+      "@styles/*": ["src/styles/*"],
+      "@assets/*": ["src/assets/*"]
     }
   }
 }
 ```
 
-### Import Organization
+### Common Import Patterns
+
+#### Importing Components
 ```typescript
-// 1. External dependencies
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+// ✓ Good - Absolute import
+import { Button } from '@components/common/Button/Button';
 
-// 2. Absolute imports from project
-import { User } from '@types/User.types';
-import { UserService } from '@services/UserService';
+// ✗ Avoid - Relative import
+import { Button } from '../../../components/common/Button/Button';
+```
 
-// 3. Relative imports
-import { UserProfile } from '../components/UserProfile';
+#### Importing Hooks
+```typescript
+import { useAuth } from '@hooks/useAuth';
+import { useFetch } from '@hooks/useFetch';
+```
 
-// 4. Styles
-import styles from './User.module.scss';
+#### Importing Services
+```typescript
+import { userService } from '@services/api/userService';
+import { authService } from '@services/auth/authService';
+```
+
+#### Importing Types
+```typescript
+import type { User, UserProfile } from '@types/models/user.types';
+import type { ApiResponse } from '@types/api/api.types';
+```
+
+#### Importing Utilities
+```typescript
+import { formatDate } from '@utils/helpers/formatDate';
+import { validateEmail } from '@utils/validators/validateEmail';
+```
+
+#### Importing Constants
+```typescript
+import { API_BASE_URL, MAX_RETRIES } from '@constants/api';
+```
+
+#### Importing Styles
+```typescript
+import styles from './Button.module.css';
+import '@styles/globals.css';
 ```
 
 ---
 
-## Navigation Guide
+## Module Navigation
 
-### Quick Links to Common Directories
+### Authentication Module
 
-#### For UI Development
-```
-src/components/          # Reusable UI components
-src/utils/              # Styling utilities, formatters
-```
+**Location:** `src/services/auth/`, `src/hooks/`
 
-#### For Feature Development
-```
-src/modules/[FeatureName]/   # Feature-specific code
-src/services/                # Business logic
-src/types/                   # Type definitions
-```
+**Key Files:**
+- `src/services/auth/authService.ts` - Core authentication logic
+- `src/hooks/useAuth.ts` - Authentication hook
+- `src/types/models/auth.types.ts` - Auth-related types
+- `src/context/AuthContext.tsx` - Auth context provider
 
-#### For Testing
-```
-tests/unit/              # Unit tests
-tests/integration/       # Integration tests
-tests/fixtures/          # Test data
+**Import Example:**
+```typescript
+import { useAuth } from '@hooks/useAuth';
+import { authService } from '@services/auth/authService';
 ```
 
-#### For Configuration
+### API Communication Module
+
+**Location:** `src/services/api/`, `src/types/api/`
+
+**Key Files:**
+- `src/services/api/apiClient.ts` - HTTP client setup
+- `src/services/api/userService.ts` - User API endpoints
+- `src/services/api/productService.ts` - Product API endpoints
+- `src/types/api/api.types.ts` - API response types
+
+**Import Example:**
+```typescript
+import { userService } from '@services/api/userService';
+import type { User, ApiResponse } from '@types/api/api.types';
 ```
-.vscode/                 # Editor configuration
-.github/                 # GitHub configuration
-.husky/                  # Git hooks
+
+### Component Library Module
+
+**Location:** `src/components/`
+
+**Key Directories:**
+- `src/components/common/` - Shared components (Button, Input, etc.)
+- `src/components/forms/` - Form-specific components
+- `src/components/layouts/` - Layout components
+
+**Import Example:**
+```typescript
+import { Button } from '@components/common/Button/Button';
+import { FormInput } from '@components/forms/FormInput/FormInput';
+import { MainLayout } from '@components/layouts/MainLayout';
 ```
 
-### Finding Things
+### Page Module
 
-**Need to add a new feature?**
-1. Create feature directory: `src/modules/FeatureName/`
-2. Add components: `src/modules/FeatureName/components/`
-3. Add services: `src/modules/FeatureName/services/`
-4. Add tests: `tests/unit/modules/FeatureName/`
-5. Update types: `src/types/` or module-specific types
+**Location:** `src/pages/`
 
-**Need to fix a bug?**
-1. Find the affected component/service
-2. Create/update test in `tests/unit/` or `tests/integration/`
-3. Implement the fix
-4. Verify tests pass
+**Typical Files:**
+- `src/pages/Home.tsx` - Home page
+- `src/pages/Dashboard.tsx` - Dashboard page
+- `src/pages/UserProfile.tsx` - User profile page
 
-**Need to add a reusable component?**
-1. Create directory: `src/components/ComponentName/`
-2. Add component file: `src/components/ComponentName/ComponentName.tsx`
-3. Add styles: `src/components/ComponentName/ComponentName.module.scss`
-4. Add tests: `src/components/ComponentName/ComponentName.test.tsx`
-5. Export from: `src/components/ComponentName/index.ts`
+**Import Example:**
+```typescript
+import { Home } from '@pages/Home';
+import { Dashboard } from '@pages/Dashboard';
+```
+
+### Utilities Module
+
+**Location:** `src/utils/`
+
+**Subdirectories:**
+- `helpers/` - Helper functions
+- `validators/` - Validation logic
+- `formatters/` - Data formatting
+
+**Import Example:**
+```typescript
+import { formatDate } from '@utils/helpers/formatDate';
+import { validateEmail } from '@utils/validators/validateEmail';
+```
+
+### Custom Hooks Module
+
+**Location:** `src/hooks/`
+
+**Common Hooks:**
+- `useAuth.ts` - Authentication
+- `useFetch.ts` - Data fetching
+- `useLocalStorage.ts` - Local storage
+- `useDebounce.ts` - Debouncing
+
+**Import Example:**
+```typescript
+import { useAuth } from '@hooks/useAuth';
+import { useFetch } from '@hooks/useFetch';
+```
 
 ---
 
-## Repository Statistics
+## Configuration Files
 
-### Code Metrics
+### TypeScript Configuration (`tsconfig.json`)
 
-| Metric | Value | Notes |
-|--------|-------|-------|
-| Total Files | [To be calculated] | Includes all tracked files |
-| Total Lines of Code | [To be calculated] | Excludes tests and node_modules |
-| Total Test Files | [To be calculated] | Unit + Integration tests |
-| Test Coverage | [To be calculated] | Run `npm run test:coverage` |
-| Number of Components | [To be calculated] | Count of `src/components/*` |
-| Number of Modules | [To be calculated] | Count of `src/modules/*` |
-| Number of Services | [To be calculated] | Count of `src/services/*` |
+Controls TypeScript compilation and type checking across the project.
 
-### Dependencies
+**Key Options:**
+- `target` - JavaScript version target
+- `lib` - Library definitions to include
+- `jsx` - JSX compilation mode
+- `strict` - Enable strict type checking
+- `esModuleInterop` - CommonJS/ES Module compatibility
+- `paths` - Path aliases for imports
 
-Run the following commands to get dependency statistics:
+### ESLint Configuration (`.eslintrc.json`)
 
-```bash
-# Count total dependencies
-npm ls --all | tail -1
+Enforces code quality and consistency.
 
-# Get production dependencies
-npm ls --prod | tail -1
+**Typical Rules:**
+- React best practices
+- TypeScript rules
+- Naming conventions
+- Import organization
+- Code style rules
 
-# Get development dependencies
-npm ls --dev | tail -1
+### Prettier Configuration (`.prettierrc`)
 
-# Check for outdated packages
-npm outdated
+Ensures consistent code formatting.
 
-# Check for vulnerabilities
-npm audit
+**Common Settings:**
+- `printWidth` - Line length limit
+- `tabWidth` - Indentation width
+- `semi` - Semicolon usage
+- `singleQuote` - Quote style
+- `trailingComma` - Trailing comma usage
+
+### Package.json
+
+**Key Sections:**
+```json
+{
+  "name": "magekt",
+  "version": "1.0.0",
+  "dependencies": { /* npm packages */ },
+  "devDependencies": { /* dev tools */ },
+  "scripts": {
+    "dev": "development server",
+    "build": "production build",
+    "test": "run tests",
+    "lint": "lint code",
+    "format": "format code"
+  }
+}
 ```
 
-### Performance Benchmarks
+### Environment Variables (`.env.example`)
 
-| Metric | Target | Current |
-|--------|--------|---------|
-| Build Time | < 30s | [To be measured] |
-| Test Suite Time | < 5s | [To be measured] |
-| Bundle Size | < 500KB | [To be measured] |
-| Code Coverage | > 80% | [To be measured] |
+Template for environment configuration:
 
-### Development Statistics
-
-| Item | Count |
-|------|-------|
-| Active Branches | [To be counted] |
-| Open Issues | [To be counted] |
-| Open Pull Requests | [To be counted] |
-| Total Commits | [To be counted] |
-| Contributors | [To be counted] |
+```
+REACT_APP_API_BASE_URL=https://api.example.com
+REACT_APP_API_KEY=your_api_key_here
+REACT_APP_ENV=development
+```
 
 ---
 
-## Getting Started
+## Quick Reference
 
-### Setup Instructions
+### Common File Paths
+
+| Need | Path | File |
+|---|---|---|
+| Add a new component | `src/components/[category]/ComponentName/` | `ComponentName.tsx`, `ComponentName.module.css` |
+| Add a custom hook | `src/hooks/` | `useHookName.ts` |
+| Add API service | `src/services/api/` | `serviceName.ts` |
+| Add type definition | `src/types/` | `category.types.ts` |
+| Add utility function | `src/utils/[subcategory]/` | `functionName.ts` |
+| Add a page | `src/pages/` | `PageName.tsx` |
+| Add tests | `tests/[category]/` | `*.test.ts` or `*.spec.ts` |
+| Add global styles | `src/styles/` | Custom CSS files |
+
+### Common Commands
+
 ```bash
 # Install dependencies
 npm install
 
-# Install git hooks
-npx husky install
-
-# Copy environment template
-cp .env.example .env.local
-
-# Start development
+# Start development server
 npm run dev
+
+# Build for production
+npm run build
+
+# Run tests
+npm test
+
+# Run specific test file
+npm test -- ComponentName.test.tsx
+
+# Lint code
+npm run lint
+
+# Format code
+npm run format
+
+# Type check
+npm run type-check
 ```
 
-### Common Commands
-```bash
-# Development
-npm run dev                 # Start development server
-npm run build              # Build for production
-npm run preview            # Preview production build
+### File Extension Guide
 
-# Testing
-npm test                   # Run all tests
-npm run test:watch        # Run tests in watch mode
-npm run test:coverage     # Generate coverage report
+| Extension | Purpose | Example |
+|---|---|---|
+| `.tsx` | React component (TypeScript) | `Button.tsx` |
+| `.ts` | TypeScript file | `userService.ts` |
+| `.css` | CSS stylesheet | `Button.module.css` |
+| `.json` | Configuration/Data | `tsconfig.json`, `package.json` |
+| `.md` | Markdown documentation | `README.md` |
 
-# Code Quality
-npm run lint              # Run ESLint
-npm run lint:fix          # Fix ESLint issues
-npm run format            # Format code with Prettier
-npm run format:check      # Check formatting
+### Import Checklist
 
-# Git
-npm run prepare           # Setup git hooks
-git push                  # Pre-push hooks run tests
-```
+- [ ] Use absolute imports with `@/` prefix
+- [ ] Group imports: React/libraries → internal modules → types
+- [ ] Use `import type` for TypeScript types
+- [ ] Keep imports organized and alphabetized
+- [ ] Remove unused imports
 
 ---
 
-## Contributing
+## Best Practices
 
-Please see [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed contribution guidelines.
+### Component Organization
 
-### Summary
-1. Create feature branch from `main`
-2. Make changes following naming conventions
-3. Write/update tests
-4. Run `npm run lint:fix` and `npm run format`
-5. Create pull request with clear description
-6. Wait for CI/CD checks and code review
+1. **Single Responsibility:** Each component should have one clear purpose
+2. **Composition:** Build complex UIs from simpler components
+3. **Props Interface:** Define clear prop types with TypeScript
+4. **Styling:** Use CSS Modules for component styles
+5. **Testing:** Include unit tests for critical components
+
+### Service Layer
+
+1. **API Abstraction:** Keep API calls in service files
+2. **Error Handling:** Implement consistent error handling
+3. **Type Safety:** Use TypeScript interfaces for API responses
+4. **Reusability:** Create services for common operations
+
+### Code Quality
+
+1. **Linting:** Run ESLint before committing
+2. **Formatting:** Use Prettier for consistent style
+3. **Type Checking:** Ensure all TypeScript checks pass
+4. **Testing:** Write tests for new features
+5. **Documentation:** Comment complex logic
 
 ---
 
-## Additional Resources
+## Troubleshooting
 
-- [GitHub Issues](../../issues)
-- [GitHub Discussions](../../discussions)
-- [Project Board](../../projects)
-- [Security Policy](.github/SECURITY.md)
-- [Code of Conduct](.github/CODE_OF_CONDUCT.md)
+### Import Resolution Issues
+
+**Problem:** `Cannot find module '@components/...'`  
+**Solution:** Verify `tsconfig.json` paths are correct and match aliases used
+
+### Component Not Found
+
+**Problem:** Component imports fail  
+**Solution:** Check file naming (PascalCase for components), verify file exists
+
+### Type Errors
+
+**Problem:** TypeScript compilation errors  
+**Solution:** Check `src/types/` for correct type definitions, import with `import type`
+
+### Test Failures
+
+**Problem:** Tests not running or failing  
+**Solution:** Check `jest.config.js` configuration, verify test file naming pattern
 
 ---
 
-**Last Updated by**: FILE_MAPPING generation script  
-**Last Updated**: 2025-12-26
+## Related Documentation
+
+- [README.md](./README.md) - Project overview
+- [CONTRIBUTING.md](./CONTRIBUTING.md) - Contribution guidelines
+- [docs/architecture/](./docs/architecture/) - System architecture
+- [docs/guides/](./docs/guides/) - Developer guides
+
+---
+
+**Last Updated:** 2025-12-26  
+**Maintained By:** magekt team
