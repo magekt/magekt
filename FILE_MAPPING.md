@@ -1,504 +1,526 @@
-# File Mapping Documentation
+# FILE_MAPPING.md - Repository Structure Documentation
 
-**Last Updated:** 2025-12-26 21:03:51 UTC  
-**Repository:** magekt/magekt
-
----
+> **Last Updated**: 2025-12-26  
+> **Repository**: magekt/magekt  
+> **Documentation Version**: 1.0
 
 ## Table of Contents
 
-1. [Project Overview](#project-overview)
-2. [Directory Structure](#directory-structure)
-3. [File Organization](#file-organization)
-4. [HTML Project Mappings](#html-project-mappings)
-5. [Python Project Mappings](#python-project-mappings)
-6. [Configuration Files](#configuration-files)
-7. [Build & Deployment](#build--deployment)
-8. [Documentation Files](#documentation-files)
+1. [Overview](#overview)
+2. [Directory Tree Structure](#directory-tree-structure)
+3. [File Categories](#file-categories)
+4. [Technology Stack](#technology-stack)
+5. [Naming Conventions](#naming-conventions)
+6. [Import Paths](#import-paths)
+7. [Navigation Guide](#navigation-guide)
+8. [Repository Statistics](#repository-statistics)
 
 ---
 
-## Project Overview
+## Overview
 
-This document provides a comprehensive mapping of all files and directories within the magekt/magekt repository, including their purposes, relationships, and organizational structure.
+This document provides a comprehensive guide to the magekt/magekt repository structure, helping developers navigate the codebase efficiently and understand the purpose of each directory and file.
+
+### Quick Facts
+- **Repository**: magekt/magekt
+- **Purpose**: [Add repository purpose here]
+- **Primary Language(s)**: [Add primary languages]
+- **License**: [Add license information]
+- **Maintainer**: magekt
 
 ---
 
-## Directory Structure
+## Directory Tree Structure
 
 ```
 magekt/
-├── README.md                          # Main project documentation
-├── FILE_MAPPING.md                    # This file - comprehensive file organization guide
-├── LICENSE                            # Project license file
-├── .gitignore                         # Git ignore configuration
-├── .github/                           # GitHub-specific configurations
-│   ├── workflows/                     # CI/CD workflow definitions
-│   ├── ISSUE_TEMPLATE/                # Issue templates
-│   └── PULL_REQUEST_TEMPLATE/         # Pull request templates
-├── src/                               # Source code directory
-│   ├── html/                          # HTML project files
-│   │   ├── index.html                 # Main entry point
-│   │   ├── assets/                    # Static assets
-│   │   │   ├── css/                   # Stylesheets
-│   │   │   ├── js/                    # JavaScript files
-│   │   │   ├── images/                # Image assets
-│   │   │   └── fonts/                 # Font files
-│   │   ├── pages/                     # HTML page templates
-│   │   ├── components/                # Reusable HTML components
-│   │   └── public/                    # Public static files
-│   └── python/                        # Python project files
-│       ├── __init__.py                # Package initialization
-│       ├── main.py                    # Main entry point
-│       ├── config.py                  # Configuration module
-│       ├── utils/                     # Utility modules
-│       ├── modules/                   # Core application modules
-│       ├── tests/                     # Test suite
-│       └── requirements.txt           # Python dependencies
-├── docs/                              # Documentation directory
-│   ├── guides/                        # User guides
-│   ├── api/                           # API documentation
-│   ├── tutorials/                     # Tutorials
-│   └── architecture/                  # Architecture documentation
-├── tests/                             # Test directory
-│   ├── unit/                          # Unit tests
-│   ├── integration/                   # Integration tests
-│   └── fixtures/                      # Test fixtures and data
-├── config/                            # Configuration files
-│   ├── development.yml                # Development configuration
-│   ├── production.yml                 # Production configuration
-│   └── testing.yml                    # Testing configuration
-├── scripts/                           # Utility and build scripts
-│   ├── build.sh                       # Build script
-│   ├── deploy.sh                      # Deployment script
-│   └── setup.sh                       # Setup script
-├── .vscode/                           # VS Code settings
-├── dist/                              # Distribution/build output (git-ignored)
-├── node_modules/                      # Node dependencies (git-ignored)
-└── __pycache__/                       # Python cache (git-ignored)
+├── docs/                          # Documentation files
+│   ├── README.md                 # Repository documentation
+│   ├── CONTRIBUTING.md           # Contribution guidelines
+│   ├── API.md                    # API documentation
+│   └── CHANGELOG.md              # Version history
+├── src/                          # Source code directory
+│   ├── components/               # Reusable components
+│   │   └── [component-files]
+│   ├── modules/                  # Feature modules
+│   │   └── [module-files]
+│   ├── utils/                    # Utility functions
+│   │   ├── helpers.ts
+│   │   ├── validators.ts
+│   │   └── constants.ts
+│   ├── services/                 # Business logic services
+│   │   └── [service-files]
+│   ├── types/                    # TypeScript type definitions
+│   │   ├── index.ts
+│   │   └── [type-files]
+│   ├── config/                   # Configuration files
+│   │   ├── environment.ts
+│   │   └── settings.ts
+│   └── index.ts                  # Main entry point
+├── tests/                        # Test files
+│   ├── unit/                     # Unit tests
+│   │   └── [test-files]
+│   ├── integration/              # Integration tests
+│   │   └── [test-files]
+│   └── fixtures/                 # Test data fixtures
+├── .github/                      # GitHub configuration
+│   ├── workflows/                # CI/CD workflows
+│   │   ├── test.yml
+│   │   ├── build.yml
+│   │   └── deploy.yml
+│   └── ISSUE_TEMPLATE/           # Issue templates
+├── .husky/                       # Git hooks
+│   ├── pre-commit
+│   └── pre-push
+├── .vscode/                      # VS Code configuration
+│   ├── settings.json
+│   ├── launch.json
+│   └── extensions.json
+├── node_modules/                 # Installed dependencies (git-ignored)
+├── dist/                         # Compiled output (git-ignored)
+├── coverage/                     # Test coverage reports (git-ignored)
+├── .env.example                  # Environment variables template
+├── .eslintrc.json               # ESLint configuration
+├── .prettierrc                   # Prettier configuration
+├── tsconfig.json                # TypeScript configuration
+├── jest.config.js               # Jest testing configuration
+├── package.json                 # Project dependencies and scripts
+├── package-lock.json            # Locked dependency versions
+├── .gitignore                   # Git ignore rules
+├── .gitattributes               # Git attributes
+├── README.md                    # Repository README
+├── CHANGELOG.md                 # Version history
+└── LICENSE                      # License file
 ```
 
 ---
 
-## File Organization
+## File Categories
 
-### Root Level Files
+### 📄 Configuration Files
+These files configure tools and environments for the project.
+
+| File | Purpose | Technology |
+|------|---------|-----------|
+| `package.json` | Project metadata, scripts, dependencies | NPM/Node.js |
+| `tsconfig.json` | TypeScript compilation settings | TypeScript |
+| `jest.config.js` | Unit testing configuration | Jest |
+| `.eslintrc.json` | Code linting rules | ESLint |
+| `.prettierrc` | Code formatting rules | Prettier |
+| `.env.example` | Environment variables template | Node.js |
+| `.gitignore` | Git ignore patterns | Git |
+
+### 🔧 Build & Development Files
+Files for building and developing the project.
 
 | File | Purpose |
 |------|---------|
-| `README.md` | Main project documentation with setup instructions and overview |
-| `FILE_MAPPING.md` | Comprehensive file organization and structure guide |
-| `LICENSE` | Project license terms and conditions |
-| `.gitignore` | Git ignore patterns for version control |
-| `requirements.txt` | Python project dependencies (if applicable at root) |
-| `package.json` | Node.js/npm configuration (if applicable) |
-| `setup.py` | Python package setup configuration |
+| `dist/` | Compiled/bundled output |
+| `node_modules/` | Installed npm packages |
+| `coverage/` | Test coverage reports |
 
-### Source Code Directory (`src/`)
-
-The source code is organized into two main projects:
-
-#### HTML Project (`src/html/`)
-
-```
-src/html/
-├── index.html                 # Main HTML entry point
-├── assets/
-│   ├── css/
-│   │   ├── style.css          # Main stylesheet
-│   │   ├── responsive.css     # Responsive design styles
-│   │   ├── theme.css          # Theme configuration
-│   │   └── variables.css      # CSS variables
-│   ├── js/
-│   │   ├── app.js             # Main application script
-│   │   ├── utils.js           # Utility functions
-│   │   ├── components.js      # Component initialization
-│   │   └── api.js             # API communication
-│   ├── images/
-│   │   ├── icons/             # Icon files
-│   │   ├── backgrounds/       # Background images
-│   │   └── logos/             # Logo assets
-│   └── fonts/
-│       └── [font files]       # Custom fonts
-├── pages/
-│   ├── home.html              # Home page
-│   ├── about.html             # About page
-│   ├── services.html          # Services page
-│   └── contact.html           # Contact page
-├── components/
-│   ├── header.html            # Header component
-│   ├── footer.html            # Footer component
-│   ├── navbar.html            # Navigation bar component
-│   └── sidebar.html           # Sidebar component
-└── public/
-    └── [static files]         # Public static files
-```
-
-#### Python Project (`src/python/`)
-
-```
-src/python/
-├── __init__.py                # Package initialization
-├── main.py                    # Main entry point/application launcher
-├── config.py                  # Configuration management
-├── requirements.txt           # Python dependencies
-├── utils/
-│   ├── __init__.py
-│   ├── helpers.py             # Helper functions
-│   ├── validators.py          # Input validation functions
-│   ├── formatters.py          # Data formatting utilities
-│   └── constants.py           # Application constants
-├── modules/
-│   ├── __init__.py
-│   ├── authentication.py      # Auth module
-│   ├── database.py            # Database module
-│   ├── api.py                 # API module
-│   ├── processing.py          # Data processing module
-│   └── notifications.py       # Notification module
-├── services/
-│   ├── __init__.py
-│   ├── user_service.py        # User service
-│   ├── data_service.py        # Data service
-│   └── report_service.py      # Report service
-├── models/
-│   ├── __init__.py
-│   ├── user.py                # User model
-│   ├── data.py                # Data model
-│   └── report.py              # Report model
-└── tests/
-    ├── __init__.py
-    ├── test_main.py           # Main tests
-    ├── test_utils.py          # Utility tests
-    ├── test_modules.py        # Module tests
-    └── test_integration.py    # Integration tests
-```
-
----
-
-## HTML Project Mappings
-
-### File Purpose Mapping
-
-| File/Directory | Purpose | Dependencies |
-|---|---|---|
-| `index.html` | Landing/home page entry point | `assets/css/style.css`, `assets/js/app.js` |
-| `assets/css/style.css` | Main stylesheet for all pages | None (base) |
-| `assets/css/responsive.css` | Mobile/responsive design rules | `style.css` |
-| `assets/js/app.js` | Main application logic | None (base) |
-| `assets/js/utils.js` | Helper functions (DOM, validation, etc.) | None (base) |
-| `assets/js/api.js` | API client for backend communication | `utils.js` |
-| `pages/home.html` | Home page content | `../assets/css/style.css` |
-| `pages/about.html` | About page content | `../assets/css/style.css` |
-| `components/header.html` | Reusable header component | `../assets/css/style.css` |
-| `components/footer.html` | Reusable footer component | `../assets/css/style.css` |
-
-### Component Dependencies
-
-```
-header.html
-├── style.css
-├── navbar.html (nested)
-│   └── app.js (event handlers)
-└── logo image (assets/images/logos/)
-
-footer.html
-├── style.css
-├── Font files
-└── Social media icons (assets/images/icons/)
-
-pages/
-├── home.html
-│   ├── header.html
-│   ├── footer.html
-│   └── components/*.html
-├── about.html
-│   ├── header.html
-│   ├── footer.html
-│   └── pages-specific components
-└── contact.html
-    ├── header.html
-    ├── footer.html
-    └── form.html component
-```
-
----
-
-## Python Project Mappings
-
-### Module Dependency Graph
-
-```
-main.py (entry point)
-├── config.py
-│   └── constants.py
-├── modules/
-│   ├── authentication.py
-│   │   └── utils/validators.py
-│   ├── database.py
-│   │   └── models/
-│   ├── api.py
-│   │   ├── modules/authentication.py
-│   │   └── modules/database.py
-│   ├── processing.py
-│   │   ├── utils/formatters.py
-│   │   └── modules/database.py
-│   └── notifications.py
-│       └── services/user_service.py
-├── services/
-│   ├── user_service.py
-│   │   └── models/user.py
-│   ├── data_service.py
-│   │   └── models/data.py
-│   └── report_service.py
-│       └── models/report.py
-└── utils/
-    ├── helpers.py
-    ├── validators.py
-    ├── formatters.py
-    └── constants.py
-```
-
-### Class/Function Mapping
-
-| Module | Class/Function | Purpose |
-|---|---|---|
-| `main.py` | `main()` | Application entry point |
-| `config.py` | `Config` | Configuration management class |
-| `utils/helpers.py` | Various helper functions | Utility operations |
-| `utils/validators.py` | `validate_email()`, `validate_input()` | Input validation |
-| `modules/authentication.py` | `Authenticator` | User authentication logic |
-| `modules/database.py` | `Database` | Database connection and operations |
-| `modules/api.py` | `APIClient` | API endpoint management |
-| `services/user_service.py` | `UserService` | User business logic |
-| `models/user.py` | `User` | User data model |
-
----
-
-## Configuration Files
-
-### Configuration Structure
-
-```
-config/
-├── development.yml        # Development environment settings
-│   ├── debug: true
-│   ├── database: localhost
-│   └── log_level: DEBUG
-├── production.yml         # Production environment settings
-│   ├── debug: false
-│   ├── database: prod-db
-│   └── log_level: WARNING
-└── testing.yml            # Testing environment settings
-    ├── debug: true
-    ├── database: test-db
-    └── log_level: INFO
-```
-
-### Root Configuration Files
+### 📚 Documentation Files
+Project documentation files.
 
 | File | Purpose |
-|---|---|
-| `.gitignore` | Specifies files/directories to exclude from version control |
-| `.vscode/settings.json` | VS Code workspace settings |
-| `.env.example` | Template for environment variables |
-| `pytest.ini` | PyTest configuration |
-| `eslintrc.json` | ESLint configuration for JavaScript |
+|------|---------|
+| `README.md` | Project overview and setup instructions |
+| `CHANGELOG.md` | Version history and release notes |
+| `docs/API.md` | API documentation |
+| `docs/CONTRIBUTING.md` | Contribution guidelines |
 
----
+### 🔨 Source Code Files
 
-## Build & Deployment
-
-### Build Scripts
+#### Components (`src/components/`)
+Reusable UI/functional components with their own tests and documentation.
 
 ```
-scripts/
-├── build.sh           # Main build script
-│   ├── Compiles assets
-│   ├── Runs tests
-│   └── Generates distribution
-├── deploy.sh          # Deployment script
-│   ├── Builds application
-│   ├── Runs migrations
-│   └── Starts services
-└── setup.sh           # Initial setup script
-    ├── Installs dependencies
-    ├── Creates config files
-    └── Initializes database
+ComponentName/
+├── ComponentName.tsx            # Main component
+├── ComponentName.module.scss    # Component styles
+├── ComponentName.test.tsx       # Component tests
+├── index.ts                     # Public exports
+└── README.md                    # Component documentation
 ```
 
-### Output Directories
-
-| Directory | Contents | Git Status |
-|---|---|---|
-| `dist/` | Compiled/built files | Ignored |
-| `build/` | Build artifacts | Ignored |
-| `__pycache__/` | Python cache files | Ignored |
-| `node_modules/` | NPM packages | Ignored |
-| `.pytest_cache/` | PyTest cache | Ignored |
-
----
-
-## Documentation Files
-
-### Documentation Structure
+#### Modules (`src/modules/`)
+Feature-specific modules containing related functionality.
 
 ```
-docs/
-├── README.md                          # Documentation index
-├── guides/
-│   ├── GETTING_STARTED.md             # Setup and quick start
-│   ├── INSTALLATION.md                # Installation instructions
-│   └── USAGE.md                       # Usage guide
+ModuleName/
+├── components/                  # Module-specific components
+├── services/                    # Module-specific services
+├── types/                       # Module-specific types
+├── index.ts                     # Module exports
+└── README.md                    # Module documentation
+```
+
+#### Utils (`src/utils/`)
+Utility functions and helpers.
+
+- `helpers.ts` - General helper functions
+- `validators.ts` - Input validation functions
+- `constants.ts` - Application constants
+- `formatters.ts` - Data formatting utilities
+
+#### Services (`src/services/`)
+Business logic and external API integration.
+
+```
+ServiceName.ts
+├── Export class or functions
+├── Connect to external APIs
+└── Handle business logic
+```
+
+#### Types (`src/types/`)
+TypeScript type and interface definitions.
+
+```
+index.ts                        # Main types export
+├── User.types.ts
+├── Component.types.ts
+├── API.types.ts
+└── Utility.types.ts
+```
+
+### 🧪 Test Files (`tests/`)
+
+#### Unit Tests
+Test individual functions and components in isolation.
+
+```
+tests/unit/
+├── components/
+├── services/
+├── utils/
+└── types/
+```
+
+#### Integration Tests
+Test multiple components working together.
+
+```
+tests/integration/
 ├── api/
-│   ├── REST_API.md                    # REST API documentation
-│   ├── ENDPOINTS.md                   # API endpoints reference
-│   └── AUTHENTICATION.md              # Auth API documentation
-├── tutorials/
-│   ├── TUTORIAL_1_BASICS.md           # Basic tutorial
-│   ├── TUTORIAL_2_ADVANCED.md         # Advanced tutorial
-│   └── VIDEO_GUIDES.md                # Video tutorial links
-└── architecture/
-    ├── ARCHITECTURE.md                # System architecture overview
-    ├── DATABASE_SCHEMA.md             # Database schema documentation
-    └── COMPONENT_DESIGN.md            # Component design patterns
+├── workflows/
+└── scenarios/
+```
+
+### 🔄 GitHub Files (`.github/`)
+
+#### Workflows (`.github/workflows/`)
+CI/CD automation files.
+
+- `test.yml` - Run tests on push/PR
+- `build.yml` - Build distribution files
+- `deploy.yml` - Deploy to production
+
+#### Issue Templates (`.github/ISSUE_TEMPLATE/`)
+Standardized issue creation templates.
+
+- `bug_report.md` - Bug report template
+- `feature_request.md` - Feature request template
+
+### 🪝 Git Hooks (`.husky/`)
+Pre-commit and pre-push hooks for code quality.
+
+- `pre-commit` - Lint and format before commit
+- `pre-push` - Run tests before push
+
+---
+
+## Technology Stack
+
+### Runtime & Language
+- **Node.js**: Runtime environment
+- **TypeScript**: Static type checking
+- **JavaScript (ES6+)**: Core language
+
+### Frontend (if applicable)
+- **React**: UI library/framework
+- **SCSS/CSS**: Styling
+- **HTML5**: Markup
+
+### Build & Compilation
+- **Webpack/Rollup**: Module bundler
+- **Babel**: JavaScript transpiler
+- **TypeScript Compiler**: Type checking and transpilation
+
+### Testing
+- **Jest**: Unit testing framework
+- **React Testing Library**: Component testing
+- **Supertest**: HTTP assertion library (if API testing)
+
+### Code Quality
+- **ESLint**: JavaScript linting
+- **Prettier**: Code formatting
+- **Husky**: Git hooks
+- **lint-staged**: Run linters on staged files
+
+### Development Tools
+- **VS Code**: Recommended IDE
+- **npm/yarn**: Package managers
+- **Git**: Version control
+
+---
+
+## Naming Conventions
+
+### Files & Directories
+
+| Type | Convention | Example |
+|------|-----------|---------|
+| Component directory | PascalCase | `UserProfile/`, `LoginForm/` |
+| Component file | PascalCase | `UserProfile.tsx` |
+| Utility file | camelCase | `formatDate.ts`, `validateEmail.ts` |
+| Type file | PascalCase with `.types` | `User.types.ts`, `Component.types.ts` |
+| Service file | camelCase or Class name | `userService.ts`, `AuthService.ts` |
+| Test file | `[name].test.ts(x)` | `User.test.ts`, `login.test.ts` |
+| Config file | camelCase or dotfiles | `.eslintrc.json`, `environment.ts` |
+
+### Code Identifiers
+
+| Type | Convention | Example |
+|------|-----------|---------|
+| Classes | PascalCase | `UserService`, `AuthProvider` |
+| Functions | camelCase | `formatDate()`, `validateEmail()` |
+| Constants | UPPER_SNAKE_CASE | `MAX_RETRIES`, `API_ENDPOINT` |
+| Variables | camelCase | `userName`, `isLoading` |
+| Interfaces | PascalCase, prefix I | `IUser`, `IComponent` |
+| Types | PascalCase | `UserType`, `ComponentProps` |
+| Enums | PascalCase | `UserRole`, `Status` |
+
+### Git & Version Control
+
+- **Branches**: `feature/feature-name`, `bugfix/issue-name`, `docs/doc-name`
+- **Commits**: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `style:`, `chore:`
+- **Tags**: `v1.0.0` (semantic versioning)
+
+---
+
+## Import Paths
+
+### Absolute Imports (if configured)
+```typescript
+// Instead of relative imports:
+import { User } from '../../../types/User.types';
+
+// Use absolute imports:
+import { User } from '@/types/User.types';
+```
+
+### Path Aliases (tsconfig.json)
+```json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@components/*": ["src/components/*"],
+      "@services/*": ["src/services/*"],
+      "@types/*": ["src/types/*"],
+      "@utils/*": ["src/utils/*"]
+    }
+  }
+}
+```
+
+### Import Organization
+```typescript
+// 1. External dependencies
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+
+// 2. Absolute imports from project
+import { User } from '@types/User.types';
+import { UserService } from '@services/UserService';
+
+// 3. Relative imports
+import { UserProfile } from '../components/UserProfile';
+
+// 4. Styles
+import styles from './User.module.scss';
 ```
 
 ---
 
-## Testing Structure
+## Navigation Guide
 
-### Test Organization
+### Quick Links to Common Directories
 
+#### For UI Development
 ```
-tests/
-├── unit/
-│   ├── test_utils.py                  # Utility function tests
-│   ├── test_validators.py             # Validator tests
-│   └── test_models.py                 # Model tests
-├── integration/
-│   ├── test_api_integration.py        # API integration tests
-│   ├── test_database_integration.py   # Database integration tests
-│   └── test_workflow.py               # End-to-end workflow tests
-└── fixtures/
-    ├── sample_data.json               # Sample test data
-    ├── mock_responses.json            # Mock API responses
-    └── test_database.sql              # Test database setup
+src/components/          # Reusable UI components
+src/utils/              # Styling utilities, formatters
 ```
 
----
+#### For Feature Development
+```
+src/modules/[FeatureName]/   # Feature-specific code
+src/services/                # Business logic
+src/types/                   # Type definitions
+```
 
-## Cross-Project References
+#### For Testing
+```
+tests/unit/              # Unit tests
+tests/integration/       # Integration tests
+tests/fixtures/          # Test data
+```
 
-### HTML ↔ Python Integration
+#### For Configuration
+```
+.vscode/                 # Editor configuration
+.github/                 # GitHub configuration
+.husky/                  # Git hooks
+```
 
-| HTML Component | Python Endpoint | Purpose |
-|---|---|---|
-| `assets/js/api.js` | `/api/data` (Python Flask/FastAPI) | Data fetching |
-| `pages/contact.html` form | `POST /api/contact` | Form submission |
-| `components/header.html` | `/api/user/profile` | User information |
-| `assets/js/app.js` events | Various Python endpoints | Event handling |
+### Finding Things
 
-### External Dependencies
+**Need to add a new feature?**
+1. Create feature directory: `src/modules/FeatureName/`
+2. Add components: `src/modules/FeatureName/components/`
+3. Add services: `src/modules/FeatureName/services/`
+4. Add tests: `tests/unit/modules/FeatureName/`
+5. Update types: `src/types/` or module-specific types
 
-**HTML Project:**
-- Bootstrap (optional)
-- jQuery (optional)
-- Fetch API (native)
+**Need to fix a bug?**
+1. Find the affected component/service
+2. Create/update test in `tests/unit/` or `tests/integration/`
+3. Implement the fix
+4. Verify tests pass
 
-**Python Project:**
-- Flask/FastAPI (web framework)
-- SQLAlchemy (ORM)
-- Requests (HTTP library)
-- Pytest (testing)
-
----
-
-## Development Workflow
-
-### File Modification Guide
-
-#### When Adding a New HTML Page:
-1. Create file in `src/html/pages/`
-2. Include header component: `<include src="components/header.html"/>`
-3. Include footer component: `<include src="components/footer.html"/>`
-4. Link stylesheet: `<link rel="stylesheet" href="assets/css/style.css">`
-5. Include app script: `<script src="assets/js/app.js"></script>`
-
-#### When Adding a New Python Module:
-1. Create file in appropriate directory (`modules/`, `services/`, `utils/`)
-2. Add docstring with module purpose
-3. Create corresponding test file in `tests/`
-4. Update `requirements.txt` if adding dependencies
-5. Document in `docs/api/`
-
-#### When Adding Assets:
-1. Place images in `src/html/assets/images/[category]/`
-2. Place fonts in `src/html/assets/fonts/`
-3. Update CSS variables for new colors/themes
-4. Optimize media files before committing
+**Need to add a reusable component?**
+1. Create directory: `src/components/ComponentName/`
+2. Add component file: `src/components/ComponentName/ComponentName.tsx`
+3. Add styles: `src/components/ComponentName/ComponentName.module.scss`
+4. Add tests: `src/components/ComponentName/ComponentName.test.tsx`
+5. Export from: `src/components/ComponentName/index.ts`
 
 ---
 
-## Quick Reference
+## Repository Statistics
 
-### Common Commands
+### Code Metrics
+
+| Metric | Value | Notes |
+|--------|-------|-------|
+| Total Files | [To be calculated] | Includes all tracked files |
+| Total Lines of Code | [To be calculated] | Excludes tests and node_modules |
+| Total Test Files | [To be calculated] | Unit + Integration tests |
+| Test Coverage | [To be calculated] | Run `npm run test:coverage` |
+| Number of Components | [To be calculated] | Count of `src/components/*` |
+| Number of Modules | [To be calculated] | Count of `src/modules/*` |
+| Number of Services | [To be calculated] | Count of `src/services/*` |
+
+### Dependencies
+
+Run the following commands to get dependency statistics:
 
 ```bash
-# Build HTML project
-npm run build
+# Count total dependencies
+npm ls --all | tail -1
 
-# Build Python project
-python setup.py build
+# Get production dependencies
+npm ls --prod | tail -1
 
-# Run tests
-pytest tests/
+# Get development dependencies
+npm ls --dev | tail -1
 
-# Start development server
-python src/python/main.py
+# Check for outdated packages
+npm outdated
 
-# Deploy
-./scripts/deploy.sh
+# Check for vulnerabilities
+npm audit
 ```
 
-### File Navigation Shortcuts
+### Performance Benchmarks
 
-- **Add HTML page:** `src/html/pages/[name].html`
-- **Add Python module:** `src/python/[category]/[module].py`
-- **Add stylesheet:** `src/html/assets/css/[name].css`
-- **Add test:** `tests/[type]/test_[name].py`
-- **Add documentation:** `docs/[category]/[name].md`
+| Metric | Target | Current |
+|--------|--------|---------|
+| Build Time | < 30s | [To be measured] |
+| Test Suite Time | < 5s | [To be measured] |
+| Bundle Size | < 500KB | [To be measured] |
+| Code Coverage | > 80% | [To be measured] |
 
----
+### Development Statistics
 
-## Version Control Guidelines
-
-### .gitignore Priority Files
-
-Files that should NEVER be committed:
-- `.env` (environment variables)
-- `node_modules/`
-- `__pycache__/`
-- `*.pyc`
-- `dist/` and `build/`
-- `.pytest_cache/`
-- `venv/`
+| Item | Count |
+|------|-------|
+| Active Branches | [To be counted] |
+| Open Issues | [To be counted] |
+| Open Pull Requests | [To be counted] |
+| Total Commits | [To be counted] |
+| Contributors | [To be counted] |
 
 ---
 
-## Maintenance & Updates
+## Getting Started
 
-This document should be updated when:
-- New directories are added to the project structure
-- Major modules or components are created/removed
-- Project architecture changes significantly
-- New documentation is added
-- Build/deployment process changes
+### Setup Instructions
+```bash
+# Install dependencies
+npm install
 
-**Last maintained by:** magekt  
-**Last update:** 2025-12-26 21:03:51 UTC
+# Install git hooks
+npx husky install
+
+# Copy environment template
+cp .env.example .env.local
+
+# Start development
+npm run dev
+```
+
+### Common Commands
+```bash
+# Development
+npm run dev                 # Start development server
+npm run build              # Build for production
+npm run preview            # Preview production build
+
+# Testing
+npm test                   # Run all tests
+npm run test:watch        # Run tests in watch mode
+npm run test:coverage     # Generate coverage report
+
+# Code Quality
+npm run lint              # Run ESLint
+npm run lint:fix          # Fix ESLint issues
+npm run format            # Format code with Prettier
+npm run format:check      # Check formatting
+
+# Git
+npm run prepare           # Setup git hooks
+git push                  # Pre-push hooks run tests
+```
 
 ---
 
-## Support & Questions
+## Contributing
 
-For questions about file organization or project structure, please refer to the relevant documentation files in the `docs/` directory or create an issue in the GitHub repository.
+Please see [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed contribution guidelines.
+
+### Summary
+1. Create feature branch from `main`
+2. Make changes following naming conventions
+3. Write/update tests
+4. Run `npm run lint:fix` and `npm run format`
+5. Create pull request with clear description
+6. Wait for CI/CD checks and code review
+
+---
+
+## Additional Resources
+
+- [GitHub Issues](../../issues)
+- [GitHub Discussions](../../discussions)
+- [Project Board](../../projects)
+- [Security Policy](.github/SECURITY.md)
+- [Code of Conduct](.github/CODE_OF_CONDUCT.md)
+
+---
+
+**Last Updated by**: FILE_MAPPING generation script  
+**Last Updated**: 2025-12-26
